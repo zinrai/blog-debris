@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+    <channel>
+        <title>command not found:</title>
+        <link>http://127.0.0.1/blog/html/</link>
+        <description>Hello World</description>
+        <language>en-us</language>
+        <pubDate>Sat, 23 Mar 2013 00:00:00 +0900</pubDate>
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/03/23/tinkerer_github.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/03/23/tinkerer_github.html</guid>
+            <title><![CDATA[Tinkerer + Github]]></title>
+            <description><![CDATA[<div class="section" id="tinkerer-github">
+<h1>Tinkerer + Github</h1>
+<p>jekyll + Githubを使ってブログを書いていたのだけれどローカルで確認するのにWEBRick動かすということに面倒くささを感じ流らく放置してしまっていた。</p>
+<p>もっと手軽な(Sphinxみたいにhtmlが掃き出される)ものはないかと探してみたところTinkererというものを見付けた。</p>
+<div class="highlight-python"><pre>$ pip install tinkerer</pre>
+</div>
+<div class="highlight-python"><pre>$ tinker -s</pre>
+</div>
+<div class="highlight-python"><pre>$ wget http://dl.dropbox.com/u/218108/files/japanesesupport.py
+$ mkdir _exts
+$ mv japanesesupport.py _exts
+$ hg clone https://bitbucket.org/vladris/tinkerer-contrib
+$ cp `find tinkerer-contrib -name withgithub.py` _exts
+$ rm -rf tinkerer-contrib
+$ touch .nojekyll</pre>
+</div>
+<div class="section" id="conf-py">
+<h2>conf.py 修正</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tinkerer.ext.blog'</span><span class="p">,</span> <span class="s">'tinkerer.ext.disqus'</span><span class="p">,</span> <span class="s">'japanesesupport'</span><span class="p">,</span> <span class="s">'withgithub'</span><span class="p">]</span>
+
+<span class="c"># Add templates to be rendered in sidebar here</span>
+<span class="n">html_sidebars</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;**&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s">&quot;recent.html&quot;</span><span class="p">,</span> <span class="s">&quot;categories.html&quot;</span><span class="p">,</span> <span class="s">&quot;tags.html&quot;</span><span class="p">,</span> <span class="s">&quot;searchbox.html&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>$ tinker -p 'first post'
+$ tinker -b
+$ git init
+$ git add .
+$ git commit -m 'first post'
+$ git remote add origin git@github.com:zinrai/zinrai.github.com.git
+$ git push -u origin master</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.tinkerer.me/exts/withgithub.html">http://www.tinkerer.me/exts/withgithub.html</a></li>
+<li><a class="reference external" href="http://sphinx-users.jp/reverse-dict/html/japanese.html">http://sphinx-users.jp/reverse-dict/html/japanese.html</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ python ]]></category>
+            <category><![CDATA[ github ]]></category>
+            <pubDate>Sat, 23 Mar 2013 00:00:00 +0900</pubDate>
+        </item>
+    </channel>
+</rss>
