@@ -5,25 +5,100 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Mon, 20 May 2013 00:00:00 +0900</pubDate>
+        <pubDate>Sun, 26 May 2013 00:00:00 +0900</pubDate>
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/05/26/ubuntu_mongodb_install.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/05/26/ubuntu_mongodb_install.html</guid>
+            <title><![CDATA[Ubuntu12.04にMongoDBをインストール]]></title>
+            <description><![CDATA[<div class="section" id="ubuntu12-04mongodb">
+<h1>Ubuntu12.04にMongoDBをインストール</h1>
+<p>積読になっていた「MongoDB イン・アクション」をようやく読み始めた。</p>
+<p>「Ubuntu 12.04 amd64」にMongoDBをインストールして手を動かしてみたのでメモしておく。</p>
+<p>Railsで使いたいなと思っているところ。</p>
+<p>本家のドキュメントにaptでインストール出来ると書いているのでそれに従ってみた。</p>
+<div class="section" id="mongodb">
+<h2>MongoDB インストール</h2>
+<div class="highlight-python"><pre>$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
+$ echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/10gen.list
+$ sudo apt-get update
+$ sudo apt-get install mongodb-10gen</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install mongodb-10gen=2.2.3</span>
+</pre></div>
+</div>
+<p>で指定のVersionをインストールすることが出来る。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># echo &quot;mongodb-10gen hold&quot; | dpkg --set-selections</span>
+</pre></div>
+</div>
+<p>でインストールしたVersionからアップグレードしないように出来る。</p>
+</div>
+<div class="section" id="id1">
+<h2>MongoDB 操作</h2>
+<div class="highlight-python"><pre>$ mongo
+MongoDB shell version: 2.4.3
+connecting to: test
+Welcome to the MongoDB shell.
+For interactive help, type &quot;help&quot;.
+For more comprehensive documentation, see
+        http://docs.mongodb.org/
+Questions? Try the support group
+        http://groups.google.com/group/mongodb-user
+
+use tutorial
+
+db.users.insert({username: &quot;hoge&quot;})
+
+db.users.find()
+{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
+
+db.users.save({username: &quot;moge&quot;})
+
+db.users.find()
+{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
+{ &quot;_id&quot; : ObjectId(&quot;51a1f8d336f07a662784e8af&quot;), &quot;username&quot; : &quot;moge&quot; }
+
+db.users.count()
+2
+
+db.users.update({username: &quot;hoge&quot;}, {$set: {country: &quot;canada&quot;}})
+db.users.find({username: &quot;hoge&quot;})
+{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;country&quot; : &quot;canada&quot;, &quot;username&quot; : &quot;hoge&quot; }
+
+db.users.update({username: &quot;hoge&quot;}, {$unset: {country: 1}})
+db.users.find({username: &quot;hoge&quot;})
+{ &quot;_id&quot; : ObjectId(&quot;51adf33a197bc318df1ad8ad&quot;), &quot;username&quot; : &quot;hoge&quot; }</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ ubuntu ]]></category>
+            <category><![CDATA[ mongodb ]]></category>
+            <pubDate>Sun, 26 May 2013 00:00:00 +0900</pubDate>
+        </item>
         <item>
             <link>http://127.0.0.1/blog/html/2013/05/20/unbound_nsd.html</link>
             <guid>http://127.0.0.1/blog/html/2013/05/20/unbound_nsd.html</guid>
             <title><![CDATA[Unbound + NSD]]></title>
             <description><![CDATA[<div class="section" id="unbound-nsd">
 <h1>Unbound + NSD</h1>
-<p>Chef Serverと戯れるときにhostsをいちいち書き換えるのは面倒なので内部にDNSサーバを立ててみた。</p>
-<p>ディストリビューションは「Ubuntu 12.04 server amd64」コンテンツサーバにNSD(3.2.9),キャッシュサーバにUnbound(1.4.16)を使った。</p>
+<p>Chef Serverと戯れるときにhostsをいちいち書き換えるのは</p>
+<p>面倒なので内部にDNSサーバを立ててみた。</p>
 <table border="1" class="docutils">
+<caption>Ubuntu 12.04 server amd64</caption>
 <colgroup>
-<col width="50%"/>
-<col width="50%"/>
+<col width="33%"/>
+<col width="33%"/>
+<col width="33%"/>
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td>NSD</td>
+<tr class="row-odd"><td>コンテンツサーバ</td>
+<td>NSD(3.2.9)</td>
 <td>192.168.0.1</td>
 </tr>
-<tr class="row-even"><td>Unbound</td>
+<tr class="row-even"><td>キャッシュサーバ</td>
+<td>Unbound(1.4.16)</td>
 <td>192.168.0.2</td>
 </tr>
 </tbody>
@@ -108,6 +183,8 @@ stub-zone:
 </div>]]></description>
             <category><![CDATA[ ubuntu ]]></category>
             <category><![CDATA[ dns ]]></category>
+            <category><![CDATA[ nsd ]]></category>
+            <category><![CDATA[ unbound ]]></category>
             <pubDate>Mon, 20 May 2013 00:00:00 +0900</pubDate>
         </item>
         <item>

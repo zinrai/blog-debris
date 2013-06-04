@@ -4,23 +4,22 @@ Unbound + NSD
 
 
 .. author:: default
-.. categories:: ubuntu,dns
+.. categories:: ubuntu,dns,nsd,unbound
 .. tags:: unbound,nsd,dns,ubuntu
 .. comments::
 
 
 
 Chef Serverと戯れるときにhostsをいちいち書き換えるのは
+
 面倒なので内部にDNSサーバを立ててみた。
 
-ディストリビューションは「Ubuntu 12.04 server amd64」
-コンテンツサーバにNSD(3.2.9),キャッシュサーバにUnbound(1.4.16)を使った。
-
-.. csv-table::
+.. csv-table:: Ubuntu 12.04 server amd64
   :delim: space
+  :header-rows: 0
 
-  NSD 192.168.0.1
-  Unbound 192.168.0.2
+  コンテンツサーバ NSD(3.2.9) 192.168.0.1
+  キャッシュサーバ Unbound(1.4.16) 192.168.0.2
 
 
 NSD

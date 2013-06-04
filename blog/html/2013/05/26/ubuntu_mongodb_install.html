@@ -12,7 +12,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Unbound + NSD &mdash; command not found:</title>
+    <title>Ubuntu12.04にMongoDBをインストール &mdash; command not found:</title>
     
     <link rel="stylesheet" href="../../../_static/minimal.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -32,8 +32,7 @@
     <link rel="shortcut icon" href="../../../_static/tinkerer.ico"/>
     
     <link rel="top" title="command not found:" href="../../../index.html" />
-    <link rel="next" title="Tinkerer + Github" href="../../03/23/tinkerer_github.html" />
-    <link rel="prev" title="Ubuntu12.04にMongoDBをインストール" href="../26/ubuntu_mongodb_install.html" />
+    <link rel="next" title="Unbound + NSD" href="../20/unbound_nsd.html" />
     <link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /> 
   </head>
   <body>
@@ -71,10 +70,10 @@
     <h1>Recent Posts</h1>
     <ul>
         <li class="recent_post">
-            <a href="../26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
+            <a href="#">Ubuntu12.04にMongoDBをインストール</a>
         </li>
         <li class="recent_post">
-            <a href="#">Unbound + NSD</a>
+            <a href="../20/unbound_nsd.html">Unbound + NSD</a>
         </li>
         <li class="recent_post">
             <a href="../../03/23/tinkerer_github.html">Tinkerer + Github</a>
@@ -132,115 +131,75 @@
     
     <div class="related">
         <ul>
-            <li>
-                 &laquo; <a href="../26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
-            </li>
             <li class="right">
-                <a href="../../03/23/tinkerer_github.html">Tinkerer + Github</a> &raquo; 
+                <a href="../20/unbound_nsd.html">Unbound + NSD</a> &raquo; 
             </li>
         </ul>
     </div>
     
         <div class="timestamp postmeta">
-            <span>May 20, 2013</span> 
+            <span>May 26, 2013</span> 
         </div>
-    <div class="section" id="unbound-nsd">
-<h1>Unbound + NSD</h1>
-<p>Chef Serverと戯れるときにhostsをいちいち書き換えるのは</p>
-<p>面倒なので内部にDNSサーバを立ててみた。</p>
-<table border="1" class="docutils">
-<caption>Ubuntu 12.04 server amd64</caption>
-<colgroup>
-<col width="33%" />
-<col width="33%" />
-<col width="33%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>コンテンツサーバ</td>
-<td>NSD(3.2.9)</td>
-<td>192.168.0.1</td>
-</tr>
-<tr class="row-even"><td>キャッシュサーバ</td>
-<td>Unbound(1.4.16)</td>
-<td>192.168.0.2</td>
-</tr>
-</tbody>
-</table>
-<div class="section" id="nsd">
-<h2>NSD</h2>
-<p>今回は正引きだけ設定した。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install nsd</span>
-<span class="c"># cd /etc/nsd3</span>
-<span class="c"># cp nsd.conf.sample nsd.conf</span>
-<span class="c"># vi nsd.conf</span>
+    <div class="section" id="ubuntu12-04mongodb">
+<h1>Ubuntu12.04にMongoDBをインストール</h1>
+<p>積読になっていた「MongoDB イン・アクション」をようやく読み始めた。</p>
+<p>「Ubuntu 12.04 amd64」にMongoDBをインストールして手を動かしてみたのでメモしておく。</p>
+<p>Railsで使いたいなと思っているところ。</p>
+<p>本家のドキュメントにaptでインストール出来ると書いているのでそれに従ってみた。</p>
+<div class="section" id="mongodb">
+<h2>MongoDB インストール</h2>
+<div class="highlight-python"><pre>$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
+$ echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/10gen.list
+$ sudo apt-get update
+$ sudo apt-get install mongodb-10gen</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install mongodb-10gen=2.2.3</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>server:
-  ip-address: 192.168.0.1
-  hide-version: yes
-  ipv4-only: yes
-  database: "/etc/nsd3/nsd.conf"
-  pidfile: "/etc/nsd3/nsd.pid"
-  chroot: "/etc/nsd3"
-  username: nsd
-  zonedir: "/etc/nsd3"
-  difffile: "/etc/nsd3/ixfr.db"
-  xfrdfile: "/etc/nsd3/xfrd.state"
-
-zone:
-  name: chef.local
-  zonefile: chef.local.zone</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi chef.local.zone</span>
+<p>で指定のVersionをインストールすることが出来る。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># echo &quot;mongodb-10gen hold&quot; | dpkg --set-selections</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$TTL 3600
-@ IN SOA ns1.chef.local. postmaster.chef.local. (
-  2013052001  ;Serial
-  3600        ;Refresh
-  1800        ;Retry
-  57200       ;Expire
-  86400       ;Minimum TTL
-)
-
-@ IN  NS  ns1.chef.local.
-
-ns1   IN  A 192.168.0.1
-ns2   IN  A 192.168.0.2
-www   IN  A 192.168.0.3
-hoge  IN  A 192.168.0.4
-fuga  IN  A 192.168.0.5
-moge  IN  A 192.168.0.6</pre>
+<p>でインストールしたVersionからアップグレードしないように出来る。</p>
 </div>
-</div>
-<div class="section" id="unbound">
-<h2>Unbound</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install unbound</span>
-<span class="c"># cd /etc/unbound</span>
-<span class="c"># zcat `locate unbound.conf | sed -n 2p` &gt; unbound.conf</span>
-<span class="c"># vi unbound.conf</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre>server:
-  verbosity: 1
-  interface 192.168.0.2
-  do-ip6: no
-  access-control: 127.0.0.0/8 allow
-  access-control: 192.168.0.0/24 allow
-  chroot: "etc/unbound"
-  username: "unbound"
-  directory: "/etc/unbound"
-  use-syslog: yes
-  pidfile: "/etc/unbound/unbound.pid"
+<div class="section" id="id1">
+<h2>MongoDB 操作</h2>
+<div class="highlight-python"><pre>$ mongo
+MongoDB shell version: 2.4.3
+connecting to: test
+Welcome to the MongoDB shell.
+For interactive help, type "help".
+For more comprehensive documentation, see
+        http://docs.mongodb.org/
+Questions? Try the support group
+        http://groups.google.com/group/mongodb-user
 
-stub-zone:
-  name: "chef.local"
-  stub-addr: 192.168.0.1</pre>
+use tutorial
+
+db.users.insert({username: "hoge"})
+
+db.users.find()
+{ "_id" : ObjectId("51a1f5c136f07a662784e8ae"), "username" : "hoge" }
+
+db.users.save({username: "moge"})
+
+db.users.find()
+{ "_id" : ObjectId("51a1f5c136f07a662784e8ae"), "username" : "hoge" }
+{ "_id" : ObjectId("51a1f8d336f07a662784e8af"), "username" : "moge" }
+
+db.users.count()
+2
+
+db.users.update({username: "hoge"}, {$set: {country: "canada"}})
+db.users.find({username: "hoge"})
+{ "_id" : ObjectId("51a1f5c136f07a662784e8ae"), "country" : "canada", "username" : "hoge" }
+
+db.users.update({username: "hoge"}, {$unset: {country: 1}})
+db.users.find({username: "hoge"})
+{ "_id" : ObjectId("51adf33a197bc318df1ad8ad"), "username" : "hoge" }</pre>
 </div>
 <ul class="simple">
-<li><a class="reference external" href="http://unbound.jp/">http://unbound.jp/</a></li>
-<li><a class="reference external" href="http://unbound.jp/news20110624/">http://unbound.jp/news20110624/</a></li>
-<li><a class="reference external" href="http://gihyo.jp/admin/feature/01/unbound">http://gihyo.jp/admin/feature/01/unbound</a></li>
+<li><a class="reference external" href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a></li>
 </ul>
 </div>
 </div>
@@ -258,11 +217,7 @@ stub-zone:
                 
                     <a href="../../../categories/ubuntu.html">ubuntu</a>,
                 
-                    <a href="../../../categories/dns.html">dns</a>,
-                
-                    <a href="../../../categories/nsd.html">nsd</a>,
-                
-                    <a href="../../../categories/unbound.html">unbound</a>
+                    <a href="../../../categories/mongodb.html">mongodb</a>
                 
             </span>
         </div>
@@ -271,13 +226,9 @@ stub-zone:
             <span>
                 Tags:
                 
-                    <a href="../../../tags/unbound.html">unbound</a>,
+                    <a href="../../../tags/ubuntu.html">ubuntu</a>,
                 
-                    <a href="../../../tags/nsd.html">nsd</a>,
-                
-                    <a href="../../../tags/dns.html">dns</a>,
-                
-                    <a href="../../../tags/ubuntu.html">ubuntu</a>
+                    <a href="../../../tags/mongodb.html">mongodb</a>
                 
             </span>
         </div>
