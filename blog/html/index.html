@@ -71,6 +71,9 @@
     <h1>Recent Posts</h1>
     <ul>
         <li class="recent_post">
+            <a href="2013/06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a>
+        </li>
+        <li class="recent_post">
             <a href="2013/05/26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
         </li>
         <li class="recent_post">
@@ -87,8 +90,10 @@
 <div class="widget">
     <h1>Categories</h1>
     <ul>
+        <li><a href="categories/debian.html">debian</a> (1)</li>
         <li><a href="categories/dns.html">dns</a> (1)</li>
         <li><a href="categories/github.html">github</a> (1)</li>
+        <li><a href="categories/kvm.html">kvm</a> (1)</li>
         <li><a href="categories/mongodb.html">mongodb</a> (1)</li>
         <li><a href="categories/nsd.html">nsd</a> (1)</li>
         <li><a href="categories/python.html">python</a> (1)</li>
@@ -100,8 +105,10 @@
 
 <div class="widget">
     <h1>Tags</h1>
+      <a href="tags/debian.html">debian</a> (1),
       <a href="tags/dns.html">dns</a> (1),
       <a href="tags/github.html">github</a> (1),
+      <a href="tags/kvm.html">kvm</a> (1),
       <a href="tags/mongodb.html">mongodb</a> (1),
       <a href="tags/nsd.html">nsd</a> (1),
       <a href="tags/python.html">python</a> (1),
@@ -130,6 +137,183 @@
           <div class="body">
             
     
+        
+        <div class="timestamp postmeta">
+            <span>June 05, 2013</span> 
+        </div>
+        <div class="section" id="debian-wheezynested-kvm">
+<h1><a href="2013/06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a></h1>
+<p><a class="reference external" href="https://code.google.com/p/ganeti">ganeti</a>のbetaを触るのに実機を2,3台用意しないといけないことから開放されそう。</p>
+<div class="section" id="kvm">
+<h2>KVM インストール</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install install qemu-kvm libvirt-bin virtinst bridge-utils</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="nested-kvm">
+<h2>Nested KVM</h2>
+<p>Nested KVMを有効にするための設定を行う。</p>
+<div class="highlight-python"><pre># modinfo kvm_intel
+filename:       /lib/modules/3.2.0-4-amd64/kernel/arch/x86/kvm/kvm-intel.ko
+license:        GPL
+author:         Qumranet
+depends:        kvm
+intree:         Y
+vermagic:       3.2.0-4-amd64 SMP mod_unload modversions
+parm:           vpid:bool
+parm:           flexpriority:bool
+parm:           ept:bool
+parm:           unrestricted_guest:bool
+parm:           emulate_invalid_guest_state:bool
+parm:           vmm_exclusive:bool
+parm:           yield_on_hlt:bool
+parm:           fasteoi:bool
+parm:           nested:bool
+parm:           ple_gap:int
+parm:           ple_window:int
+
+# cat /sys/module/kvm_intel/parameters/nested
+N
+
+# vi /etc/modprobe.d/kvm-nested.conf
+options kvm_intel nested=1
+
+# modprobe -r kvm_intel
+# modprobe kvm_intel
+
+# cat /sys/module/kvm_intel/parameters/nested
+Y</pre>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>仮想マシンの作成</h2>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+
+<span class="nv">VM_NAME</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">MEM</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">SIZE</span><span class="o">=</span><span class="nv">$3</span>
+<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$4</span>
+<span class="nv">OS</span><span class="o">=</span><span class="nv">$5</span>
+
+<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">&quot;/var/lib/libvirt/images/$VM_NAME&quot;</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;centos&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># CentOS 6.4 amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;precise&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Ubuntu 12.04 amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;squeeze&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Debian Squeeze amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;wheezy&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Debian Wheezy amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
+<span class="k">fi</span>
+
+virt-install --hvm --accelerate --nographics <span class="se">\</span>
+  --name <span class="nv">$VM_NAME</span> <span class="se">\</span>
+  --network <span class="nv">bridge</span><span class="o">=</span><span class="nv">$IFACE</span>,model<span class="o">=</span>virtio <span class="se">\</span>
+  --ram <span class="nv">$MEM</span> <span class="se">\</span>
+  --vcpus 1 <span class="se">\</span>
+  --cpu core2duo <span class="se">\</span>
+  --os-type linux <span class="se">\</span>
+  --location <span class="nv">$DIST</span> <span class="se">\</span>
+  --disk <span class="nv">path</span><span class="o">=</span><span class="nv">$DISKIMAGE</span>.qcow2,format<span class="o">=</span>qcow2,size<span class="o">=</span><span class="nv">$SIZE</span>,bus<span class="o">=</span>virtio,cache<span class="o">=</span>writethrough <span class="se">\</span>
+  --extra-args<span class="o">=</span><span class="s1">'console=tty0 console=ttyS0,115200n8'</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vm-install.sh debian7_vm 1500 100 br1 wheezy</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="os">
+<h2>ゲストOSでの仮想マシン作成</h2>
+<p>ゲストOSでKVMのインストールと仮想マシンの作成を行う。</p>
+<p>スクリプトは–cpuオプションを取っただけであとは同じ。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install install qemu-kvm libvirt-bin virtinst bridge-utils</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+
+<span class="nv">VM_NAME</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">MEM</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">SIZE</span><span class="o">=</span><span class="nv">$3</span>
+<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$4</span>
+<span class="nv">OS</span><span class="o">=</span><span class="nv">$5</span>
+
+<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">&quot;/var/lib/libvirt/images/$VM_NAME&quot;</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;centos&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># CentOS 6.4 amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;precise&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Ubuntu 12.04 amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;squeeze&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Debian Squeeze amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;wheezy&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Debian Wheezy amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
+<span class="k">fi</span>
+
+virt-install --hvm --accelerate --nographics <span class="se">\</span>
+  --name <span class="nv">$VM_NAME</span> <span class="se">\</span>
+  --network <span class="nv">bridge</span><span class="o">=</span><span class="nv">$IFACE</span>,model<span class="o">=</span>virtio <span class="se">\</span>
+  --ram <span class="nv">$MEM</span> <span class="se">\</span>
+  --vcpus 1 <span class="se">\</span>
+  --os-type linux <span class="se">\</span>
+  --location <span class="nv">$DIST</span> <span class="se">\</span>
+  --disk <span class="nv">path</span><span class="o">=</span><span class="nv">$DISKIMAGE</span>.qcow2,format<span class="o">=</span>qcow2,size<span class="o">=</span><span class="nv">$SIZE</span>,bus<span class="o">=</span>virtio,cache<span class="o">=</span>writethrough <span class="se">\</span>
+  --extra-args<span class="o">=</span><span class="s1">'console=tty0 console=ttyS0,115200n8'</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># virsh net-list --all
+Name                 State      Autostart
+-----------------------------------------
+default              inactive   no
+
+# virsh net-start default
+# vm-install.sh debian7_nested 500 50 virbr0 wheezy</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.debian.org/releases/wheezy">http://www.debian.org/releases/wheezy/</a></li>
+<li><a class="reference external" href="http://wiki.debian.org/KVM">http://wiki.debian.org/KVM</a></li>
+<li><a class="reference external" href="http://aikotobaha.blogspot.jp/2012/02/kvm-on-kvmnested-kvm.html">http://aikotobaha.blogspot.jp/2012/02/kvm-on-kvmnested-kvm.html</a></li>
+</ul>
+</div>
+</div>
+        
+    <div class="postmeta">
+        
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        
+        <div class="categories">
+            <span>
+                Filed under:
+                
+                    <a href="categories/debian.html">debian</a>,
+                
+                    <a href="categories/kvm.html">kvm</a>
+                
+            </span>
+        </div>
+        
+        <div class="tags">
+            <span>
+                Tags:
+                
+                    <a href="tags/debian.html">debian</a>,
+                
+                    <a href="tags/kvm.html">kvm</a>
+                
+            </span>
+        </div>
+        
+    </div><div class="separator post_separator"></div>
         
         <div class="timestamp postmeta">
             <span>May 26, 2013</span> 
