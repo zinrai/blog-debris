@@ -12,7 +12,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Unbound + NSD &mdash; command not found:</title>
+    <title>Rails3でMongoDBを使ってみる &mdash; command not found:</title>
     
     <link rel="stylesheet" href="../../../_static/minimal.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -32,8 +32,7 @@
     <link rel="shortcut icon" href="../../../_static/tinkerer.ico"/>
     
     <link rel="top" title="command not found:" href="../../../index.html" />
-    <link rel="next" title="Tinkerer + Github" href="../../03/23/tinkerer_github.html" />
-    <link rel="prev" title="Ubuntu12.04にMongoDBをインストール" href="../26/ubuntu_mongodb_install.html" />
+    <link rel="next" title="Debian wheezyでNested KVMを試してみる" href="../05/debian_wheezy_nested_kvm.html" />
     <link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /> 
   </head>
   <body>
@@ -71,16 +70,16 @@
     <h1>Recent Posts</h1>
     <ul>
         <li class="recent_post">
-            <a href="../../06/08/ubuntu_mongodb_rails3_setup.html">Rails3でMongoDBを使ってみる</a>
+            <a href="#">Rails3でMongoDBを使ってみる</a>
         </li>
         <li class="recent_post">
-            <a href="../../06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a>
+            <a href="../05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a>
         </li>
         <li class="recent_post">
-            <a href="../26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
+            <a href="../../05/26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
         </li>
         <li class="recent_post">
-            <a href="#">Unbound + NSD</a>
+            <a href="../../05/20/unbound_nsd.html">Unbound + NSD</a>
         </li>
         <li class="recent_post">
             <a href="../../03/23/tinkerer_github.html">Tinkerer + Github</a>
@@ -142,117 +141,66 @@
     
     <div class="related">
         <ul>
-            <li>
-                 &laquo; <a href="../26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
-            </li>
             <li class="right">
-                <a href="../../03/23/tinkerer_github.html">Tinkerer + Github</a> &raquo; 
+                <a href="../05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a> &raquo; 
             </li>
         </ul>
     </div>
     
         <div class="timestamp postmeta">
-            <span>May 20, 2013</span> 
+            <span>June 08, 2013</span> 
         </div>
-    <div class="section" id="unbound-nsd">
-<h1>Unbound + NSD</h1>
-<p>Chef Serverと戯れるときにhostsをいちいち書き換えるのは</p>
-<p>面倒なので内部にDNSサーバを立ててみた。</p>
-<table border="1" class="docutils">
-<caption>Ubuntu 12.04 server amd64</caption>
-<colgroup>
-<col width="33%" />
-<col width="33%" />
-<col width="33%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>コンテンツサーバ</td>
-<td>NSD(3.2.9)</td>
-<td>192.168.0.1</td>
-</tr>
-<tr class="row-even"><td>キャッシュサーバ</td>
-<td>Unbound(1.4.16)</td>
-<td>192.168.0.2</td>
-</tr>
-</tbody>
-</table>
-<div class="section" id="nsd">
-<h2>NSD</h2>
-<p>今回は正引きだけ設定した。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install nsd</span>
-<span class="c"># cd /etc/nsd3</span>
-<span class="c"># cp nsd.conf.sample nsd.conf</span>
-<span class="c"># vi nsd.conf</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre>server:
-  ip-address: 192.168.0.1
-  hide-version: yes
-  ipv4-only: yes
-  database: "/etc/nsd3/nsd.conf"
-  pidfile: "/etc/nsd3/nsd.pid"
-  chroot: "/etc/nsd3"
-  username: nsd
-  zonedir: "/etc/nsd3"
-  difffile: "/etc/nsd3/ixfr.db"
-  xfrdfile: "/etc/nsd3/xfrd.state"
+    <div class="section" id="rails3mongodb">
+<h1>Rails3でMongoDBを使ってみる</h1>
+<div class="highlight-python"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 12.04.2 LTS
+Release:        12.04
+Codename:       precise
 
-zone:
-  name: chef.local
-  zonefile: chef.local.zone</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi chef.local.zone</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre>$TTL 3600
-@ IN SOA ns1.chef.local. postmaster.chef.local. (
-  2013052001  ;Serial
-  3600        ;Refresh
-  1800        ;Retry
-  57200       ;Expire
-  86400       ;Minimum TTL
-)
+$ uname -a
+Linux ubuntu1204-64-base 3.2.0-45-generic #70-Ubuntu SMP Wed May 29 20:12:06 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
 
-@ IN  NS  ns1.chef.local.
+$ rails -v
+Rails 3.2.12
 
-ns1   IN  A 192.168.0.1
-ns2   IN  A 192.168.0.2
-www   IN  A 192.168.0.3
-hoge  IN  A 192.168.0.4
-fuga  IN  A 192.168.0.5
-moge  IN  A 192.168.0.6</pre>
-</div>
-</div>
-<div class="section" id="unbound">
-<h2>Unbound</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install unbound</span>
-<span class="c"># cd /etc/unbound</span>
-<span class="c"># zcat `locate unbound.conf | sed -n 2p` &gt; unbound.conf</span>
-<span class="c"># vi unbound.conf</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre>server:
-  verbosity: 1
-  interface 192.168.0.2
-  do-ip6: no
-  access-control: 127.0.0.0/8 allow
-  access-control: 192.168.0.0/24 allow
-  chroot: "etc/unbound"
-  username: "unbound"
-  directory: "/etc/unbound"
-  use-syslog: yes
-  pidfile: "/etc/unbound/unbound.pid"
+$ rails new mongodb_app --skip-active-record
 
-stub-zone:
-  name: "chef.local"
-  stub-addr: 192.168.0.1</pre>
+$ cd mongodb_app
+
+$ vi Gemfile
+gem 'mongoid'
+gem 'bson_ext'
+
+$ bundle install --path vendor/bundle --binstubs
+
+$ bin/rails g mongoid:config
+  create  config/mongoid.yml
+
+$ bin/rails g scaffold Post title:string subscription:text
+
+$ cat app/models/post.rb
+class Post
+  include Mongoid::Document
+  field :title, type: String
+  field :subscription, type: String
+end
+
+$ mongo
+&gt; show dbs
+mongodb_app_development 0.203125GB
+&gt; use mongodb_app_development
+&gt; show collections
+posts
+&gt; db.posts.find()
+{ "_id" : ObjectId("51b1ea5da64aef614e000001"), "title" : "sample", "subscription" : "text" }
+{ "_id" : ObjectId("51b2afb0a64aef0c3f000001"), "title" : "hogehoge", "subscription" : "fugafuga" }</pre>
 </div>
 <ul class="simple">
-<li><a class="reference external" href="http://unbound.jp/">http://unbound.jp/</a></li>
-<li><a class="reference external" href="http://unbound.jp/news20110624/">http://unbound.jp/news20110624/</a></li>
-<li><a class="reference external" href="http://gihyo.jp/admin/feature/01/unbound">http://gihyo.jp/admin/feature/01/unbound</a></li>
+<li><a class="reference external" href="http://mongoid.org/en/mongoid/">http://mongoid.org/en/mongoid/</a></li>
+<li><a class="reference external" href="http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3/">http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3/</a></li>
 </ul>
-</div>
 </div>
 
     
@@ -268,11 +216,7 @@ stub-zone:
                 
                     <a href="../../../categories/ubuntu.html">ubuntu</a>,
                 
-                    <a href="../../../categories/dns.html">dns</a>,
-                
-                    <a href="../../../categories/nsd.html">nsd</a>,
-                
-                    <a href="../../../categories/unbound.html">unbound</a>
+                    <a href="../../../categories/mongodb.html">mongodb</a>
                 
             </span>
         </div>
@@ -281,13 +225,9 @@ stub-zone:
             <span>
                 Tags:
                 
-                    <a href="../../../tags/unbound.html">unbound</a>,
+                    <a href="../../../tags/ubuntu.html">ubuntu</a>,
                 
-                    <a href="../../../tags/nsd.html">nsd</a>,
-                
-                    <a href="../../../tags/dns.html">dns</a>,
-                
-                    <a href="../../../tags/ubuntu.html">ubuntu</a>
+                    <a href="../../../tags/mongodb.html">mongodb</a>
                 
             </span>
         </div>

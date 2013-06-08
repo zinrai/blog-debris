@@ -71,6 +71,9 @@
     <h1>Recent Posts</h1>
     <ul>
         <li class="recent_post">
+            <a href="2013/06/08/ubuntu_mongodb_rails3_setup.html">Rails3でMongoDBを使ってみる</a>
+        </li>
+        <li class="recent_post">
             <a href="2013/06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a>
         </li>
         <li class="recent_post">
@@ -94,10 +97,10 @@
         <li><a href="categories/dns.html">dns</a> (1)</li>
         <li><a href="categories/github.html">github</a> (1)</li>
         <li><a href="categories/kvm.html">kvm</a> (1)</li>
-        <li><a href="categories/mongodb.html">mongodb</a> (1)</li>
+        <li><a href="categories/mongodb.html">mongodb</a> (2)</li>
         <li><a href="categories/nsd.html">nsd</a> (1)</li>
         <li><a href="categories/python.html">python</a> (1)</li>
-        <li><a href="categories/ubuntu.html">ubuntu</a> (2)</li>
+        <li><a href="categories/ubuntu.html">ubuntu</a> (3)</li>
         <li><a href="categories/unbound.html">unbound</a> (1)</li>
     </ul>
 </div>
@@ -109,10 +112,10 @@
       <a href="tags/dns.html">dns</a> (1),
       <a href="tags/github.html">github</a> (1),
       <a href="tags/kvm.html">kvm</a> (1),
-      <a href="tags/mongodb.html">mongodb</a> (1),
+      <a href="tags/mongodb.html">mongodb</a> (2),
       <a href="tags/nsd.html">nsd</a> (1),
       <a href="tags/python.html">python</a> (1),
-      <a href="tags/ubuntu.html">ubuntu</a> (2),
+      <a href="tags/ubuntu.html">ubuntu</a> (3),
       <a href="tags/unbound.html">unbound</a> (1)
 </div>
 <div id="searchbox" style="display: none">
@@ -137,6 +140,92 @@
           <div class="body">
             
     
+        
+        <div class="timestamp postmeta">
+            <span>June 08, 2013</span> 
+        </div>
+        <div class="section" id="rails3mongodb">
+<h1><a href="2013/06/08/ubuntu_mongodb_rails3_setup.html">Rails3でMongoDBを使ってみる</a></h1>
+<div class="highlight-python"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 12.04.2 LTS
+Release:        12.04
+Codename:       precise
+
+$ uname -a
+Linux ubuntu1204-64-base 3.2.0-45-generic #70-Ubuntu SMP Wed May 29 20:12:06 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+
+$ rails -v
+Rails 3.2.12
+
+$ rails new mongodb_app --skip-active-record
+
+$ cd mongodb_app
+
+$ vi Gemfile
+gem 'mongoid'
+gem 'bson_ext'
+
+$ bundle install --path vendor/bundle --binstubs
+
+$ bin/rails g mongoid:config
+  create  config/mongoid.yml
+
+$ bin/rails g scaffold Post title:string subscription:text
+
+$ cat app/models/post.rb
+class Post
+  include Mongoid::Document
+  field :title, type: String
+  field :subscription, type: String
+end
+
+$ mongo
+&gt; show dbs
+mongodb_app_development 0.203125GB
+&gt; use mongodb_app_development
+&gt; show collections
+posts
+&gt; db.posts.find()
+{ &quot;_id&quot; : ObjectId(&quot;51b1ea5da64aef614e000001&quot;), &quot;title&quot; : &quot;sample&quot;, &quot;subscription&quot; : &quot;text&quot; }
+{ &quot;_id&quot; : ObjectId(&quot;51b2afb0a64aef0c3f000001&quot;), &quot;title&quot; : &quot;hogehoge&quot;, &quot;subscription&quot; : &quot;fugafuga&quot; }</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://mongoid.org/en/mongoid">http://mongoid.org/en/mongoid/</a></li>
+<li><a class="reference external" href="http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3">http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3/</a></li>
+</ul>
+</div>
+        
+    <div class="postmeta">
+        
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        
+        <div class="categories">
+            <span>
+                Filed under:
+                
+                    <a href="categories/ubuntu.html">ubuntu</a>,
+                
+                    <a href="categories/mongodb.html">mongodb</a>
+                
+            </span>
+        </div>
+        
+        <div class="tags">
+            <span>
+                Tags:
+                
+                    <a href="tags/ubuntu.html">ubuntu</a>,
+                
+                    <a href="tags/mongodb.html">mongodb</a>
+                
+            </span>
+        </div>
+        
+    </div><div class="separator post_separator"></div>
         
         <div class="timestamp postmeta">
             <span>June 05, 2013</span> 

@@ -5,7 +5,67 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 05 Jun 2013 00:00:00 +0900</pubDate>
+        <pubDate>Sat, 08 Jun 2013 00:00:00 +0900</pubDate>
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/06/08/ubuntu_mongodb_rails3_setup.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/06/08/ubuntu_mongodb_rails3_setup.html</guid>
+            <title><![CDATA[Rails3でMongoDBを使ってみる]]></title>
+            <description><![CDATA[<div class="section" id="rails3mongodb">
+<h1>Rails3でMongoDBを使ってみる</h1>
+<div class="highlight-python"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 12.04.2 LTS
+Release:        12.04
+Codename:       precise
+
+$ uname -a
+Linux ubuntu1204-64-base 3.2.0-45-generic #70-Ubuntu SMP Wed May 29 20:12:06 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+
+$ rails -v
+Rails 3.2.12
+
+$ rails new mongodb_app --skip-active-record
+
+$ cd mongodb_app
+
+$ vi Gemfile
+gem 'mongoid'
+gem 'bson_ext'
+
+$ bundle install --path vendor/bundle --binstubs
+
+$ bin/rails g mongoid:config
+  create  config/mongoid.yml
+
+$ bin/rails g scaffold Post title:string subscription:text
+
+$ cat app/models/post.rb
+class Post
+  include Mongoid::Document
+  field :title, type: String
+  field :subscription, type: String
+end
+
+$ mongo
+&gt; show dbs
+mongodb_app_development 0.203125GB
+&gt; use mongodb_app_development
+&gt; show collections
+posts
+&gt; db.posts.find()
+{ &quot;_id&quot; : ObjectId(&quot;51b1ea5da64aef614e000001&quot;), &quot;title&quot; : &quot;sample&quot;, &quot;subscription&quot; : &quot;text&quot; }
+{ &quot;_id&quot; : ObjectId(&quot;51b2afb0a64aef0c3f000001&quot;), &quot;title&quot; : &quot;hogehoge&quot;, &quot;subscription&quot; : &quot;fugafuga&quot; }</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://mongoid.org/en/mongoid">http://mongoid.org/en/mongoid/</a></li>
+<li><a class="reference external" href="http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3">http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3/</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ ubuntu ]]></category>
+            <category><![CDATA[ mongodb ]]></category>
+            <pubDate>Sat, 08 Jun 2013 00:00:00 +0900</pubDate>
+        </item>
         <item>
             <link>http://127.0.0.1/blog/html/2013/06/05/debian_wheezy_nested_kvm.html</link>
             <guid>http://127.0.0.1/blog/html/2013/06/05/debian_wheezy_nested_kvm.html</guid>
