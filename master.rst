@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/06/18/centos_cobbler_setup
    2013/06/08/ubuntu_mongodb_rails3_setup
    2013/06/05/debian_wheezy_nested_kvm
    2013/05/26/ubuntu_mongodb_install
