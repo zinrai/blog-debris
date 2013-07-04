@@ -36,7 +36,7 @@ disqus_shortname = None
 html_favicon = 'tinkerer.ico'
 
 # Pick another Tinkerer theme or use your own
-html_theme = "minimal"
+html_theme = "dark"
 
 # Theme-specific options, see docs
 html_theme_options = { }
@@ -46,7 +46,7 @@ html_theme_options = { }
 rss_service = None
 
 # Number of blog posts per page
-posts_per_page = 10
+posts_per_page = 3
 
 # **************************************************************
 # Edit lines below to further customize Sphinx build
