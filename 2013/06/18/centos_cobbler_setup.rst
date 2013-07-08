@@ -73,7 +73,7 @@ SELinuxを無効にしないとCobblerが動作しない。
   # vi /etc/cobbler/settings
   server: 192.168.0.1
   manage_dhcp: 1
-  next_server: 192.168.0.1
+  next_server: 192.168.0.254 <- Gateway
 
   # vi /etc/cobbler/dhcp.template
   subnet 192.168.0.0 netmask 255.255.255.0 {

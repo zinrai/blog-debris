@@ -95,7 +95,7 @@
 manage_dns: 1
 manage_dhcp: 1
 server: 192.168.0.1
-next_server: 192.168.0.1</pre>
+next_server: 192.168.0.254 &lt;- Gateway</pre>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/cobbler/modules.conf</span>
 
@@ -130,6 +130,9 @@ dhcp-boot=net:normalarch,pxelinux.0
 dhcp-boot=net:ia64,$elilo
 
 $insert_cobbler_system_definitions</pre>
+</div>
+<div class="highlight-python"><pre># vi /etc/hosts
+192.168.0.1 cobbler.localnet</pre>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># chkconfig dnsmasq on</span>
 <span class="c"># service dnsmasq start</span>
@@ -182,7 +185,9 @@ Virt Type                      : qemu</pre>
 <p>EPELにあるPuppetを使用する。</p>
 <div class="highlight-python"><pre># yum -y install wget
 
-# cobbler repo add --name=CentOS6.4-epel --mirror=http://dl.fedoraproject.org/pub/epel/6/x86_64/ --mirror-locally=N --breed=yum
+# cobbler repo add --name=CentOS6.4-epel --mirror=http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64 --mirror-locally=no
+# cobbler reposync
+# mkdir /var/www/cobbler/repo_mirror/CentOS6.4-epel/.origin
 # cobbler reposync
 
 # cobbler repo report
@@ -193,7 +198,7 @@ Comment                        :
 Createrepo Flags               : &lt;&lt;inherit&gt;&gt;
 Environment Variables          : {}
 Keep Updated                   : True
-Mirror                         : http://dl.fedoraproject.org/pub/epel/6/x86_64
+Mirror                         : http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64
 Mirror locally                 : False
 Owners                         : ['admin']
 Priority                       : 99
@@ -442,10 +447,10 @@ $SNIPPET('kickstart_done')
 # End final steps</pre>
 </div>
 <ul class="simple">
+<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html">Managing DNS</a></li>
+<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.2.3/4/3/1_-_Managing_DHCP.html">Managing DHCP</a></li>
 <li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
 <li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add">http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add/</a></li>
-<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.4.0/4/4">http://www.cobblerd.org/manuals/2.4.0/4/4/</a><a href="#id1"><span class="problematic" id="id2">2_</span></a>-_Managing_DNS.html</li>
-<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.2.3/4/3">http://www.cobblerd.org/manuals/2.2.3/4/3/</a><a href="#id3"><span class="problematic" id="id4">1_</span></a>-_Managing_DHCP.html</li>
 </ul>
 </div>
 </div>
@@ -520,7 +525,7 @@ disable = no
 # vi /etc/cobbler/settings
 server: 192.168.0.1
 manage_dhcp: 1
-next_server: 192.168.0.1
+next_server: 192.168.0.254 &lt;- Gateway
 
 # vi /etc/cobbler/dhcp.template
 subnet 192.168.0.0 netmask 255.255.255.0 {

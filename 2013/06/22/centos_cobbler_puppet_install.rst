@@ -25,7 +25,7 @@ DHCP,DNSサーバにdnsmasqを使用する。ISC DHCPよりもdnsmasqを使っ�
   manage_dns: 1
   manage_dhcp: 1
   server: 192.168.0.1
-  next_server: 192.168.0.1
+  next_server: 192.168.0.254 <- Gateway
 
 
 ::
@@ -66,6 +66,12 @@ DHCP,DNSサーバにdnsmasqを使用する。ISC DHCPよりもdnsmasqを使っ�
   dhcp-boot=net:ia64,$elilo
 
   $insert_cobbler_system_definitions
+
+
+::
+
+  # vi /etc/hosts
+  192.168.0.1 cobbler.localnet
 
 
 ::
@@ -130,7 +136,9 @@ EPELにあるPuppetを使用する。
 
   # yum -y install wget
 
-  # cobbler repo add --name=CentOS6.4-epel --mirror=http://dl.fedoraproject.org/pub/epel/6/x86_64/ --mirror-locally=N --breed=yum
+  # cobbler repo add --name=CentOS6.4-epel --mirror=http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64 --mirror-locally=no
+  # cobbler reposync
+  # mkdir /var/www/cobbler/repo_mirror/CentOS6.4-epel/.origin
   # cobbler reposync
 
   # cobbler repo report
@@ -141,7 +149,7 @@ EPELにあるPuppetを使用する。
   Createrepo Flags               : <<inherit>>
   Environment Variables          : {}
   Keep Updated                   : True
-  Mirror                         : http://dl.fedoraproject.org/pub/epel/6/x86_64
+  Mirror                         : http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64
   Mirror locally                 : False
   Owners                         : ['admin']
   Priority                       : 99
@@ -441,7 +449,7 @@ postセクションに
 
 
 
+* `Managing DNS <http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html>`_
+* `Managing DHCP <http://www.cobblerd.org/manuals/2.2.3/4/3/1_-_Managing_DHCP.html>`_
 * http://d.hatena.ne.jp/int128/20120226/1330247800
 * http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add/
-* http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html
-* http://www.cobblerd.org/manuals/2.2.3/4/3/1_-_Managing_DHCP.html
