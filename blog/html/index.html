@@ -215,8 +215,8 @@ Yum Options                    : {}</pre>
 <span class="c"># cp sample.ks puppet_server.ks</span>
 <span class="c"># cp sample.ks puppet_client.ks</span>
 
-<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_cli --kickstart=/var/lib/cobbler/kickstarts/puppet_server.ks</span>
-<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_cli --kickstart=/var/lib/cobbler/kickstarts/puppet_client.ks</span>
+<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --kickstart=/var/lib/cobbler/kickstarts/puppet_server.ks</span>
+<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_client --kickstart=/var/lib/cobbler/kickstarts/puppet_client.ks</span>
 </pre></div>
 </div>
 <p>固定IPを割り振るためにsystemに登録する。</p>
@@ -575,6 +575,7 @@ default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
 <ul class="simple">
 <li><a class="reference external" href="http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html">http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html</a></li>
 <li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/15/cobbler-install">http://blog.glidenote.com/blog/2012/03/15/cobbler-install/</a></li>
+<li><a class="reference external" href="http://www.ibm.com/developerworks/jp/linux/library/l-cobbler">http://www.ibm.com/developerworks/jp/linux/library/l-cobbler/</a></li>
 </ul>
 </div>
         <div class="postmeta">

@@ -175,8 +175,8 @@ ksファイルをコピーしてPuppetをインストールするよう書き換
   # cp sample.ks puppet_server.ks
   # cp sample.ks puppet_client.ks
 
-  # cobbler profile edit --name=CentOS6.4-puppet_cli --kickstart=/var/lib/cobbler/kickstarts/puppet_server.ks
-  # cobbler profile edit --name=CentOS6.4-puppet_cli --kickstart=/var/lib/cobbler/kickstarts/puppet_client.ks
+  # cobbler profile edit --name=CentOS6.4-puppet_server --kickstart=/var/lib/cobbler/kickstarts/puppet_server.ks
+  # cobbler profile edit --name=CentOS6.4-puppet_client --kickstart=/var/lib/cobbler/kickstarts/puppet_client.ks
 
 固定IPを割り振るためにsystemに登録する。
 

@@ -142,3 +142,4 @@ Cobblerを使いインストールするとデフォルトのパスワードはc
 
 * http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html
 * http://blog.glidenote.com/blog/2012/03/15/cobbler-install/
+* http://www.ibm.com/developerworks/jp/linux/library/l-cobbler/
