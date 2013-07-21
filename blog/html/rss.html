@@ -5,8 +5,168 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sat, 22 Jun 2013 00:00:00 +0900</pubDate>
+        <pubDate>Sat, 20 Jul 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html</guid>
+            <title><![CDATA[PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化]]></title>
+            <description><![CDATA[<div class="section" id="pxe-boot-freebsd-9-1">
+<h1>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</h1>
+<p>OSインストールをするだけでお金が貰えるならば喜んでやるが、趣味の時間をOSインストールに奪われるのはつらいので、自動化してみた。</p>
+<div class="section" id="pxe-boot">
+<h2>PXE boot サーバ構築</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mdconfig -a -t vnode -f FreeBSD-9.1-RELEASE-amd64-disc1.iso</span>
+<span class="n">md0</span>
+<span class="c"># mount_cd9660 /dev/md0 /mnt</span>
+<span class="c"># mkdir /var/pxeboot</span>
+<span class="c"># cp -Rv /mnt/ /var/pxeboot</span>
+<span class="c"># umount /mnt</span>
+<span class="c"># mdconfig -d -u 0</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/etc/fstab</span>
+<span class="c"># /dev/iso9660/FREEBSD_INSTALL / cd9660 ro 0 0 &lt;- コメントアウト</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># vi /etc/inetd.conf
+tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var/pxeboot/boot
+
+# /etc/rc.d/inetd onestart</pre>
+</div>
+<div class="highlight-python"><pre># cd /usr/ports/net/isc-dhcp42-server
+# make install
+
+# vi /usr/local/etc/dhcpd.conf
+ddns-update-style none;
+server-name &quot;pxeboot&quot;;               # name of the tftp-server
+server-identifier 192.168.0.253;  # address of the tftp-server
+next-server 192.168.0.253;        # address of the NFS-server
+
+subnet 192.168.0.0 netmask 255.255.255.0 {
+    range 192.168.0.220 192.168.0.250;
+    option routers 192.168.0.254;
+    option root-path &quot;/var/pxeboot&quot;; # root-path for NFS
+    filename &quot;pxeboot&quot;;                    # filename of NBP (network bootstrap program)
+}
+
+# /usr/local/etc/rc.d/isc-dhcpd onestart</pre>
+</div>
+<div class="highlight-python"><pre># vi /etc/exports
+/var/pxeboot -alldirs -maproot=root -ro
+
+# /etc/rc.d/nfsd onestart</pre>
+</div>
+<p>再起動後もデーモンを起動させておきたければrc.confに書いておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+<span class="n">inetd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">dhcpd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">nfs_server_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="freebsd">
+<h2>FreeBSDインストールスクリプト</h2>
+<p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/etc/rc.local</span>
+
+<span class="c">#!/bin/sh</span>
+<span class="c"># $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $</span>
+
+<span class="n">sh</span> <span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">freebsd_install</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+<p>このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。</p>
+<div class="highlight-python"><pre># vi /var/pxeboot/root/freebsd_install.sh
+
+#!/bin/sh
+
+get_conf() {
+  for a in $MACADDR; do
+    find . -name ${a}.conf
+  done
+}
+
+MACADDR=`ifconfig | awk '/ether/ {print $2}'`
+IFACE=`netstat -nr | awk '{if($3 ~ /^U$/) print $6}'`
+
+CONFFILE=`get_conf`
+
+if [ -n &quot;$CONFFILE&quot; ]; then
+  sh $CONFFILE $IFACE
+fi</pre>
+</div>
+<div class="highlight-python"><pre># vi /var/pxeboot/root/01:23:45:67:89:ab.conf
+
+#!/bin/sh
+
+IFACE=$1
+DIST_TXZ=`ls /usr/freebsd-dist/*.txz`
+
+gpart destroy -F ada1
+gpart create -s gpt ada1
+gpart add -s 64K -t freebsd-boot ada1
+gpart add -s 8G -t freebsd-swap -l swap0 ada1
+gpart add -t freebsd-ufs ada1
+gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 ada1
+
+newfs -U /dev/ada1p3
+
+mount /dev/ada1p3 /mnt
+
+cd /mnt
+
+for FILE in $DIST_TXZ; do
+  tar xfzp $FILE
+done
+
+cat &lt;&lt; EOF &gt; /mnt/tmp/freebsd_setup.sh
+newaliases
+tzsetup Asia/Tokyo
+printf &quot;hogefugamoge&quot; | pw usermod -n root -h 0
+dumpon /dev/ada1p2
+ln -sf /dev/ada1p2 /dev/dumpdev
+EOF
+
+cat &lt;&lt; EOF &gt; /mnt/etc/rc.conf
+hostname=&quot;hoge.local&quot;
+keymap=&quot;us.iso.kbd&quot;
+ifconfig_${IFACE}=&quot; inet 192.168.0.252 netmask 255.255.255.0&quot;
+defaultrouter=&quot;192.168.0.254&quot;
+sshd_enable=&quot;YES&quot;
+# Set dumpdev to &quot;AUTO&quot; to enable crash dumps, &quot;NO&quot; to disable
+dumpdev=&quot;AUTO&quot;
+EOF
+
+cat &lt;&lt; EOF &gt; /mnt/etc/resolv.conf
+nameserver 8.8.8.8
+EOF
+
+cat &lt;&lt; EOF &gt; /mnt/etc/fstab
+# Device        Mountpoint      FStype  Options Dump    Pass#
+/dev/ada1p3     /               ufs     rw      1       1
+/dev/ada1p2     none            swap    sw      0       0
+EOF
+
+mount -t devfs dev /mnt/dev
+chroot /mnt /bin/sh /tmp/freebsd_setup.sh
+
+rm /mnt/tmp/freebsd_setup.sh
+cd /
+umount /mnt/dev
+umount /mnt
+reboot</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
+<li><a class="reference external" href="http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren">http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ freebsd ]]></category>
+             <pubDate>Sat, 20 Jul 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/06/22/centos_cobbler_puppet_install.html</link>
             <guid>http://127.0.0.1/blog/html/2013/06/22/centos_cobbler_puppet_install.html</guid>

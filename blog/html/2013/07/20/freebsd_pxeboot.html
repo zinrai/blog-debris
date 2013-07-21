@@ -15,7 +15,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="description" content="This is an awesome blog">
         <meta name="viewport" content="width=device-width">
-        <title>Unbound + NSD &mdash; command not found:</title>
+        <title>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化 &mdash; command not found:</title>
             <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
@@ -27,7 +27,7 @@
         <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
         <script src="../../../_static/plugins.js"></script>
         <script src="../../../_static/main.js"></script>
-        <link rel="next" title="Tinkerer + Github" href="../../03/23/tinkerer_github.html" /><link rel="prev" title="Ubuntu12.04にMongoDBをインストール" href="../26/ubuntu_mongodb_install.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+        <link rel="next" title="Cobbler + Puppet" href="../../06/22/centos_cobbler_puppet_install.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
         VERSION:     '1.1',
@@ -79,108 +79,160 @@
 </div>
 
 <div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a></li>
-            <li class="right"><a href="../../03/23/tinkerer_github.html">Tinkerer + Github</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../../06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
-            <span>May 20, 2013</span>
+            <span>July 20, 2013</span>
         </div>
-    <div class="section" id="unbound-nsd">
-<h1>Unbound + NSD</h1>
-<p>Chef Serverと戯れるときにhostsをいちいち書き換えるのは</p>
-<p>面倒なので内部にDNSサーバを立ててみた。</p>
-<table border="1" class="docutils">
-<caption>Ubuntu 12.04 server amd64</caption>
-<colgroup>
-<col width="33%" />
-<col width="33%" />
-<col width="33%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>コンテンツサーバ</td>
-<td>NSD(3.2.9)</td>
-<td>192.168.0.1</td>
-</tr>
-<tr class="row-even"><td>キャッシュサーバ</td>
-<td>Unbound(1.4.16)</td>
-<td>192.168.0.2</td>
-</tr>
-</tbody>
-</table>
-<div class="section" id="nsd">
-<h2>NSD</h2>
-<p>今回は正引きだけ設定した。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install nsd</span>
-<span class="c"># cd /etc/nsd3</span>
-<span class="c"># cp nsd.conf.sample nsd.conf</span>
-<span class="c"># vi nsd.conf</span>
+    <div class="section" id="pxe-boot-freebsd-9-1">
+<h1>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</h1>
+<p>OSインストールをするだけでお金が貰えるならば喜んでやるが、趣味の時間をOSインストールに奪われるのはつらいので、自動化してみた。</p>
+<div class="section" id="pxe-boot">
+<h2>PXE boot サーバ構築</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mdconfig -a -t vnode -f FreeBSD-9.1-RELEASE-amd64-disc1.iso</span>
+<span class="n">md0</span>
+<span class="c"># mount_cd9660 /dev/md0 /mnt</span>
+<span class="c"># mkdir /var/pxeboot</span>
+<span class="c"># cp -Rv /mnt/ /var/pxeboot</span>
+<span class="c"># umount /mnt</span>
+<span class="c"># mdconfig -d -u 0</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>server:
-  ip-address: 192.168.0.1
-  hide-version: yes
-  ipv4-only: yes
-  database: "/etc/nsd3/nsd.conf"
-  pidfile: "/etc/nsd3/nsd.pid"
-  chroot: "/etc/nsd3"
-  username: nsd
-  zonedir: "/etc/nsd3"
-  difffile: "/etc/nsd3/ixfr.db"
-  xfrdfile: "/etc/nsd3/xfrd.state"
-
-zone:
-  name: chef.local
-  zonefile: chef.local.zone</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi chef.local.zone</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/etc/fstab</span>
+<span class="c"># /dev/iso9660/FREEBSD_INSTALL / cd9660 ro 0 0 &lt;- コメントアウト</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$TTL 3600
-@ IN SOA ns1.chef.local. postmaster.chef.local. (
-  2013052001  ;Serial
-  3600        ;Refresh
-  1800        ;Retry
-  57200       ;Expire
-  86400       ;Minimum TTL
-)
+<div class="highlight-python"><pre># vi /etc/inetd.conf
+tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var/pxeboot/boot
 
-@ IN  NS  ns1.chef.local.
+# /etc/rc.d/inetd onestart</pre>
+</div>
+<div class="highlight-python"><pre># cd /usr/ports/net/isc-dhcp42-server
+# make install
 
-ns1   IN  A 192.168.0.1
-ns2   IN  A 192.168.0.2
-www   IN  A 192.168.0.3
-hoge  IN  A 192.168.0.4
-fuga  IN  A 192.168.0.5
-moge  IN  A 192.168.0.6</pre>
+# vi /usr/local/etc/dhcpd.conf
+ddns-update-style none;
+server-name "pxeboot";               # name of the tftp-server
+server-identifier 192.168.0.253;  # address of the tftp-server
+next-server 192.168.0.253;        # address of the NFS-server
+
+subnet 192.168.0.0 netmask 255.255.255.0 {
+    range 192.168.0.220 192.168.0.250;
+    option routers 192.168.0.254;
+    option root-path "/var/pxeboot"; # root-path for NFS
+    filename "pxeboot";                    # filename of NBP (network bootstrap program)
+}
+
+# /usr/local/etc/rc.d/isc-dhcpd onestart</pre>
 </div>
+<div class="highlight-python"><pre># vi /etc/exports
+/var/pxeboot -alldirs -maproot=root -ro
+
+# /etc/rc.d/nfsd onestart</pre>
 </div>
-<div class="section" id="unbound">
-<h2>Unbound</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install unbound</span>
-<span class="c"># cd /etc/unbound</span>
-<span class="c"># zcat `locate unbound.conf | sed -n 2p` &gt; unbound.conf</span>
-<span class="c"># vi unbound.conf</span>
+<p>再起動後もデーモンを起動させておきたければrc.confに書いておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+<span class="n">inetd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">dhcpd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">nfs_server_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>server:
-  verbosity: 1
-  interface 192.168.0.2
-  do-ip6: no
-  access-control: 127.0.0.0/8 allow
-  access-control: 192.168.0.0/24 allow
-  chroot: "etc/unbound"
-  username: "unbound"
-  directory: "/etc/unbound"
-  use-syslog: yes
-  pidfile: "/etc/unbound/unbound.pid"
+</div>
+<div class="section" id="freebsd">
+<h2>FreeBSDインストールスクリプト</h2>
+<p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/etc/rc.local</span>
 
-stub-zone:
-  name: "chef.local"
-  stub-addr: 192.168.0.1</pre>
+<span class="c">#!/bin/sh</span>
+<span class="c"># $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $</span>
+
+<span class="n">sh</span> <span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">freebsd_install</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+<p>このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。</p>
+<div class="highlight-python"><pre># vi /var/pxeboot/root/freebsd_install.sh
+
+#!/bin/sh
+
+get_conf() {
+  for a in $MACADDR; do
+    find . -name ${a}.conf
+  done
+}
+
+MACADDR=`ifconfig | awk '/ether/ {print $2}'`
+IFACE=`netstat -nr | awk '{if($3 ~ /^U$/) print $6}'`
+
+CONFFILE=`get_conf`
+
+if [ -n "$CONFFILE" ]; then
+  sh $CONFFILE $IFACE
+fi</pre>
+</div>
+<div class="highlight-python"><pre># vi /var/pxeboot/root/01:23:45:67:89:ab.conf
+
+#!/bin/sh
+
+IFACE=$1
+DIST_TXZ=`ls /usr/freebsd-dist/*.txz`
+
+gpart destroy -F ada1
+gpart create -s gpt ada1
+gpart add -s 64K -t freebsd-boot ada1
+gpart add -s 8G -t freebsd-swap -l swap0 ada1
+gpart add -t freebsd-ufs ada1
+gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 ada1
+
+newfs -U /dev/ada1p3
+
+mount /dev/ada1p3 /mnt
+
+cd /mnt
+
+for FILE in $DIST_TXZ; do
+  tar xfzp $FILE
+done
+
+cat &lt;&lt; EOF &gt; /mnt/tmp/freebsd_setup.sh
+newaliases
+tzsetup Asia/Tokyo
+printf "hogefugamoge" | pw usermod -n root -h 0
+dumpon /dev/ada1p2
+ln -sf /dev/ada1p2 /dev/dumpdev
+EOF
+
+cat &lt;&lt; EOF &gt; /mnt/etc/rc.conf
+hostname="hoge.local"
+keymap="us.iso.kbd"
+ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"
+defaultrouter="192.168.0.254"
+sshd_enable="YES"
+# Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
+dumpdev="AUTO"
+EOF
+
+cat &lt;&lt; EOF &gt; /mnt/etc/resolv.conf
+nameserver 8.8.8.8
+EOF
+
+cat &lt;&lt; EOF &gt; /mnt/etc/fstab
+# Device        Mountpoint      FStype  Options Dump    Pass#
+/dev/ada1p3     /               ufs     rw      1       1
+/dev/ada1p2     none            swap    sw      0       0
+EOF
+
+mount -t devfs dev /mnt/dev
+chroot /mnt /bin/sh /tmp/freebsd_setup.sh
+
+rm /mnt/tmp/freebsd_setup.sh
+cd /
+umount /mnt/dev
+umount /mnt
+reboot</pre>
 </div>
 <ul class="simple">
-<li><a class="reference external" href="http://unbound.jp/">http://unbound.jp/</a></li>
-<li><a class="reference external" href="http://unbound.jp/news20110624/">http://unbound.jp/news20110624/</a></li>
-<li><a class="reference external" href="http://gihyo.jp/admin/feature/01/unbound">http://gihyo.jp/admin/feature/01/unbound</a></li>
+<li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
+<li><a class="reference external" href="http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren">http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren</a></li>
 </ul>
 </div>
 </div>
@@ -192,21 +244,21 @@ stub-zone:
         <div class="categories">
             <span>
                 Filed under:
-                <a href="../../../categories/ubuntu.html">ubuntu</a>, <a href="../../../categories/dns.html">dns</a>, <a href="../../../categories/nsd.html">nsd</a>, <a href="../../../categories/unbound.html">unbound</a></span>
+                <a href="../../../categories/freebsd.html">freebsd</a></span>
         </div>
         <div class="tags">
             <span>
                 Tags:
-                <a href="../../../tags/unbound.html">unbound</a>, <a href="../../../tags/nsd.html">nsd</a>, <a href="../../../tags/dns.html">dns</a>, <a href="../../../tags/ubuntu.html">ubuntu</a></span>
+                <a href="../../../tags/freebsd.html">freebsd</a></span>
         </div>
         </div>
     <ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a></li>
-            <li class="right"><a href="../../03/23/tinkerer_github.html">Tinkerer + Github</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../../06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a> &raquo; </li>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
-            <a href="../../07/20/freebsd_pxeboot.html">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a>
+            <a href="#">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a>
         </li><li>
             <a href="../../06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a>
         </li><li>
@@ -216,9 +268,9 @@ stub-zone:
         </li><li>
             <a href="../../06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a>
         </li><li>
-            <a href="../26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
+            <a href="../../05/26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
         </li><li>
-            <a href="#">Unbound + NSD</a>
+            <a href="../../05/20/unbound_nsd.html">Unbound + NSD</a>
         </li><li>
             <a href="../../03/23/tinkerer_github.html">Tinkerer + Github</a>
         </li></ul>
