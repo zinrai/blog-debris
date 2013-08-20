@@ -2,7 +2,6 @@ PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化
 ###############################################################
 
 
-
 .. author:: default
 .. categories:: freebsd
 .. tags:: freebsd
@@ -63,7 +62,7 @@ PXE boot サーバ構築
 ::
 
   # vi /etc/exports
-  /var/pxeboot -alldirs -maproot=root -ro
+  /var/pxeboot -alldirs -maproot=root
 
   # /etc/rc.d/nfsd onestart
 
@@ -79,6 +78,120 @@ PXE boot サーバ構築
 FreeBSDインストールスクリプト
 ***************************************************************
 
+
+このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした
+[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。
+
+::
+
+  # vi /var/pxeboot/var/scripts/os_install.sh
+
+  #!/bin/sh
+
+  get_conf() {
+    if [ "$OS" = "FreeBSD" ]; then
+      local MACADDR="`ifconfig | awk '/ether/ {print $NF}'`"
+    elif [ "$OS" = "Linux" ]; then
+      local MACADDR="`ifconfig | awk '/HWaddr/ {print $NF}'`"
+    fi
+
+    for a in $MACADDR; do
+      find . -name ${a}.conf
+    done
+  }
+
+  OS=`uname`
+  CONFFILE=`get_conf`
+
+  if [ "$OS" = "FreeBSD" ]; then
+    IFACE=`netstat -nr | awk '{if($3 ~ /^UG$/) print $6}'`
+    DIRNAME=`sha256 -q $CONFFILE`
+  elif [ "$OS" = "Linux" ]; then
+    IFACE=`netstat -nr | awk '{if($4 ~ /^UG$/) print $8}'`
+    DIRNAME=`sha256sum $CONFFILE | awk '{print $1}'`
+  fi
+
+  mkdir /mnt/${DIRNAME}
+
+  if [ -n "$CONFFILE" ]; then
+    sh $CONFFILE $IFACE $DIRNAME
+  fi
+
+
+::
+
+  # vi /var/pxeboot/var/scripts/01:23:45:67:89:ab.conf
+
+  #!/bin/sh
+
+  IFACE=$1
+  DISK=ada1
+  MOUNTDIR="/mnt/$2"
+  DIST_TXZ=`ls /usr/freebsd-dist/*.txz`
+
+  gpart destroy -F $DISK
+  gpart create -s gpt $DISK
+  gpart add -s 64K -t freebsd-boot $DISK
+  gpart add -s 8G -t freebsd-swap -l swap0 $DISK
+  gpart add -t freebsd-ufs $DISK
+  gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 $DISK
+
+  newfs -U /dev/${DISK}p3
+
+  mount /dev/${DISK}p3 $MOUNTDIR
+
+  cd $MOUNTDIR
+
+  for FILE in $DIST_TXZ; do
+    tar xfzp $FILE
+  done
+
+  cat << EOF > ${MOUNTDIR}/etc/rc.conf
+  hostname="freebsd.local"
+  keymap="us.iso.kbd"
+  ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"
+  defaultrouter="192.168.0.254"
+  sshd_enable="YES"
+  # Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
+  dumpdev="AUTO"
+  EOF
+
+  cat << EOF > ${MOUNTDIR}/etc/resolv.conf
+  nameserver 8.8.8.8
+  EOF
+
+  cat << EOF > ${MOUNTDIR}/etc/fstab
+  # Device        Mountpoint      FStype  Options Dump    Pass#
+  /dev/${DISK}p3     /               ufs     rw      1       1
+  /dev/${DISK}p2     none            swap    sw      0       0
+  EOF
+
+  cat << EOF > ${MOUNTDIR}/tmp/freebsd_setup.sh
+  newaliases
+  tzsetup Asia/Tokyo
+
+  printf "hogefugamoge" | pw usermod -n root -h 0
+
+  pw useradd -n nanashi -s /bin/tcsh -G wheel -m
+  printf "ebifuraibutsukenzo" | pw usermod -n nanashi -h 0
+
+  dumpon /dev/${DISK}p2
+  ln -sf /dev/${DISK}p2 /dev/dumpdev
+  EOF
+
+  mount -t devfs dev ${MOUNTDIR}/dev
+  chroot $MOUNTDIR /bin/sh /tmp/freebsd_setup.sh
+
+  rm ${MOUNTDIR}/tmp/freebsd_setup.sh
+
+  cd /
+  umount ${MOUNTDIR}/dev
+  umount $MOUNTDIR
+
+  rmdir $MOUNTDIR
+  reboot
+
+
 PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。
 
 ::
@@ -88,96 +201,7 @@ PXE boot時に指定のスクリプトを実行するようにrc.localに書い�
   #!/bin/sh
   # $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $
 
-  sh /root/freebsd_install.sh
-
-
-このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。
-
-::
-
-  # vi /var/pxeboot/root/freebsd_install.sh
-
-  #!/bin/sh
-
-  get_conf() {
-    for a in $MACADDR; do
-      find . -name ${a}.conf
-    done
-  }
-
-  MACADDR=`ifconfig | awk '/ether/ {print $2}'`
-  IFACE=`netstat -nr | awk '{if($3 ~ /^U$/) print $6}'`
-
-  CONFFILE=`get_conf`
-
-  if [ -n "$CONFFILE" ]; then
-    sh $CONFFILE $IFACE
-  fi
-
-
-::
-
-  # vi /var/pxeboot/root/01:23:45:67:89:ab.conf
-
-  #!/bin/sh
-
-  IFACE=$1
-  DIST_TXZ=`ls /usr/freebsd-dist/*.txz`
-
-  gpart destroy -F ada1
-  gpart create -s gpt ada1
-  gpart add -s 64K -t freebsd-boot ada1
-  gpart add -s 8G -t freebsd-swap -l swap0 ada1
-  gpart add -t freebsd-ufs ada1
-  gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 ada1
-
-  newfs -U /dev/ada1p3
-
-  mount /dev/ada1p3 /mnt
-
-  cd /mnt
-
-  for FILE in $DIST_TXZ; do
-    tar xfzp $FILE
-  done
-
-  cat << EOF > /mnt/tmp/freebsd_setup.sh
-  newaliases
-  tzsetup Asia/Tokyo
-  printf "hogefugamoge" | pw usermod -n root -h 0
-  dumpon /dev/ada1p2
-  ln -sf /dev/ada1p2 /dev/dumpdev
-  EOF
-
-  cat << EOF > /mnt/etc/rc.conf
-  hostname="hoge.local"
-  keymap="us.iso.kbd"
-  ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"
-  defaultrouter="192.168.0.254"
-  sshd_enable="YES"
-  # Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
-  dumpdev="AUTO"
-  EOF
-
-  cat << EOF > /mnt/etc/resolv.conf
-  nameserver 8.8.8.8
-  EOF
-
-  cat << EOF > /mnt/etc/fstab
-  # Device        Mountpoint      FStype  Options Dump    Pass#
-  /dev/ada1p3     /               ufs     rw      1       1
-  /dev/ada1p2     none            swap    sw      0       0
-  EOF
-
-  mount -t devfs dev /mnt/dev
-  chroot /mnt /bin/sh /tmp/freebsd_setup.sh
-
-  rm /mnt/tmp/freebsd_setup.sh
-  cd /
-  umount /mnt/dev
-  umount /mnt
-  reboot
-
+  /var/script/os_install.sh
 
 * https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201
 * http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren

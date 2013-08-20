@@ -126,7 +126,7 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 # /usr/local/etc/rc.d/isc-dhcpd onestart</pre>
 </div>
 <div class="highlight-python"><pre># vi /etc/exports
-/var/pxeboot -alldirs -maproot=root -ro
+/var/pxeboot -alldirs -maproot=root
 
 # /etc/rc.d/nfsd onestart</pre>
 </div>
@@ -140,69 +140,68 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 </div>
 <div class="section" id="freebsd">
 <h2>FreeBSDインストールスクリプト</h2>
-<p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/etc/rc.local</span>
-
-<span class="c">#!/bin/sh</span>
-<span class="c"># $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $</span>
-
-<span class="n">sh</span> <span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">freebsd_install</span><span class="o">.</span><span class="n">sh</span>
-</pre></div>
-</div>
 <p>このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。</p>
-<div class="highlight-python"><pre># vi /var/pxeboot/root/freebsd_install.sh
+<div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/os_install.sh
 
 #!/bin/sh
 
 get_conf() {
+  if [ "$OS" = "FreeBSD" ]; then
+    local MACADDR="`ifconfig | awk '/ether/ {print $NF}'`"
+  elif [ "$OS" = "Linux" ]; then
+    local MACADDR="`ifconfig | awk '/HWaddr/ {print $NF}'`"
+  fi
+
   for a in $MACADDR; do
     find . -name ${a}.conf
   done
 }
 
-MACADDR=`ifconfig | awk '/ether/ {print $2}'`
-IFACE=`netstat -nr | awk '{if($3 ~ /^U$/) print $6}'`
-
+OS=`uname`
 CONFFILE=`get_conf`
 
+if [ "$OS" = "FreeBSD" ]; then
+  IFACE=`netstat -nr | awk '{if($3 ~ /^UG$/) print $6}'`
+  DIRNAME=`sha256 -q $CONFFILE`
+elif [ "$OS" = "Linux" ]; then
+  IFACE=`netstat -nr | awk '{if($4 ~ /^UG$/) print $8}'`
+  DIRNAME=`sha256sum $CONFFILE | awk '{print $1}'`
+fi
+
+mkdir /mnt/${DIRNAME}
+
 if [ -n "$CONFFILE" ]; then
-  sh $CONFFILE $IFACE
+  sh $CONFFILE $IFACE $DIRNAME
 fi</pre>
 </div>
-<div class="highlight-python"><pre># vi /var/pxeboot/root/01:23:45:67:89:ab.conf
+<div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/01:23:45:67:89:ab.conf
 
 #!/bin/sh
 
 IFACE=$1
+DISK=ada1
+MOUNTDIR="/mnt/$2"
 DIST_TXZ=`ls /usr/freebsd-dist/*.txz`
 
-gpart destroy -F ada1
-gpart create -s gpt ada1
-gpart add -s 64K -t freebsd-boot ada1
-gpart add -s 8G -t freebsd-swap -l swap0 ada1
-gpart add -t freebsd-ufs ada1
-gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 ada1
+gpart destroy -F $DISK
+gpart create -s gpt $DISK
+gpart add -s 64K -t freebsd-boot $DISK
+gpart add -s 8G -t freebsd-swap -l swap0 $DISK
+gpart add -t freebsd-ufs $DISK
+gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 $DISK
 
-newfs -U /dev/ada1p3
+newfs -U /dev/${DISK}p3
 
-mount /dev/ada1p3 /mnt
+mount /dev/${DISK}p3 $MOUNTDIR
 
-cd /mnt
+cd $MOUNTDIR
 
 for FILE in $DIST_TXZ; do
   tar xfzp $FILE
 done
 
-cat &lt;&lt; EOF &gt; /mnt/tmp/freebsd_setup.sh
-newaliases
-tzsetup Asia/Tokyo
-printf "hogefugamoge" | pw usermod -n root -h 0
-dumpon /dev/ada1p2
-ln -sf /dev/ada1p2 /dev/dumpdev
-EOF
-
-cat &lt;&lt; EOF &gt; /mnt/etc/rc.conf
-hostname="hoge.local"
+cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/rc.conf
+hostname="freebsd.local"
 keymap="us.iso.kbd"
 ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"
 defaultrouter="192.168.0.254"
@@ -211,24 +210,48 @@ sshd_enable="YES"
 dumpdev="AUTO"
 EOF
 
-cat &lt;&lt; EOF &gt; /mnt/etc/resolv.conf
+cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/resolv.conf
 nameserver 8.8.8.8
 EOF
 
-cat &lt;&lt; EOF &gt; /mnt/etc/fstab
+cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/fstab
 # Device        Mountpoint      FStype  Options Dump    Pass#
-/dev/ada1p3     /               ufs     rw      1       1
-/dev/ada1p2     none            swap    sw      0       0
+/dev/${DISK}p3     /               ufs     rw      1       1
+/dev/${DISK}p2     none            swap    sw      0       0
 EOF
 
-mount -t devfs dev /mnt/dev
-chroot /mnt /bin/sh /tmp/freebsd_setup.sh
+cat &lt;&lt; EOF &gt; ${MOUNTDIR}/tmp/freebsd_setup.sh
+newaliases
+tzsetup Asia/Tokyo
 
-rm /mnt/tmp/freebsd_setup.sh
+printf "hogefugamoge" | pw usermod -n root -h 0
+
+pw useradd -n nanashi -s /bin/tcsh -G wheel -m
+printf "ebifuraibutsukenzo" | pw usermod -n nanashi -h 0
+
+dumpon /dev/${DISK}p2
+ln -sf /dev/${DISK}p2 /dev/dumpdev
+EOF
+
+mount -t devfs dev ${MOUNTDIR}/dev
+chroot $MOUNTDIR /bin/sh /tmp/freebsd_setup.sh
+
+rm ${MOUNTDIR}/tmp/freebsd_setup.sh
+
 cd /
-umount /mnt/dev
-umount /mnt
+umount ${MOUNTDIR}/dev
+umount $MOUNTDIR
+
+rmdir $MOUNTDIR
 reboot</pre>
+</div>
+<p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
+<div class="highlight-python"><pre># vi /var/pxeboot/etc/rc.local
+
+#!/bin/sh
+# $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $
+
+/var/script/os_install.sh</pre>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
