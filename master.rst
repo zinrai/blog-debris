@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/08/22/freebsd_jail_vimage_zfs
    2013/07/20/freebsd_pxeboot
    2013/06/22/centos_cobbler_puppet_install
    2013/06/18/centos_cobbler_setup
