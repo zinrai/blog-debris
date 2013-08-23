@@ -15,7 +15,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="description" content="This is an awesome blog">
         <meta name="viewport" content="width=device-width">
-        <title>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化 &mdash; command not found:</title>
+        <title>nullfsを使いjailのportsを共有する &mdash; command not found:</title>
             <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
@@ -27,7 +27,7 @@
         <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
         <script src="../../../_static/plugins.js"></script>
         <script src="../../../_static/main.js"></script>
-        <link rel="next" title="Cobbler + Puppet" href="../../06/22/centos_cobbler_puppet_install.html" /><link rel="prev" title="FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築" href="../../08/22/freebsd_jail_vimage_zfs.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+        <link rel="next" title="FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築" href="../22/freebsd_jail_vimage_zfs.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
         VERSION:     '1.1',
@@ -79,184 +79,73 @@
 </div>
 
 <div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../../08/22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a></li>
-            <li class="right"><a href="../../06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
-            <span>July 20, 2013</span>
+            <span>August 23, 2013</span>
         </div>
-    <div class="section" id="pxe-boot-freebsd-9-1">
-<h1>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</h1>
-<p>OSインストールをするだけでお金が貰えるならば喜んでやるが、趣味の時間をOSインストールに奪われるのはつらいので、自動化してみた。</p>
-<div class="section" id="pxe-boot">
-<h2>PXE boot サーバ構築</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># mdconfig -a -t vnode -f FreeBSD-9.1-RELEASE-amd64-disc1.iso</span>
-<span class="n">md0</span>
-<span class="c"># mount_cd9660 /dev/md0 /mnt</span>
-<span class="c"># mkdir /var/pxeboot</span>
-<span class="c"># cp -Rv /mnt/ /var/pxeboot</span>
-<span class="c"># umount /mnt</span>
-<span class="c"># mdconfig -d -u 0</span>
+    <div class="section" id="nullfsjailports">
+<h1>nullfsを使いjailのportsを共有する</h1>
+<p>jailを複数動かしているとports(Ports Collection)をどのように取り扱うかという壁にブチ当たると思う。jailごとにportsnap fetchしているとportsnapサーバに負荷がかかるし、管理が面倒くさい。ということでjailのportsは共有し、ホストからしかfetch,updateなどが出来ないようにしてみた。</p>
+<p><a class="reference internal" href="../22/freebsd_jail_vimage_zfs.html"><em>前回</em></a>からの続きということで。</p>
+<div class="highlight-python"><pre># cd 9.1.0/sys/amd64/conf
+# cp VIMAGE NULLFS
+
+# vi VIMAGE
+options         NULLFS
+
+# cd /usr/src/9.1.0
+# make buildkernel KERNCONF=NULLFS
+# make installkernel KERNCONF=NULLFS
+# reboot</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/ports</span>
+<span class="c"># portsnap -p /jails/ports fetch</span>
+<span class="c"># portsnap -p /jails/ports extract</span>
+<span class="c"># portsnap -p /jails/ports update</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/etc/fstab</span>
-<span class="c"># /dev/iso9660/FREEBSD_INSTALL / cd9660 ro 0 0 &lt;- コメントアウト</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre># vi /etc/inetd.conf
-tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var/pxeboot/boot
+<p>設定があちこちに散らばると管理が面倒なのでnullfsのマウントはホストのfstabではなくjail.conf(5)に書く。</p>
+<div class="highlight-python"><pre># vi /etc/jail.conf
 
-# /etc/rc.d/inetd onestart</pre>
-</div>
-<div class="highlight-python"><pre># cd /usr/ports/net/isc-dhcp42-server
-# make install
+exec.prestart  = "ifconfig epair${if} create up &gt; /dev/null";
+exec.prestart += "ifconfig vswitch0 addm epair${if}a";
+exec.prestart += "mount -t nullfs -o ro /jails/ports /jails/${name}/usr/ports";
+exec.start     = "ifconfig lo0 up 127.0.0.1";
+exec.start    += "ifconfig epair${if}b up $ipaddr";
+exec.start    += "route add default 192.168.0.254";
+exec.start    += "sh /etc/rc";
+exec.stop      = "sh /etc/rc.shutdown";
+exec.poststop  = "ifconfig epair${if}a destroy";
+exec.poststop += "umount /jails/${name}/usr/ports";
+host.hostname = "${name}.localnet";
+mount.devfs;
+devfs_ruleset = 5;
+vnet;
+vnet.interface = "epair${if}b";
+path = "/jails/${name}";
+persist;
 
-# vi /usr/local/etc/dhcpd.conf
-ddns-update-style none;
-server-name "pxeboot";               # name of the tftp-server
-server-identifier 192.168.0.253;  # address of the tftp-server
-next-server 192.168.0.253;        # address of the NFS-server
-
-subnet 192.168.0.0 netmask 255.255.255.0 {
-    range 192.168.0.220 192.168.0.250;
-    option routers 192.168.0.254;
-    option root-path "/var/pxeboot"; # root-path for NFS
-    filename "pxeboot";                    # filename of NBP (network bootstrap program)
+test01 {
+        $if = 1;
+        $ipaddr = 192.168.0.1;
 }
 
-# /usr/local/etc/rc.d/isc-dhcpd onestart</pre>
+test02 {
+        $if = 2;
+        $ipaddr = 192.168.0.2;
+}</pre>
 </div>
-<div class="highlight-python"><pre># vi /etc/exports
-/var/pxeboot -alldirs -maproot=root
+<p>portsをリードオンリーでマウントしているのでビルド時の作業用ディレクトリが作成できない。そのためjail環境のmake.conf(5)に作業ディレクトリの指定、ディレクトリを作成する必要がある。設定した環境変数の説明はports(5)に書いてある。</p>
+<div class="highlight-python"><pre># vi /jails/test01/etc/make.conf
 
-# /etc/rc.d/nfsd onestart</pre>
-</div>
-<p>再起動後もデーモンを起動させておきたければrc.confに書いておく。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">inetd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-<span class="n">dhcpd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-<span class="n">nfs_server_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="freebsd">
-<h2>FreeBSDインストールスクリプト</h2>
-<p>このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。</p>
-<div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/os_install.sh
+WRKDIRPREFIX = /var/ports/
+DISTDIR = /var/ports/distfiles/
+PACKAGES = /var/ports/packages/
+INDEXDIR = /var/ports/
 
-#!/bin/sh
-
-get_conf() {
-  if [ "$OS" = "FreeBSD" ]; then
-    local MACADDR="`ifconfig | awk '/ether/ {print $NF}'`"
-  elif [ "$OS" = "Linux" ]; then
-    local MACADDR="`ifconfig | awk '/HWaddr/ {print $NF}'`"
-  fi
-
-  for a in $MACADDR; do
-    find . -name ${a}.conf
-  done
-}
-
-OS=`uname`
-CONFFILE=`get_conf`
-
-if [ "$OS" = "FreeBSD" ]; then
-  IFACE=`netstat -nr | awk '{if($3 ~ /^UG$/) print $6}'`
-  DIRNAME=`sha256 -q $CONFFILE`
-elif [ "$OS" = "Linux" ]; then
-  IFACE=`netstat -nr | awk '{if($4 ~ /^UG$/) print $8}'`
-  DIRNAME=`sha256sum $CONFFILE | awk '{print $1}'`
-fi
-
-mkdir /mnt/${DIRNAME}
-
-if [ -n "$CONFFILE" ]; then
-  sh $CONFFILE $IFACE $DIRNAME
-fi</pre>
-</div>
-<div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/01:23:45:67:89:ab.conf
-
-#!/bin/sh
-
-IFACE=$1
-DISK=ada1
-MOUNTDIR="/mnt/$2"
-DIST_TXZ=`ls /usr/freebsd-dist/*.txz`
-
-gpart destroy -F $DISK
-gpart create -s gpt $DISK
-gpart add -s 64K -t freebsd-boot $DISK
-gpart add -s 8G -t freebsd-swap -l swap0 $DISK
-gpart add -t freebsd-ufs $DISK
-gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 $DISK
-
-newfs -U /dev/${DISK}p3
-
-mount /dev/${DISK}p3 $MOUNTDIR
-
-cd $MOUNTDIR
-
-for FILE in $DIST_TXZ; do
-  tar xfzp $FILE
-done
-
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/rc.conf
-hostname="freebsd.local"
-keymap="us.iso.kbd"
-ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"
-defaultrouter="192.168.0.254"
-sshd_enable="YES"
-# Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
-dumpdev="AUTO"
-EOF
-
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/resolv.conf
-nameserver 8.8.8.8
-EOF
-
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/fstab
-# Device        Mountpoint      FStype  Options Dump    Pass#
-/dev/${DISK}p3     /               ufs     rw      1       1
-/dev/${DISK}p2     none            swap    sw      0       0
-EOF
-
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/tmp/freebsd_setup.sh
-newaliases
-tzsetup Asia/Tokyo
-
-printf "hogefugamoge" | pw usermod -n root -h 0
-
-pw useradd -n nanashi -s /bin/tcsh -G wheel -m
-printf "ebifuraibutsukenzo" | pw usermod -n nanashi -h 0
-
-dumpon /dev/${DISK}p2
-ln -sf /dev/${DISK}p2 /dev/dumpdev
-EOF
-
-mount -t devfs dev ${MOUNTDIR}/dev
-chroot $MOUNTDIR /bin/sh /tmp/freebsd_setup.sh
-
-rm ${MOUNTDIR}/tmp/freebsd_setup.sh
-
-cd /
-umount ${MOUNTDIR}/dev
-umount $MOUNTDIR
-
-rmdir $MOUNTDIR
-reboot</pre>
-</div>
-<p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
-<div class="highlight-python"><pre># vi /var/pxeboot/etc/rc.local
-
-#!/bin/sh
-# $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $
-
-/var/script/os_install.sh</pre>
-</div>
-<ul class="simple">
-<li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
-<li><a class="reference external" href="http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren">http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren</a></li>
-</ul>
+# mkdir -p /jails/test01/var/ports/distfiles
+# mkdir -p /jails/test01/var/ports/packages</pre>
 </div>
 </div>
 
@@ -267,25 +156,25 @@ reboot</pre>
         <div class="categories">
             <span>
                 Filed under:
-                <a href="../../../categories/freebsd.html">freebsd</a></span>
+                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/jail.html">jail</a></span>
         </div>
         <div class="tags">
             <span>
                 Tags:
-                <a href="../../../tags/freebsd.html">freebsd</a></span>
+                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/nullfs.html">nullfs</a>, <a href="../../../tags/zfs.html">zfs</a>, <a href="../../../tags/ports.html">ports</a></span>
         </div>
         </div>
     <ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../../08/22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a></li>
-            <li class="right"><a href="../../06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a> &raquo; </li>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
-            <a href="../../08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a>
+            <a href="#">nullfsを使いjailのportsを共有する</a>
         </li><li>
-            <a href="../../08/22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a>
+            <a href="../22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a>
         </li><li>
-            <a href="#">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a>
+            <a href="../../07/20/freebsd_pxeboot.html">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a>
         </li><li>
             <a href="../../06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a>
         </li><li>
