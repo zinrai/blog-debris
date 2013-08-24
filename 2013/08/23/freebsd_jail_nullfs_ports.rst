@@ -82,7 +82,6 @@ portsをリードオンリーでマウントしているのでビルド時の作
   WRKDIRPREFIX = /var/ports/
   DISTDIR = /var/ports/distfiles/
   PACKAGES = /var/ports/packages/
-  INDEXDIR = /var/ports/
 
   # mkdir -p /jails/test01/var/ports/distfiles
   # mkdir -p /jails/test01/var/ports/packages
