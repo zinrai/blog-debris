@@ -168,6 +168,7 @@ FreeBSDインストールスクリプト
 
   cat << EOF > ${MOUNTDIR}/tmp/freebsd_setup.sh
   newaliases
+  touch /etc/wall_cmos_clock
   tzsetup Asia/Tokyo
 
   printf "hogefugamoge" | pw usermod -n root -h 0
