@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/08/28/freebsd_jail_ports_packages
    2013/08/23/freebsd_jail_nullfs_ports
    2013/08/22/freebsd_jail_vimage_zfs
    2013/07/20/freebsd_pxeboot
