@@ -5,8 +5,96 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 28 Aug 2013 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 29 Aug 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html</guid>
+            <title><![CDATA[packages配布サーバ構築]]></title>
+            <description><![CDATA[<div class="section" id="packages">
+<h1>packages配布サーバ構築</h1>
+<p><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html"><em>前回</em></a>はpackagesを作成する環境を構築した。</p>
+<p>今回は作成したpackagesを各FreeBSDマシンに配布する環境を構築する。</p>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html"><em>portsのパッケージをビルドする環境を構築する</em></a></li>
+</ul>
+<p>jails/pkg/packagesにpackagesが作られているので配布サーバ用jailにリードオンリーでマウントしてWebサーバ(nginx)を動かすだけの簡単なお仕事である。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/pkgsrv</span>
+<span class="c"># mkdir /jails/pkgsrv/var/packages</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># vi /etc/jail.conf
+test02 {
+        $if = 2;
+        $ipaddr = 192.168.0.2;
+}
+
+pkgsrv {
+        exec.prestart += &quot;mount -t nullfs -o ro /jails/pkg/packages /jails/${name}/var/packages&quot;;
+        exec.poststop += &quot;umount /jails/${name}/var/packages&quot;;
+        $if = 5;
+        $ipaddr = 192.168.0.5;
+}</pre>
+</div>
+<div class="section" id="pkgsrv">
+<h2>pkgsrv</h2>
+<p>pkgsrvにpackagesのnginxをインストールするためbuildboxでnginxをビルドしておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /var/packages/Latest</span>
+<span class="c"># pkg_add nginx</span>
+
+<span class="c"># cd /usr/local/nginx</span>
+<span class="c"># cp nginx.conf nginx.conf.bak</span>
+
+<span class="c"># mkdir /var/tmp/nginx</span>
+<span class="c"># touch /var/tmp/nginx/client_body_temp</span>
+</pre></div>
+</div>
+<p>serverブロックに以下のように書いていればとりあえず目的は達成できる。</p>
+<div class="highlight-python"><pre># vi /usr/local/nginx/nginx.conf
+server {
+        autoindex on;
+
+        location / {
+            root   /var/packages;
+            index  index.html index.htm;
+            allow 192.168.0.0/24;
+            deny all;
+        }
+}</pre>
+</div>
+<div class="highlight-python"><pre># nginx -t
+nginx: the configuration file /usr/local/etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /usr/local/etc/nginx/nginx.conf test is successful
+
+# service nginx onestart</pre>
+</div>
+</div>
+<div class="section" id="test02">
+<h2>test02</h2>
+<p>pkg_add(1)は環境変数を設定することで取得するpackagesのサーバを指定できる。環境変数の設定方法は調べればいくらでも引っ掛かるのでcshでの設定のみ書いておく。</p>
+<div class="highlight-python"><pre># vi .cshrc
+setenv PACKAGEROOT http://192.168.0.5/
+setenv PACKAGESITE http://192.168.0.5/Latest
+
+# source .cshrc
+# pkg_add -r wget</pre>
+</div>
+<p>packages配布サーバの構築は無事に完了した。ただ、IP直打ちだと配布サーバのIPを変更したとき環境変数を書き換えなければならず面倒だし、nginxを配布サーバ以外のことにも使いたい。</p>
+<p>というわけで</p>
+<ul class="simple">
+<li>ネームーサーバの構築</li>
+<li>nginx バーチャルホストの設定</li>
+</ul>
+<p>を課題としておく。</p>
+</div>
+</div>]]></description>
+            <category><![CDATA[ freebsd ]]></category>
+            <category><![CDATA[ nginx ]]></category>
+             <pubDate>Thu, 29 Aug 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html</guid>
