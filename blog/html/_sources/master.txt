@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/08/30/freebsd_dns_dnsmasq
    2013/08/29/freebsd_packages_nginx
    2013/08/28/freebsd_jail_ports_packages
    2013/08/23/freebsd_jail_nullfs_ports

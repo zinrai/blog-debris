@@ -5,8 +5,96 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 29 Aug 2013 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 30 Aug 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html</guid>
+            <title><![CDATA[dnsmasqを使ったDNSサーバ]]></title>
+            <description><![CDATA[<div class="section" id="dnsmasqdns">
+<h1>dnsmasqを使ったDNSサーバ</h1>
+<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a>」で課題にしていたDNSサーバ構築を行う。DNSサーバというとBINDや<a class="reference external" href="http://www.nlnetlabs.nl/projects/nsd">NSD</a>などが思い浮ぶだろうが、これらを使うのは腰が重い(とくにBIND、またはBIND、あるいはBIND)。</p>
+<p><a class="reference external" href="http://www.thekelleys.org.uk/dnsmasq">dnsmasq</a>は少しの設定ファイル変更とhosts(5)を書くだけでDNSサーバとして機能する。DHCP,TFTPサーバの機能も持っており、PXE Bootなどに使え非常に勝手がいい。</p>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html"><em>portsのパッケージをビルドする環境を構築する</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a></li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/dns</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># vi /etc/jail.conf
+dns {
+        $if = 6;
+        $ipaddr = 192.168.0.6;
+}</pre>
+</div>
+<div class="section" id="dns">
+<h2>dns</h2>
+<p>dnsmasqのpackagesはbuildboxで作成し、自前のpackages配布サーバを環境変数を設定しておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># pkg_add -r dnsmasq</span>
+<span class="c"># cd /usr/local/etc</span>
+<span class="c"># cp dnsmasq.conf.example dnsmasq.conf</span>
+</pre></div>
+</div>
+<p>dnsmasq.confはdnsmasq.dディレクトリ下のファイルを読み込む設定だけ有効にしておく。dnsmasq.confは600行くらいろいろ書いてあるので必要な設定項目だけをdnsmasq.dディレクトリ下に書いて管理したほうが設定を見通しやすい。Debian Apache風にavailableディレクトリに設定ファイルを置き、有効にしたい設定だけをenableディレクトリにシンボリックリンクを貼る。これで設定ファイルの切り替えが楽になる。</p>
+<div class="highlight-python"><pre># cd /usr/local/etc
+# mkdir -p dnsmasq.d/dnsmasq-available
+# mkdir -p dnsmasq.d/dnsmasq-enabled
+
+# vi dnsmasq.conf
+conf-dir=/usr/local/etc/dnsmasq.d/dnsmasq-enabled</pre>
+</div>
+<div class="highlight-python"><pre># vi dnsmasq.d/dnsmasq-avalilable/dns.conf
+
+# Never forward plain names (without a dot or domain part)
+domain-needed
+
+# Never forward addresses in the non-routed address spaces.
+bogus-priv
+
+# Add local-only domains here, queries in these domains are answered
+# from /etc/hosts or DHCP only.
+local=/localnet/
+
+# Set this (and domain: see below) if you want to have a domain
+# automatically added to simple names in a hosts-file.
+expand-hosts
+
+# Set the domain for dnsmasq. this is optional, but if it is set, it
+# does the following things.
+# 1) Allows DHCP hosts to have fully qualified domain names, as long
+#     as the domain part matches this setting.
+# 2) Sets the &quot;domain&quot; DHCP option thereby potentially setting the
+#    domain of all systems configured by DHCP
+# 3) Provides the domain part for &quot;expand-hosts&quot;
+domain=localnet</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd dnsmasq.d/dnsmasq-enabled</span>
+<span class="c"># ln -s ../dnsmasq-available/dns.conf</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># vi /etc/hosts
+192.168.0.5 pkgsrv.localnet</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+<span class="n">dnsmasq_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+
+<span class="c"># service dnsmasq start</span>
+</pre></div>
+</div>
+<p>これで自前のpackages配布サーバを名前で引けるようになった。あとはresolv.confにdnsmasqが動いているサーバを指定するだけである。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ freebsd ]]></category>
+            <category><![CDATA[ dnsmasq ]]></category>
+             <pubDate>Fri, 30 Aug 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html</guid>

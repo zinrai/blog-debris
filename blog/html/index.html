@@ -85,6 +85,102 @@
             <li class="left"></li>
             <li class="right"><a href="page2.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>August 30, 2013</span>
+        </div>
+        <div class="section" id="dnsmasqdns">
+<h1><a href="2013/08/30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a></h1>
+<p>「<a class="reference internal" href="2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a>」で課題にしていたDNSサーバ構築を行う。DNSサーバというとBINDや<a class="reference external" href="http://www.nlnetlabs.nl/projects/nsd">NSD</a>などが思い浮ぶだろうが、これらを使うのは腰が重い(とくにBIND、またはBIND、あるいはBIND)。</p>
+<p><a class="reference external" href="http://www.thekelleys.org.uk/dnsmasq">dnsmasq</a>は少しの設定ファイル変更とhosts(5)を書くだけでDNSサーバとして機能する。DHCP,TFTPサーバの機能も持っており、PXE Bootなどに使え非常に勝手がいい。</p>
+<ul class="simple">
+<li><a class="reference internal" href="2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<li><a class="reference internal" href="2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
+<li><a class="reference internal" href="2013/08/28/freebsd_jail_ports_packages.html"><em>portsのパッケージをビルドする環境を構築する</em></a></li>
+<li><a class="reference internal" href="2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a></li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/dns</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># vi /etc/jail.conf
+dns {
+        $if = 6;
+        $ipaddr = 192.168.0.6;
+}</pre>
+</div>
+<div class="section" id="dns">
+<h2>dns</h2>
+<p>dnsmasqのpackagesはbuildboxで作成し、自前のpackages配布サーバを環境変数を設定しておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># pkg_add -r dnsmasq</span>
+<span class="c"># cd /usr/local/etc</span>
+<span class="c"># cp dnsmasq.conf.example dnsmasq.conf</span>
+</pre></div>
+</div>
+<p>dnsmasq.confはdnsmasq.dディレクトリ下のファイルを読み込む設定だけ有効にしておく。dnsmasq.confは600行くらいろいろ書いてあるので必要な設定項目だけをdnsmasq.dディレクトリ下に書いて管理したほうが設定を見通しやすい。Debian Apache風にavailableディレクトリに設定ファイルを置き、有効にしたい設定だけをenableディレクトリにシンボリックリンクを貼る。これで設定ファイルの切り替えが楽になる。</p>
+<div class="highlight-python"><pre># cd /usr/local/etc
+# mkdir -p dnsmasq.d/dnsmasq-available
+# mkdir -p dnsmasq.d/dnsmasq-enabled
+
+# vi dnsmasq.conf
+conf-dir=/usr/local/etc/dnsmasq.d/dnsmasq-enabled</pre>
+</div>
+<div class="highlight-python"><pre># vi dnsmasq.d/dnsmasq-avalilable/dns.conf
+
+# Never forward plain names (without a dot or domain part)
+domain-needed
+
+# Never forward addresses in the non-routed address spaces.
+bogus-priv
+
+# Add local-only domains here, queries in these domains are answered
+# from /etc/hosts or DHCP only.
+local=/localnet/
+
+# Set this (and domain: see below) if you want to have a domain
+# automatically added to simple names in a hosts-file.
+expand-hosts
+
+# Set the domain for dnsmasq. this is optional, but if it is set, it
+# does the following things.
+# 1) Allows DHCP hosts to have fully qualified domain names, as long
+#     as the domain part matches this setting.
+# 2) Sets the &quot;domain&quot; DHCP option thereby potentially setting the
+#    domain of all systems configured by DHCP
+# 3) Provides the domain part for &quot;expand-hosts&quot;
+domain=localnet</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd dnsmasq.d/dnsmasq-enabled</span>
+<span class="c"># ln -s ../dnsmasq-available/dns.conf</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># vi /etc/hosts
+192.168.0.5 pkgsrv.localnet</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+<span class="n">dnsmasq_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+
+<span class="c"># service dnsmasq start</span>
+</pre></div>
+</div>
+<p>これで自前のpackages配布サーバを名前で引けるようになった。あとはresolv.confにdnsmasqが動いているサーバを指定するだけである。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
+</ul>
+</div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/freebsd.html">freebsd</a>, <a href="categories/dnsmasq.html">dnsmasq</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/dnsmasq.html">dnsmasq</a>, <a href="tags/dns.html">dns</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>August 29, 2013</span>
         </div>
         <div class="section" id="packages">
@@ -267,86 +363,6 @@ buildbox {
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/ports.html">ports</a>, <a href="tags/packages.html">packages</a>, <a href="tags/nullfs.html">nullfs</a>, <a href="tags/zfs.html">zfs</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>August 23, 2013</span>
-        </div>
-        <div class="section" id="nullfsjailports">
-<h1><a href="2013/08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a></h1>
-<p>jailを複数動かしているとports(Ports Collection)をどのように取り扱うかという壁にブチ当たると思う。jailごとにportsnap fetchしているとportsnapサーバに負荷がかかるし、管理が面倒くさい。ということでjailのportsは共有し、ホストからしかfetch,updateなどが出来ないようにしてみた。</p>
-<p><a class="reference internal" href="2013/08/22/freebsd_jail_vimage_zfs.html"><em>前回</em></a>からの続きということで。</p>
-<div class="highlight-python"><pre># cd 9.1.0/sys/amd64/conf
-# cp VIMAGE NULLFS
-
-# vi VIMAGE
-options         NULLFS
-
-# cd /usr/src/9.1.0
-# make buildkernel KERNCONF=NULLFS
-# make installkernel KERNCONF=NULLFS
-# reboot</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/ports</span>
-<span class="c"># portsnap -p /jails/ports fetch</span>
-<span class="c"># portsnap -p /jails/ports extract</span>
-<span class="c"># portsnap -p /jails/ports update</span>
-</pre></div>
-</div>
-<p>設定があちこちに散らばると管理が面倒なのでnullfsのマウントはホストのfstabではなくjail.conf(5)に書く。</p>
-<div class="highlight-python"><pre># vi /etc/jail.conf
-
-exec.prestart  = &quot;ifconfig epair${if} create up &gt; /dev/null&quot;;
-exec.prestart += &quot;ifconfig vswitch0 addm epair${if}a&quot;;
-exec.prestart += &quot;mount -t nullfs -o ro /jails/ports /jails/${name}/usr/ports&quot;;
-exec.start     = &quot;ifconfig lo0 up 127.0.0.1&quot;;
-exec.start    += &quot;ifconfig epair${if}b up $ipaddr&quot;;
-exec.start    += &quot;route add default 192.168.0.254&quot;;
-exec.start    += &quot;sh /etc/rc&quot;;
-exec.stop      = &quot;sh /etc/rc.shutdown&quot;;
-exec.poststop  = &quot;ifconfig epair${if}a destroy&quot;;
-exec.poststop += &quot;umount /jails/${name}/usr/ports&quot;;
-host.hostname = &quot;${name}.localnet&quot;;
-mount.devfs;
-devfs_ruleset = 5;
-vnet;
-vnet.interface = &quot;epair${if}b&quot;;
-path = &quot;/jails/${name}&quot;;
-persist;
-
-test01 {
-        $if = 1;
-        $ipaddr = 192.168.0.1;
-}
-
-test02 {
-        $if = 2;
-        $ipaddr = 192.168.0.2;
-}</pre>
-</div>
-<p>portsをリードオンリーでマウントしているのでビルド時の作業用ディレクトリが作成できない。そのためjail環境のmake.conf(5)に作業ディレクトリの指定、ディレクトリを作成する必要がある。設定した環境変数の説明はports(5)に書いてある。</p>
-<div class="highlight-python"><pre># vi /jails/test01/etc/make.conf
-
-WRKDIRPREFIX = /var/ports/
-DISTDIR = /var/ports/distfiles/
-PACKAGES = /var/ports/packages/
-
-# mkdir -p /jails/test01/var/ports/distfiles
-# mkdir -p /jails/test01/var/ports/packages</pre>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/freebsd.html">freebsd</a>, <a href="categories/jail.html">jail</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/nullfs.html">nullfs</a>, <a href="tags/zfs.html">zfs</a>, <a href="tags/ports.html">ports</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash;  Blog Archive  &mdash; </a>
     </div><ul class="related clearfix">
@@ -355,6 +371,8 @@ PACKAGES = /var/ports/packages/
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2013/08/30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a>
+        </li><li>
             <a href="2013/08/29/freebsd_packages_nginx.html">packages配布サーバ構築</a>
         </li><li>
             <a href="2013/08/28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a>
@@ -372,15 +390,13 @@ PACKAGES = /var/ports/packages/
             <a href="2013/06/08/ubuntu_mongodb_rails3_setup.html">Rails3でMongoDBを使ってみる</a>
         </li><li>
             <a href="2013/06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a>
-        </li><li>
-            <a href="2013/05/26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/debian.html">debian</a> (1)</li><li><a href="categories/dns.html">dns</a> (1)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/github.html">github</a> (1)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ports.html">ports</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/python.html">python</a> (1)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/ubuntu.html">ubuntu</a> (3)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li></ul>
+    <ul><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/debian.html">debian</a> (1)</li><li><a href="categories/dns.html">dns</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/github.html">github</a> (1)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ports.html">ports</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/python.html">python</a> (1)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/ubuntu.html">ubuntu</a> (3)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/centos.html">centos</a> (2), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/debian.html">debian</a> (1), <a href="tags/dns.html">dns</a> (1), <a href="tags/freebsd.html">freebsd</a> (5), <a href="tags/github.html">github</a> (1), <a href="tags/jail.html">jail</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/packages.html">packages</a> (2), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/python.html">python</a> (1), <a href="tags/rails.html">rails</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/zfs.html">zfs</a> (3)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/centos.html">centos</a> (2), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/debian.html">debian</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (1), <a href="tags/freebsd.html">freebsd</a> (6), <a href="tags/github.html">github</a> (1), <a href="tags/jail.html">jail</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/packages.html">packages</a> (2), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/python.html">python</a> (1), <a href="tags/rails.html">rails</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/zfs.html">zfs</a> (3)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
