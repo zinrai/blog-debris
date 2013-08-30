@@ -152,7 +152,7 @@ nginx: configuration file /usr/local/etc/nginx/nginx.conf test is successful
 <p>pkg_add(1)は環境変数を設定することで取得するpackagesのサーバを指定できる。環境変数の設定方法は調べればいくらでも引っ掛かるのでcshでの設定のみ書いておく。</p>
 <div class="highlight-python"><pre># vi .cshrc
 setenv PACKAGEROOT http://192.168.0.5/
-setenv PACKAGESITE http://192.168.0.5/Latest
+setenv PACKAGESITE http://192.168.0.5/Latest/
 
 # source .cshrc
 # pkg_add -r wget</pre>
@@ -160,7 +160,7 @@ setenv PACKAGESITE http://192.168.0.5/Latest
 <p>packages配布サーバの構築は無事に完了した。ただ、IP直打ちだと配布サーバのIPを変更したとき環境変数を書き換えなければならず面倒だし、nginxを配布サーバ以外のことにも使いたい。</p>
 <p>というわけで</p>
 <ul class="simple">
-<li>ネームーサーバの構築</li>
+<li>DNSサーバの構築</li>
 <li>nginx バーチャルホストの設定</li>
 </ul>
 <p>を課題としておく。</p>

@@ -94,7 +94,7 @@ pkg_add(1)は環境変数を設定することで取得するpackagesのサー�
 
   # vi .cshrc
   setenv PACKAGEROOT http://192.168.0.5/
-  setenv PACKAGESITE http://192.168.0.5/Latest
+  setenv PACKAGESITE http://192.168.0.5/Latest/
 
   # source .cshrc
   # pkg_add -r wget
@@ -106,7 +106,7 @@ packages配布サーバの構築は無事に完了した。
 というわけで
 
 
-* ネームーサーバの構築
+* DNSサーバの構築
 * nginx バーチャルホストの設定
 
 を課題としておく。
