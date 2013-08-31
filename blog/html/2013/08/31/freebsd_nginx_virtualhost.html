@@ -15,7 +15,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="description" content="This is an awesome blog">
         <meta name="viewport" content="width=device-width">
-        <title>portsのパッケージをビルドする環境を構築する &mdash; command not found:</title>
+        <title>Nginxでバーチャルホスト &mdash; command not found:</title>
             <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
@@ -27,7 +27,7 @@
         <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
         <script src="../../../_static/plugins.js"></script>
         <script src="../../../_static/main.js"></script>
-        <link rel="next" title="nullfsを使いjailのportsを共有する" href="../23/freebsd_jail_nullfs_ports.html" /><link rel="prev" title="packages配布サーバ構築" href="../29/freebsd_packages_nginx.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+        <link rel="next" title="dnsmasqを使ったDNSサーバ" href="../30/freebsd_dns_dnsmasq.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
         VERSION:     '1.1',
@@ -82,80 +82,81 @@
 </div>
 
 <div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../29/freebsd_packages_nginx.html">packages配布サーバ構築</a></li>
-            <li class="right"><a href="../23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
-            <span>August 28, 2013</span>
+            <span>August 31, 2013</span>
         </div>
-    <div class="section" id="ports">
-<h1>portsのパッケージをビルドする環境を構築する</h1>
-<p>FreeBSDを複数台動かす場合、パッケージをどのような手段でインストールするか考えることになると思う。</p>
-<p>FreeBSDでのパッケージのインストールは</p>
+    <div class="section" id="nginx">
+<h1>Nginxでバーチャルホスト</h1>
+<p>「<a class="reference internal" href="../29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a>」で課題にしていたnginxでのバーチャルホストの設定を行う。</p>
+<p>バーチャルホストには</p>
 <ul class="simple">
-<li><strong>ports</strong>: ソースコードをコンパイルしてインストール</li>
-<li><strong>packages</strong>:  コンパイル済みのバイナリをインストール</li>
+<li><strong>IPベース</strong>: 1台のサーバに対して複数のドメイン,IPアドレスで運用する。</li>
+<li><strong>名前ベース</strong>: 1台のサーバに対して複数のドメインを1つのIPアドレスで共用する。</li>
 </ul>
-<p>の2種類が用意されている。</p>
-<p>それぞれのFreeBSDにあるportsからパッケージをインストールするのは面倒だし、コンパイルオプションの指定ミスなどが発生したとき原因調査に時間を取られて泣きをみることは間違いない。</p>
-<p>というわけでpackagesを使いFreeBSDマシンにパッケージをインストールする。packagesはFreeBSDから提供されているが、portsからも作成できる。portsからだとコンパイルオプションを自分の好きなようにカスタマイズしたpackagesを作ることが出来る。ただし、portsからpackagesを作成するにはパッケージをインストールしなければならない。</p>
-<p>FreeBSDでは自前のpackagesを作成するツールとして「<a class="reference external" href="http://ftp.marcuscom.com/">Tinderbox</a>」が存在する。「<a class="reference external" href="http://ftp.marcuscom.com/">Tinderbox</a>」は様々なユーザーランド,portsを組み合わせビルド環境を作り、packagesを作成してくれる。WebUIも供えておりpackagesにしたいパッケージを登録すれば勝手にビルドしていく。4.0.0からDBにSQLiteが使えるようになり導入のハードルがグッと下っているので気になったら触ってみて欲しい。</p>
-<p>今回は「<a class="reference external" href="http://ftp.marcuscom.com/">Tinderbox</a>」は使わず、「<a class="reference external" href="http://ftp.marcuscom.com/">Tinderbox</a>」の動きを真似たビルド環境を自分で構築することにした。下記の記事のような環境がすでに出来ているものとする。</p>
-<ul class="simple">
-<li><a class="reference internal" href="../22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
-<li><a class="reference internal" href="../23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/pkg</span>
-<span class="c"># zfs create jails/buildbox</span>
+<p>の2種類がある。</p>
+<p>今回は「名前ベース」のバーチャルホストを設定する。</p>
+<div class="section" id="dnsmasq">
+<h2>dnsmasq</h2>
+<p><a class="reference internal" href="../30/freebsd_dns_dnsmasq.html"><em>前回構築したDNSサーバ</em></a>に名前を登録する。</p>
+<div class="highlight-python"><pre># vi /etc/hosts
+192.168.0.5 srv.localnet
+192.168.0.5 packages.localnet
 
-<span class="c"># cd /usr/src/9.1.0</span>
-<span class="c"># make buildworld</span>
-<span class="c"># make installworld DESTDIR=/jails/buildbox</span>
-<span class="c"># make distribution DESTDIR=/jails/buildbox</span>
-</pre></div>
+# service dnsmasq restart</pre>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir /jails/buildbox/usr/ports</span>
-<span class="c"># mkdir /jails/buildbox/var/ports</span>
-<span class="c"># cd /jails/pkg</span>
-<span class="c"># mkdir distfiles packages coptions</span>
-</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /jails/buildbox//etc/resolv.conf
-nameserver 8.8.8.8</pre>
+<div class="section" id="id1">
+<h2>Nginx</h2>
+<p>nginxのほうも「<a class="reference internal" href="../30/freebsd_dns_dnsmasq.html"><em>dnsmasqを使ったDNSサーバ</em></a>」と同じようにDebian Aapache2風のディレクトリ構成をとる。最低限の設定しか載せていないので、他のパラメータはドキュメントを眺めながら各自で設定して欲しい。</p>
+<div class="highlight-python"><pre># nginx -v
+nginx version: nginx/1.4.2</pre>
 </div>
-<div class="highlight-python"><pre># vi /jails/buildbox/etc/make.conf
-WRKDIRPREFIX = /var/ports/
-DISTDIR = /var/ports/distfiles/
-PACKAGES = /var/ports/packages/
-PORT_DBDIR = /var/ports/coptions/</pre>
+<div class="highlight-python"><pre># cd /usr/local/etc/nginx
+# mkdir sites-available sites-enabled
+
+# vi nginx.conf
+http {
+  include /usr/local/etc/nginx/sites-enabled/*;
+}
+
+# vi sites-available/packages.localnet
+server {
+    listen 80;
+    server_name packages.localnet;
+
+    autoindex on;
+
+    location / {
+        root   /var/packages;
+        index  index.html;
+    }
+}
+
+# vi sites-avaliable/srv.localnet
+server {
+    listen       80;
+    server_name  srv.localnet;
+
+    location / {
+        root   /usr/local/www/nginx;
+        index  index.html index.htm;
+    }
+}
+
+# cd sites-enabled
+# ln -s ../sites-available/packages.localnet
+# ln -s ../sites-available/srv.localnet
+
+# service nginx start</pre>
 </div>
-<div class="highlight-python"><pre># vi /etc/jail.conf
-buildbox {
-        exec.prestart += "mount -t nullfs /jails/pkg /jails/${name}/var/ports";
-        exec.poststop += "umount /jails/${name}/var/ports";
-        $if = 4;
-        $ipaddr = 192.168.0.4;
-}</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs snapshot jails/pkg@base</span>
-<span class="c"># zfs snapshot jails/buildbox@base</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># jail -c buildbox</span>
-</pre></div>
-</div>
-<p>書いてある設定でピンときたでしょうが、ビルド作業用ディレクトリを別にマウントしてbuildboxのほうはzfs rollbackでいつでも初期状態に戻せるようにしているだけである。</p>
-<p>あとはjail環境で</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/ports/ftp/wget</span>
-<span class="c"># make config-recursive</span>
-<span class="c"># make install</span>
-<span class="c"># make package-recursive</span>
-</pre></div>
-</div>
-<p>すれば/jails/pkg/packagesにpackagesが作られる。</p>
-<p>packagesをどう配布するかは次の機会に。(調べればすぐに見付かるけど...)</p>
+<p>packages.localnetにアクセスするとpackagesが見え、srv.localnetにアクセスするとnginxのインデックスページが見えれば名前ベースバーチャルホストの設定は完了である。</p>
 <ul class="simple">
-<li><a class="reference external" href="http://ftp.marcuscom.com/">http://ftp.marcuscom.com/</a></li>
+<li><a class="reference external" href="http://ja.wikipedia.org/wiki/バーチャルホスト">http://ja.wikipedia.org/wiki/バーチャルホスト</a></li>
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#server">http://nginx.org/en/docs/http/ngx_http_core_module.html#server</a></li>
 </ul>
+</div>
 </div>
 
     <div class="postmeta">
@@ -165,27 +166,27 @@ buildbox {
         <div class="categories">
             <span>
                 Filed under:
-                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/ports.html">ports</a></span>
+                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/nginx.html">nginx</a></span>
         </div>
         <div class="tags">
             <span>
                 Tags:
-                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/ports.html">ports</a>, <a href="../../../tags/packages.html">packages</a>, <a href="../../../tags/nullfs.html">nullfs</a>, <a href="../../../tags/zfs.html">zfs</a></span>
+                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/nginx.html">nginx</a></span>
         </div>
         </div>
     <ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../29/freebsd_packages_nginx.html">packages配布サーバ構築</a></li>
-            <li class="right"><a href="../23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a> &raquo; </li>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
-            <a href="../31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a>
+            <a href="#">Nginxでバーチャルホスト</a>
         </li><li>
             <a href="../30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a>
         </li><li>
             <a href="../29/freebsd_packages_nginx.html">packages配布サーバ構築</a>
         </li><li>
-            <a href="#">portsのパッケージをビルドする環境を構築する</a>
+            <a href="../28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a>
         </li><li>
             <a href="../23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a>
         </li><li>

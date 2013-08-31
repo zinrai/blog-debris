@@ -5,8 +5,88 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Fri, 30 Aug 2013 00:00:00 +0900</pubDate>
+        <pubDate>Sat, 31 Aug 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html</guid>
+            <title><![CDATA[Nginxでバーチャルホスト]]></title>
+            <description><![CDATA[<div class="section" id="nginx">
+<h1>Nginxでバーチャルホスト</h1>
+<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a>」で課題にしていたnginxでのバーチャルホストの設定を行う。</p>
+<p>バーチャルホストには</p>
+<ul class="simple">
+<li><strong>IPベース</strong>: 1台のサーバに対して複数のドメイン,IPアドレスで運用する。</li>
+<li><strong>名前ベース</strong>: 1台のサーバに対して複数のドメインを1つのIPアドレスで共用する。</li>
+</ul>
+<p>の2種類がある。</p>
+<p>今回は「名前ベース」のバーチャルホストを設定する。</p>
+<div class="section" id="dnsmasq">
+<h2>dnsmasq</h2>
+<p><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html"><em>前回構築したDNSサーバ</em></a>に名前を登録する。</p>
+<div class="highlight-python"><pre># vi /etc/hosts
+192.168.0.5 srv.localnet
+192.168.0.5 packages.localnet
+
+# service dnsmasq restart</pre>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Nginx</h2>
+<p>nginxのほうも「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html"><em>dnsmasqを使ったDNSサーバ</em></a>」と同じようにDebian Aapache2風のディレクトリ構成をとる。最低限の設定しか載せていないので、他のパラメータはドキュメントを眺めながら各自で設定して欲しい。</p>
+<div class="highlight-python"><pre># nginx -v
+nginx version: nginx/1.4.2</pre>
+</div>
+<div class="highlight-python"><pre># cd /usr/local/etc/nginx
+# mkdir sites-available sites-enabled
+
+# vi nginx.conf
+http {
+  include /usr/local/etc/nginx/sites-enabled/*;
+}
+
+# vi sites-available/packages.localnet
+server {
+    listen 80;
+    server_name packages.localnet;
+
+    autoindex on;
+
+    location / {
+        root   /var/packages;
+        index  index.html;
+    }
+}
+
+# vi sites-avaliable/srv.localnet
+server {
+    listen       80;
+    server_name  srv.localnet;
+
+    location / {
+        root   /usr/local/www/nginx;
+        index  index.html index.htm;
+    }
+}
+
+# cd sites-enabled
+# ln -s ../sites-available/packages.localnet
+# ln -s ../sites-available/srv.localnet
+
+# service nginx start</pre>
+</div>
+<p>packages.localnetにアクセスするとpackagesが見え、srv.localnetにアクセスするとnginxのインデックスページが見えれば名前ベースバーチャルホストの設定は完了である。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://ja.wikipedia.org/wiki/バーチャルホスト">http://ja.wikipedia.org/wiki/バーチャルホスト</a></li>
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#server">http://nginx.org/en/docs/http/ngx_http_core_module.html#server</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ freebsd ]]></category>
+            <category><![CDATA[ nginx ]]></category>
+             <pubDate>Sat, 31 Aug 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html</guid>
