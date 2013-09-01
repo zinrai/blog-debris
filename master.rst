@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/09/01/freebsd_irc_ngircd
    2013/08/31/freebsd_nginx_virtualhost
    2013/08/30/freebsd_dns_dnsmasq
    2013/08/29/freebsd_packages_nginx
