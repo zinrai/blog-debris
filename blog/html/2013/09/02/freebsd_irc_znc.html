@@ -1,0 +1,361 @@
+<!DOCTYPE html><!--[if lt IE 7]>      <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="This is an awesome blog">
+        <meta name="viewport" content="width=device-width">
+        <title>ZNCでIRC Proxy &mdash; command not found:</title>
+            <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+            <link rel="stylesheet" href="../../../_static/webfont.css" type="text/css">
+        <link rel="shortcut icon" href="../../../_static/tinkerer.ico" /><!-- Load modernizr and JQuery -->
+        <script src="../../../_static/vendor/modernizr-2.6.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
+        <script src="../../../_static/plugins.js"></script>
+        <script src="../../../_static/main.js"></script>
+        <link rel="next" title="ngircdでIRCサーバ" href="../01/freebsd_irc_ngircd.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script><script type="text/javascript" src="../../../_static/underscore.js"></script><script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Adjusts document height if sidebar is taller
+            var documentwrapper = document.getElementsByTagName('article')[0];
+            var sidebar = document.getElementsByTagName('aside')[0];
+
+            if (sidebar.offsetHeight > documentwrapper.offsetHeight)
+            {
+                documentwrapper.style.minHeight = sidebar.offsetHeight + "px";
+            }
+
+            // Scroll to content if on small screen
+            if (screen.width < 480)
+            {
+                $(document).scrollTop(documentwrapper.offsetTop - 44);
+            }
+        });
+    </script></head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+        <![endif]-->
+
+      <div id="container"><div class="header-container">
+    <header class="wrapper clearfix">
+        <div class="title">
+          <h1><a href="../../../index.html">command not found:</a></h1>
+          <h4>Hello World</h4>
+        </div>
+        <nav>
+          <ul>
+            <li class="main-nav">
+              <a href="../../../index.html">Home</a>
+            </li>
+            <li class="main-nav">
+              <a href="../../../pages/about.html">About</a>
+            </li>
+            <li class="quicklink"><div class="rss">
+        <a href="../../../rss.html" title="Subscribe via RSS"><span class="webfont">B</span></a>
+    </div></li></ul>
+        </nav>
+    </header>
+</div>
+
+<div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a> &raquo; </li>
+        </ul><div class="timestamp postmeta">
+            <span>September 02, 2013</span>
+        </div>
+    <div class="section" id="zncirc-proxy">
+<h1>ZNCでIRC Proxy</h1>
+<p>IRCクライアオンからIRCサーバに接続してない間の発言は見ることが出来無い。IRC Proxyを置けば接続していない間の発言を記録し、IRCクライアントからIRC Proxyに接続すれば記録された発言を見ることが出来る。IRC Proxyでログを定期的にメールすると外出中は捗る。IRC Proxyといえばネットでは「<a class="reference external" href="http://www.clovery.jp/tiarra/">Tiarra</a>」をよく見掛けるが、SSL接続のために「<a class="reference external" href="http://sourceforge.jp/projects/stone/">stone</a>」などを使わなければならず面倒くさい。SSL接続できるIRC Proxyはないか探してみたところ「<a class="reference external" href="http://wiki.znc.in/ZNC">ZNC</a>」を見付け使っている。</p>
+<ul class="simple">
+<li><a class="reference internal" href="../01/freebsd_irc_ngircd.html"><em>ngircdでIRCサーバ</em></a></li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># pw useradd -n znc -s /bin/tcsh -m</span>
+<span class="c"># su - znc</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>$ znc --help
+[ ** ] USAGE: znc [options]
+[ ** ] Options are:
+[ ** ]  -h, --help         List available command line options (this page)
+[ ** ]  -v, --version      Output version information and exit
+[ ** ]  -f, --foreground   Don't fork into the background
+[ ** ]  -D, --debug        Output debugging information (Implies -f)
+[ ** ]  -n, --no-color     Don't use escape sequences in the output
+[ ** ]  -r, --allow-root   Don't complain if ZNC is run as root
+[ ** ]  -c, --makeconf     Interactively create a new config
+[ ** ]  -s, --makepass     Generates a password for use in config
+[ ** ]  -p, --makepem      Generates a pemfile for use with SSL
+[ ** ]  -d, --datadir      Set a different ZNC repository (default is ~/.znc)</pre>
+</div>
+<div class="highlight-python"><pre>$ znc -v
+ZNC 1.0 - http://znc.in
+IPv6: yes, SSL: yes, DNS: threads</pre>
+</div>
+<div class="highlight-python"><pre>$ znc -c
+[ ok ] Checking for list of available modules...
+[ ** ] Building new config
+[ ** ]
+[ ** ] First let's start with some global settings...
+[ ** ]
+[ ?? ] What port would you like ZNC to listen on? (1025 to 65535): 6668
+[ ?? ] Would you like ZNC to listen using SSL? (yes/no) [no]: yes
+[ ** ] Unable to locate pem file: [/home/znc/.znc/znc.pem]
+[ ?? ] Would you like to create a new pem file now? (yes/no) [yes]:
+[ ok ] Writing Pem file [/home/znc/.znc/znc.pem]...
+[ ?? ] Would you like ZNC to listen using ipv6? (yes/no) [yes]: no
+[ ?? ] Listen Host (Blank for all ips): 192.168.0.8
+[ ok ] Verifying the listener...
+[ ** ]
+[ ** ] -- Global Modules --
+[ ** ]
+[ ** ] +-----------+----------------------------------------------------------+
+[ ** ] | Name      | Description                                              |
+[ ** ] +-----------+----------------------------------------------------------+
+[ ** ] | partyline | Internal channels and queries for users connected to znc |
+[ ** ] | webadmin  | Web based administration module                          |
+[ ** ] +-----------+----------------------------------------------------------+
+[ ** ] And 10 other (uncommon) modules. You can enable those later.
+[ ** ]
+[ ?? ] Load global module &lt;partyline&gt;? (yes/no) [no]:
+[ ?? ] Load global module &lt;webadmin&gt;? (yes/no) [no]:
+[ ** ]
+[ ** ] Now we need to set up a user...
+[ ** ]
+[ ?? ] Username (AlphaNumeric): hoge
+[ ?? ] Enter Password:
+[ ?? ] Confirm Password:
+[ ?? ] Would you like this user to be an admin? (yes/no) [yes]:
+[ ?? ] Nick [hoge]:
+[ ?? ] Alt Nick [hoge_]:
+[ ?? ] Ident [hoge]:
+[ ?? ] Real Name [Got ZNC?]: fuga
+[ ?? ] Bind Host (optional):
+[ ?? ] Number of lines to buffer per channel [50]:
+[ ?? ] Would you like to clear channel buffers after replay? (yes/no) [yes]:
+[ ?? ] Default channel modes [+stn]:
+[ ** ]
+[ ** ] -- User Modules --
+[ ** ]
+[ ** ] +--------------+------------------------------------------------------------------------------------------+
+[ ** ] | Name         | Description                                                                              |
+[ ** ] +--------------+------------------------------------------------------------------------------------------+
+[ ** ] | chansaver    | Keep config up-to-date when user joins/parts                                             |
+[ ** ] | controlpanel | Dynamic configuration through IRC. Allows editing only yourself if you're not ZNC admin. |
+[ ** ] | perform      | Keeps a list of commands to be executed when ZNC connects to IRC.                        |
+[ ** ] +--------------+------------------------------------------------------------------------------------------+
+[ ** ] And 22 other (uncommon) modules. You can enable those later.
+[ ** ]
+[ ?? ] Load module &lt;chansaver&gt;? (yes/no) [no]:
+[ ?? ] Load module &lt;controlpanel&gt;? (yes/no) [no]:
+[ ?? ] Load module &lt;perform&gt;? (yes/no) [no]:
+[ ** ]
+[ ?? ] Would you like to set up a network? (yes/no) [no]: yes
+[ ?? ] Network (e.g. `freenode' or `efnet'): hogeirc
+[ ** ]
+[ ** ] -- Network Modules --
+[ ** ]
+[ ** ] +-------------+-------------------------------------------------------------------------------------------------+
+[ ** ] | Name        | Description                                                                                     |
+[ ** ] +-------------+-------------------------------------------------------------------------------------------------+
+[ ** ] | chansaver   | Keep config up-to-date when user joins/parts                                                    |
+[ ** ] | keepnick    | Keep trying for your primary nick                                                               |
+[ ** ] | kickrejoin  | Autorejoin on kick                                                                              |
+[ ** ] | nickserv    | Auths you with NickServ                                                                         |
+[ ** ] | perform     | Keeps a list of commands to be executed when ZNC connects to IRC.                               |
+[ ** ] | simple_away | This module will automatically set you away on IRC while you are disconnected from the bouncer. |
+[ ** ] +-------------+-------------------------------------------------------------------------------------------------+
+[ ** ] And 16 other (uncommon) modules. You can enable those later.
+[ ** ]
+[ ?? ] Load module &lt;chansaver&gt;? (yes/no) [no]:
+[ ?? ] Load module &lt;keepnick&gt;? (yes/no) [no]:
+[ ?? ] Load module &lt;kickrejoin&gt;? (yes/no) [no]:
+[ ?? ] Load module &lt;nickserv&gt;? (yes/no) [no]:
+[ ?? ] Load module &lt;perform&gt;? (yes/no) [no]:
+[ ?? ] Load module &lt;simple_away&gt;? (yes/no) [no]:
+[ ** ]
+[ ** ] -- IRC Servers --
+[ ** ] Only add servers from the same IRC network.
+[ ** ] If a server from the list can't be reached, another server will be used.
+[ ** ]
+[ ?? ] IRC server (host only): 192.168.0.7
+[ ?? ] [192.168.50.7] Port (1 to 65535) [6667]: 6669
+[ ?? ] [192.168.50.7] Password (probably empty): aiueo
+[ ?? ] Does this server use SSL? (yes/no) [no]: yes
+[ ** ]
+[ ?? ] Would you like to add another server for this IRC network? (yes/no) [no]:
+[ ** ]
+[ ** ] -- Channels --
+[ ** ]
+[ ?? ] Would you like to add a channel for ZNC to automatically join? (yes/no) [yes]:
+[ ?? ] Channel name: #fuga
+[ ?? ] Would you like to add another channel? (yes/no) [no]:
+[ ?? ] Would you like to set up another network? (yes/no) [no]:
+[ ** ]
+[ ?? ] Would you like to set up another user? (yes/no) [no]:
+[ ok ] Writing config [/home/znc/.znc/configs/znc.conf]...
+[ ** ]
+[ ** ] To connect to this ZNC you need to connect to it as your IRC server
+[ ** ] using the port that you supplied.  You have to supply your login info
+[ ** ] as the IRC server password like this: user/network:pass.
+[ ** ]
+[ ** ] Try something like this in your IRC client...
+[ ** ] /server &lt;znc_server_ip&gt; +6668 hoge:&lt;pass&gt;
+[ ** ] And this in your browser...
+[ ** ] https://&lt;znc_server_ip&gt;:6668/
+[ ** ]
+[ ?? ] Launch ZNC now? (yes/no) [yes]:
+[ ok ] Opening config [/home/znc/.znc/configs/znc.conf]...
+[ ok ] Binding to port [+6668] on host [192.168.0.8] using ipv4...
+[ ** ] Loading user [hoge]
+[ ** ] Loading network [hogeirc]
+[ ok ] Adding server [192.168.0.7 +6669 aiueo]...
+[ ok ] Forking into the background... [pid: 42611]</pre>
+</div>
+<div class="highlight-python"><pre>$ vi .znc/configs/znc.conf
+// WARNING
+//
+// Do NOT edit this file while ZNC is running!
+// Use webadmin or *controlpanel instead.
+//
+// Buf if you feel risky, you might want to read help on /znc saveconfig and /znc rehash.
+// Also check http://en.znc.in/wiki/Configuration
+
+Version = 1.0
+&lt;Listener l&gt;
+        Port = 6668
+        IPv4 = true
+        IPv6 = false
+        SSL = true
+        Host = 192.168.0.8
+&lt;/Listener&gt;
+
+&lt;User hoge&gt;
+        Pass       = sha256#...#...#
+        Admin      = true
+        Nick       = hoge
+        AltNick    = hoge_
+        Ident      = hoge
+        RealName   = fuga
+        Buffer     = 50
+        AutoClearChanBuffer = true
+        ChanModes  = +stn
+
+
+        &lt;Network hogeirc&gt;
+
+                Server     = 192.168.0.7 +6669 aiueo
+
+                &lt;Chan #atchan&gt;
+                &lt;/Chan&gt;
+        &lt;/Network&gt;
+&lt;/User&gt;</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+<span class="n">znc_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">znc_user</span><span class="o">=</span><span class="s">&quot;znc&quot;</span>
+<span class="n">znc_conf_dir</span><span class="o">=</span><span class="s">&quot;/home/znc/.znc&quot;</span>
+
+<span class="c"># service znc start</span>
+</pre></div>
+</div>
+<div class="section" id="weechat">
+<h2>WeeChat</h2>
+<p>「<a class="reference internal" href="#weechat">WeeChat</a>」で「<a class="reference external" href="http://wiki.znc.in/ZNC">ZNC</a>」に接続するには</p>
+<div class="highlight-python"><pre>/server add hoge irc.hoge.localnet/6668 -ssl -username=hoge -password=hogepassword
+/connect hoge
+/disconnect hoge</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.weechat.org/">http://www.weechat.org/</a></li>
+<li><a class="reference external" href="http://wiki.znc.in/Weechat">http://wiki.znc.in/Weechat</a></li>
+<li><a class="reference external" href="http://wiki.znc.in/Using_commands">http://wiki.znc.in/Using_commands</a></li>
+</ul>
+</div>
+</div>
+
+    <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/irc.html">irc</a>, <a href="../../../categories/znc.html">znc</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/irc.html">irc</a>, <a href="../../../tags/znc.html">znc</a></span>
+        </div>
+        </div>
+    <ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a> &raquo; </li>
+        </ul></article><aside class="sidebar"><section><div class="widget">
+    <h1>Recent Posts</h1>
+    <ul><li>
+            <a href="#">ZNCでIRC Proxy</a>
+        </li><li>
+            <a href="../01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a>
+        </li><li>
+            <a href="../../08/31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a>
+        </li><li>
+            <a href="../../08/30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a>
+        </li><li>
+            <a href="../../08/29/freebsd_packages_nginx.html">packages配布サーバ構築</a>
+        </li><li>
+            <a href="../../08/28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a>
+        </li><li>
+            <a href="../../08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a>
+        </li><li>
+            <a href="../../08/22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a>
+        </li><li>
+            <a href="../../07/20/freebsd_pxeboot.html">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a>
+        </li><li>
+            <a href="../../06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a>
+        </li></ul>
+</div>
+</section><section><div class="widget">
+    <h1>Categories</h1>
+    <ul><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/debian.html">debian</a> (1)</li><li><a href="../../../categories/dns.html">dns</a> (1)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (9)</li><li><a href="../../../categories/github.html">github</a> (1)</li><li><a href="../../../categories/irc.html">irc</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (2)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/ports.html">ports</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/python.html">python</a> (1)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/ubuntu.html">ubuntu</a> (3)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (1)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+</div></section><section><div class="widget">
+    <h1>Tags</h1><a href="../../../tags/centos.html">centos</a> (2), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/debian.html">debian</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (1), <a href="../../../tags/freebsd.html">freebsd</a> (9), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (1), <a href="../../../tags/kvm.html">kvm</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (2), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/python.html">python</a> (1), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (3), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/zfs.html">zfs</a> (3), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Search</h1>
+    <form action="../../../search.html" method="get">
+        <input type="text" name="q" />
+        <button type="submit"><span class="webfont">L</span></button>
+    </form>
+</div></section></aside></div> <!-- #main --></div> <!-- #main-container -->
+
+        <div class="footer-container"><footer class="wrapper">&copy; Copyright 2012, zinrai. Powered by <a href="http://www.tinkerer.me/">Tinkerer</a> and <a href="http://sphinx.pocoo.org/">Sphinx</a>.</footer></div> <!-- footer-container -->
+
+      </div> <!--! end of #container --><!--[if lt IE 7 ]>
+          <script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.3/CFInstall.min.js"></script>
+          <script>window.attachEvent('onload',function(){CFInstall.check({mode:'overlay'})})</script>
+        <![endif]-->
+    </body>
+</html>
