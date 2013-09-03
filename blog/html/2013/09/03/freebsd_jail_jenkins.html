@@ -15,7 +15,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="description" content="This is an awesome blog">
         <meta name="viewport" content="width=device-width">
-        <title>dnsmasqを使ったDNSサーバ &mdash; command not found:</title>
+        <title>jail環境でJenkinsを動かす &mdash; command not found:</title>
             <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
@@ -27,7 +27,7 @@
         <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
         <script src="../../../_static/plugins.js"></script>
         <script src="../../../_static/main.js"></script>
-        <link rel="next" title="packages配布サーバ構築" href="../29/freebsd_packages_nginx.html" /><link rel="prev" title="Nginxでバーチャルホスト" href="../31/freebsd_nginx_virtualhost.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+        <link rel="next" title="ZNCでIRC Proxy" href="../02/freebsd_irc_znc.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
         VERSION:     '1.1',
@@ -82,87 +82,60 @@
 </div>
 
 <div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a></li>
-            <li class="right"><a href="../29/freebsd_packages_nginx.html">packages配布サーバ構築</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../02/freebsd_irc_znc.html">ZNCでIRC Proxy</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
-            <span>August 30, 2013</span>
+            <span>September 03, 2013</span>
         </div>
-    <div class="section" id="dnsmasqdns">
-<h1>dnsmasqを使ったDNSサーバ</h1>
-<p>「<a class="reference internal" href="../29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a>」で課題にしていたDNSサーバ構築を行う。DNSサーバというとBINDや<a class="reference external" href="http://www.nlnetlabs.nl/projects/nsd/">NSD</a>などが思い浮ぶだろうが、これらを使うのは腰が重い(とくにBIND、またはBIND、あるいはBIND)。</p>
-<p><a class="reference external" href="http://www.thekelleys.org.uk/dnsmasq/">dnsmasq</a>は少しの設定ファイル変更とhosts(5)を書くだけでDNSサーバとして機能する。DHCP,TFTPサーバの機能も持っており、PXE Bootなどに使え非常に勝手がいい。</p>
+    <div class="section" id="jailjenkins">
+<h1>jail環境でJenkinsを動かす</h1>
+<p>会社員だったときに仕様書がエルセル方眼紙だったので、「<a class="reference external" href="http://sphinx-doc.org/">Sphinx</a>にするとプレーンテキストで管理でき、gitなどのバージョン管理システムの管理下に置け、さらに<a class="reference external" href="http://jenkins-ci.org/">Jenkins</a>を使えば手元に<a class="reference external" href="http://sphinx-doc.org/">Sphinx</a>がなくてもバージョン管理下に置いたソースをリモートリポジトリにpushするだけでビルドしてくれる環境ができますよ」というようなことをもう少しわかりやすく提案し見事に却下された。エクセル方眼紙は3人で編集していたのでマージ作業が辛かった。</p>
+<p>jail環境の構築は下記を参考に</p>
 <ul class="simple">
-<li><a class="reference internal" href="../22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
-<li><a class="reference internal" href="../23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
-<li><a class="reference internal" href="../28/freebsd_jail_ports_packages.html"><em>portsのパッケージをビルドする環境を構築する</em></a></li>
-<li><a class="reference internal" href="../29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a></li>
+<li><a class="reference internal" href="../../08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
 </ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/dns</span>
-</pre></div>
+<p>FreeBSDにJenkinsをインストールするとインストール後に下記のように表示される。</p>
+<div class="highlight-python"><pre>======================================================================
+
+This OpenJDK implementation requires fdescfs(5) mounted on /dev/fd and
+procfs(5) mounted on /proc.
+
+If you have not done it yet, please do the following:
+
+        mount -t fdescfs fdesc /dev/fd
+        mount -t procfs proc /proc
+
+To make it permanent, you need the following lines in /etc/fstab:
+
+        fdesc   /dev/fd         fdescfs         rw      0       0
+        proc    /proc           procfs          rw      0       0
+
+======================================================================</pre>
 </div>
+<p>jail環境ではマウントできないのでホストのjail.conf(5)にjail起動時にマウントするよう書いておく。</p>
 <div class="highlight-python"><pre># vi /etc/jail.conf
-dns {
-        $if = 6;
-        $ipaddr = 192.168.0.6;
+jenkins {
+        exec.prestart += "mount -t fdescfs fdesc /jails/${name}/dev/fd";
+        exec.prestart += "mount -t procfs proc /jails/${name}/proc";
+        exec.poststop += "umount /jails/${name}/dev/fd";
+        exec.poststop += "umount /jails/${name}/proc";
+        $if = 9;
+        $ipaddr = 192.168.0.9;
 }</pre>
 </div>
-<div class="section" id="dns">
-<h2>dns</h2>
-<p>dnsmasqのpackagesはbuildboxで作成し、自前のpackages配布サーバを環境変数を設定しておく。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># pkg_add -r dnsmasq</span>
-<span class="c"># cd /usr/local/etc</span>
-<span class="c"># cp dnsmasq.conf.example dnsmasq.conf</span>
-</pre></div>
-</div>
-<p>dnsmasq.confはdnsmasq.dディレクトリ下のファイルを読み込む設定だけ有効にしておく。dnsmasq.confは600行くらいろいろ書いてあるので必要な設定項目だけをdnsmasq.dディレクトリ下に書いて管理したほうが設定を見通しやすい。Debian Apache風にavailableディレクトリに設定ファイルを置き、有効にしたい設定だけをenableディレクトリにシンボリックリンクを貼る。これで設定ファイルの切り替えが楽になる。</p>
-<div class="highlight-python"><pre># cd /usr/local/etc
-# mkdir -p dnsmasq.d/dnsmasq-available
-# mkdir -p dnsmasq.d/dnsmasq-enabled
-
-# vi dnsmasq.conf
-conf-dir=/usr/local/etc/dnsmasq.d/dnsmasq-enabled</pre>
-</div>
-<div class="highlight-python"><pre># vi dnsmasq.d/dnsmasq-avalilable/dns.conf
-
-# Never forward plain names (without a dot or domain part)
-domain-needed
-
-# Never forward addresses in the non-routed address spaces.
-bogus-priv
-
-# Add local-only domains here, queries in these domains are answered
-# from /etc/hosts or DHCP only.
-local=/localnet/
-
-# Set this (and domain: see below) if you want to have a domain
-# automatically added to simple names in a hosts-file.
-expand-hosts
-
-# Set the domain for dnsmasq. this is optional, but if it is set, it
-# does the following things.
-# 1) Allows DHCP hosts to have fully qualified domain names, as long
-#     as the domain part matches this setting.
-# 2) Sets the "domain" DHCP option thereby potentially setting the
-#    domain of all systems configured by DHCP
-# 3) Provides the domain part for "expand-hosts"
-domain=localnet</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd dnsmasq.d/dnsmasq-enabled</span>
-<span class="c"># ln -s ../dnsmasq-available/dns.conf</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre># vi /etc/hosts
-192.168.0.5 pkgsrv.localnet</pre>
-</div>
+<div class="section" id="jenkins">
+<h2>jenkins</h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">dnsmasq_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">jenkins_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
 
-<span class="c"># service dnsmasq start</span>
+<span class="c"># service jenkins start</span>
 </pre></div>
 </div>
-<p>これで自前のpackages配布サーバを名前で引けるようになった。あとはresolv.confにdnsmasqが動いているサーバを指定するだけである。</p>
+<p>JenkinsはlocalhostでListenしているので、このままだと他からアクセスできない。</p>
+<p>次回はリバースプロキシにnginxを使いJenkinsにアクセスできるようにする。</p>
 <ul class="simple">
-<li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
+<li><a class="reference external" href="http://sphinx-users.jp/">http://sphinx-users.jp/</a></li>
+<li><a class="reference external" href="http://build-shokunin.org/">http://build-shokunin.org/</a></li>
 </ul>
 </div>
 </div>
@@ -174,37 +147,37 @@ domain=localnet</pre>
         <div class="categories">
             <span>
                 Filed under:
-                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/dnsmasq.html">dnsmasq</a></span>
+                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/jail.html">jail</a>, <a href="../../../categories/jenkins.html">jenkins</a></span>
         </div>
         <div class="tags">
             <span>
                 Tags:
-                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/dnsmasq.html">dnsmasq</a>, <a href="../../../tags/dns.html">dns</a></span>
+                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/jail.html">jail</a>, <a href="../../../tags/jenkins.html">jenkins</a></span>
         </div>
         </div>
     <ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a></li>
-            <li class="right"><a href="../29/freebsd_packages_nginx.html">packages配布サーバ構築</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../02/freebsd_irc_znc.html">ZNCでIRC Proxy</a> &raquo; </li>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
-            <a href="../../09/03/freebsd_jail_jenkins.html">jail環境でJenkinsを動かす</a>
+            <a href="#">jail環境でJenkinsを動かす</a>
         </li><li>
-            <a href="../../09/02/freebsd_irc_znc.html">ZNCでIRC Proxy</a>
+            <a href="../02/freebsd_irc_znc.html">ZNCでIRC Proxy</a>
         </li><li>
-            <a href="../../09/01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a>
+            <a href="../01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a>
         </li><li>
-            <a href="../31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a>
+            <a href="../../08/31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a>
         </li><li>
-            <a href="#">dnsmasqを使ったDNSサーバ</a>
+            <a href="../../08/30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a>
         </li><li>
-            <a href="../29/freebsd_packages_nginx.html">packages配布サーバ構築</a>
+            <a href="../../08/29/freebsd_packages_nginx.html">packages配布サーバ構築</a>
         </li><li>
-            <a href="../28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a>
+            <a href="../../08/28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a>
         </li><li>
-            <a href="../23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a>
+            <a href="../../08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a>
         </li><li>
-            <a href="../22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a>
+            <a href="../../08/22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a>
         </li><li>
             <a href="../../07/20/freebsd_pxeboot.html">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a>
         </li></ul>

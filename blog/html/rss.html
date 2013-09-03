@@ -5,8 +5,70 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Mon, 02 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Tue, 03 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html</guid>
+            <title><![CDATA[jail環境でJenkinsを動かす]]></title>
+            <description><![CDATA[<div class="section" id="jailjenkins">
+<h1>jail環境でJenkinsを動かす</h1>
+<p>会社員だったときに仕様書がエルセル方眼紙だったので、「<a class="reference external" href="http://sphinx-doc.org">Sphinx</a>にするとプレーンテキストで管理でき、gitなどのバージョン管理システムの管理下に置け、さらに<a class="reference external" href="http://jenkins-ci.org">Jenkins</a>を使えば手元に<a class="reference external" href="http://sphinx-doc.org">Sphinx</a>がなくてもバージョン管理下に置いたソースをリモートリポジトリにpushするだけでビルドしてくれる環境ができますよ」というようなことをもう少しわかりやすく提案し見事に却下された。エクセル方眼紙は3人で編集していたのでマージ作業が辛かった。</p>
+<p>jail環境の構築は下記を参考に</p>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+</ul>
+<p>FreeBSDにJenkinsをインストールするとインストール後に下記のように表示される。</p>
+<div class="highlight-python"><pre>======================================================================
+
+This OpenJDK implementation requires fdescfs(5) mounted on /dev/fd and
+procfs(5) mounted on /proc.
+
+If you have not done it yet, please do the following:
+
+        mount -t fdescfs fdesc /dev/fd
+        mount -t procfs proc /proc
+
+To make it permanent, you need the following lines in /etc/fstab:
+
+        fdesc   /dev/fd         fdescfs         rw      0       0
+        proc    /proc           procfs          rw      0       0
+
+======================================================================</pre>
+</div>
+<p>jail環境ではマウントできないのでホストのjail.conf(5)にjail起動時にマウントするよう書いておく。</p>
+<div class="highlight-python"><pre># vi /etc/jail.conf
+jenkins {
+        exec.prestart += &quot;mount -t fdescfs fdesc /jails/${name}/dev/fd&quot;;
+        exec.prestart += &quot;mount -t procfs proc /jails/${name}/proc&quot;;
+        exec.poststop += &quot;umount /jails/${name}/dev/fd&quot;;
+        exec.poststop += &quot;umount /jails/${name}/proc&quot;;
+        $if = 9;
+        $ipaddr = 192.168.0.9;
+}</pre>
+</div>
+<div class="section" id="jenkins">
+<h2>jenkins</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+<span class="n">jenkins_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+
+<span class="c"># service jenkins start</span>
+</pre></div>
+</div>
+<p>JenkinsはlocalhostでListenしているので、このままだと他からアクセスできない。</p>
+<p>次回はリバースプロキシにnginxを使いJenkinsにアクセスできるようにする。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://sphinx-users.jp">http://sphinx-users.jp/</a></li>
+<li><a class="reference external" href="http://build-shokunin.org">http://build-shokunin.org/</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ freebsd ]]></category>
+            <category><![CDATA[ jail ]]></category>
+            <category><![CDATA[ jenkins ]]></category>
+             <pubDate>Tue, 03 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/02/freebsd_irc_znc.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/02/freebsd_irc_znc.html</guid>
