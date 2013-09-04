@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/09/04/freebsd_nginx_reverse_proxy
    2013/09/03/freebsd_jail_jenkins
    2013/09/02/freebsd_irc_znc
    2013/09/01/freebsd_irc_ngircd

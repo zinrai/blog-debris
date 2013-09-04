@@ -85,6 +85,130 @@
             <li class="left"> &laquo; <a href="page4.html">Newer</a></li>
             <li class="right"><a href="page6.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>June 18, 2013</span>
+        </div>
+        <div class="section" id="centos6-4cobbler">
+<h1><a href="2013/06/18/centos_cobbler_setup.html">CentOS6.4にCobblerサーバ構築</a></h1>
+<p>サーバ100台くらいにOSインストールする作業が発生するかもしれないので怠けるための作業をメモしておく。まずはCobblerサーバを構築してOSインストールが出来るまで。</p>
+<div class="highlight-python"><pre># uname -a
+Linux localhost.localdomain 2.6.32-358.11.1.el6.x86_64 #1 SMP Wed Jun 12 03:34:52 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+
+# cat /etc/centos-release
+CentOS release 6.4 (Final)</pre>
+</div>
+<p>SELinuxを無効にしないとCobblerが動作しない。</p>
+<p>下記のファイルを編集して再起動</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/selinux/config</span>
+<span class="n">SELINUX</span><span class="o">=</span><span class="n">disabled</span>
+
+<span class="c"># chkconfig xinetd on</span>
+<span class="c"># chkconfig httpd on</span>
+<span class="c"># chkconfig cobblerd on</span>
+<span class="c"># chkconfig dhcpd on</span>
+<span class="c"># reboot</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># rpm -i http://mirror.symnds.com/distributions/fedora-epel/6/x86_64/epel-release-6-8.noarch.rpm
+# yum -y install cobbler pykickstart dhcp
+
+# cobbler --version
+Cobbler 2.2.3
+  source: ?, ?
+  build time: Mon Jun 18 01:04:49 2012
+
+# cobbler check
+The following are potential configuration items that you may want to fix:
+
+1 : The 'server' field in /etc/cobbler/settings must be set to something other than localhost, or kickstarting features will not work.  This should be a resolvable hostname or IP for the boot server as reachable by all machines that will use it.
+2 : For PXE to be functional, the 'next_server' field in /etc/cobbler/settings must be set to something other than 127.0.0.1, and should match the IP of the boot server on the PXE network.
+3 : some network boot-loaders are missing from /var/lib/cobbler/loaders, you may run 'cobbler get-loaders' to download them, or, if you only want to handle x86/x86_64 netbooting, you may ensure that you have installed a *recent* version of the syslinux package installed and can ignore this message entirely.  Files in this directory, should you want to support all architectures, should include pxelinux.0, menu.c32, elilo.efi, and yaboot. The 'cobbler get-loaders' command is the easiest way to resolve these requirements.
+4 : change 'disable' to 'no' in /etc/xinetd.d/rsync
+5 : since iptables may be running, ensure 69, 80/443, and 25151 are unblocked
+6 : debmirror package is not installed, it will be required to manage debian deployments and repositories
+7 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: &quot;openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'&quot; to generate new one
+8 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them
+
+Restart cobblerd and then run 'cobbler sync' to apply changes.
+
+# /etc/init.d/cobblerd start
+
+# vi /etc/xinetd.d/rsync
+disable = no
+
+# vi /etc/xinetd.d/tftp
+disable = no
+
+# vi /etc/cobbler/settings
+server: 192.168.0.1
+manage_dhcp: 1
+next_server: 192.168.0.254 &lt;- Gateway
+
+# vi /etc/cobbler/dhcp.template
+subnet 192.168.0.0 netmask 255.255.255.0 {
+     option routers             192.168.0.254;
+     option domain-name-servers 8.8.8.8;
+     option subnet-mask         255.255.255.0;
+     range dynamic-bootp        192.168.0.200 192.168.0.250;
+     filename                   &quot;/pxelinux.0&quot;;
+     default-lease-time         21600;
+     max-lease-time             43200;
+     next-server                $next_server;
+}
+
+# /etc/init.d/iptables stop
+# /etc/init.d/xinetd restart
+# /etc/init.d/cobblerd restart
+
+# cobbler get-loaders
+# cobbler sync
+
+# cobbler import --path=rsync://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/ --name=CentOS6.4_x86_64
+# cobbler sync</pre>
+</div>
+<p>Cobblerを使いインストールするとデフォルトのパスワードはcobblerとなっている。</p>
+<p>変更する場合は</p>
+<div class="highlight-python"><pre># cobbler check
+The following are potential configuration items that you may want to fix:
+
+1 : debmirror package is not installed, it will be required to manage debian deployments and repositories
+2 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: &quot;openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'&quot; to generate new one
+3 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them
+
+Restart cobblerd and then run 'cobbler sync' to apply changes.</pre>
+</div>
+<p>に書いてあるように</p>
+<div class="highlight-python"><pre># openssl passwd -1 -salt &quot;cobbler&quot; &quot;password&quot;
+$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1</pre>
+</div>
+<p>を実行して</p>
+<div class="highlight-python"><pre># vi /etc/cobbler/settings
+default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
+</div>
+<p>設定ファイルを書き換えてCobblerを再起動</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># /etc/init.d/cobblerd restart</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html">http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html</a></li>
+<li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/15/cobbler-install">http://blog.glidenote.com/blog/2012/03/15/cobbler-install/</a></li>
+<li><a class="reference external" href="http://www.ibm.com/developerworks/jp/linux/library/l-cobbler">http://www.ibm.com/developerworks/jp/linux/library/l-cobbler/</a></li>
+</ul>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/centos.html">centos</a>, <a href="categories/cobbler.html">cobbler</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/centos.html">centos</a>, <a href="tags/cobbler.html">cobbler</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>June 08, 2013</span>
         </div>
         <div class="section" id="rails3mongodb">
@@ -313,86 +437,6 @@ default              inactive   no
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/kvm.html">kvm</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>May 26, 2013</span>
-        </div>
-        <div class="section" id="ubuntu12-04mongodb">
-<h1><a href="2013/05/26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a></h1>
-<p>積読になっていた「MongoDB イン・アクション」をようやく読み始めた。</p>
-<p>「Ubuntu 12.04 amd64」にMongoDBをインストールして手を動かしてみたのでメモしておく。</p>
-<p>Railsで使いたいなと思っているところ。</p>
-<p>本家のドキュメントにaptでインストール出来ると書いているのでそれに従ってみた。</p>
-<div class="section" id="mongodb">
-<h2>MongoDB インストール</h2>
-<div class="highlight-python"><pre>$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
-$ echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/10gen.list
-$ sudo apt-get update
-$ sudo apt-get install mongodb-10gen</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install mongodb-10gen=2.2.3</span>
-</pre></div>
-</div>
-<p>で指定のVersionをインストールすることが出来る。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># echo &quot;mongodb-10gen hold&quot; | dpkg --set-selections</span>
-</pre></div>
-</div>
-<p>でインストールしたVersionからアップグレードしないように出来る。</p>
-</div>
-<div class="section" id="id1">
-<h2>MongoDB 操作</h2>
-<div class="highlight-python"><pre>$ mongo
-MongoDB shell version: 2.4.3
-connecting to: test
-Welcome to the MongoDB shell.
-For interactive help, type &quot;help&quot;.
-For more comprehensive documentation, see
-        http://docs.mongodb.org/
-Questions? Try the support group
-        http://groups.google.com/group/mongodb-user
-
-use tutorial
-
-db.users.insert({username: &quot;hoge&quot;})
-
-db.users.find()
-{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
-
-db.users.save({username: &quot;moge&quot;})
-
-db.users.find()
-{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
-{ &quot;_id&quot; : ObjectId(&quot;51a1f8d336f07a662784e8af&quot;), &quot;username&quot; : &quot;moge&quot; }
-
-db.users.count()
-2
-
-db.users.update({username: &quot;hoge&quot;}, {$set: {country: &quot;canada&quot;}})
-db.users.find({username: &quot;hoge&quot;})
-{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;country&quot; : &quot;canada&quot;, &quot;username&quot; : &quot;hoge&quot; }
-
-db.users.update({username: &quot;hoge&quot;}, {$unset: {country: 1}})
-db.users.find({username: &quot;hoge&quot;})
-{ &quot;_id&quot; : ObjectId(&quot;51adf33a197bc318df1ad8ad&quot;), &quot;username&quot; : &quot;hoge&quot; }</pre>
-</div>
-<ul class="simple">
-<li><a class="reference external" href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a></li>
-</ul>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/ubuntu.html">ubuntu</a>, <a href="categories/mongodb.html">mongodb</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/ubuntu.html">ubuntu</a>, <a href="tags/mongodb.html">mongodb</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash;  Blog Archive  &mdash; </a>
     </div><ul class="related clearfix">
@@ -401,6 +445,8 @@ db.users.find({username: &quot;hoge&quot;})
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2013/09/04/freebsd_nginx_reverse_proxy.html">Nginxでリバースプロキシ</a>
+        </li><li>
             <a href="2013/09/03/freebsd_jail_jenkins.html">jail環境でJenkinsを動かす</a>
         </li><li>
             <a href="2013/09/02/freebsd_irc_znc.html">ZNCでIRC Proxy</a>
@@ -418,15 +464,13 @@ db.users.find({username: &quot;hoge&quot;})
             <a href="2013/08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a>
         </li><li>
             <a href="2013/08/22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a>
-        </li><li>
-            <a href="2013/07/20/freebsd_pxeboot.html">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/debian.html">debian</a> (1)</li><li><a href="categories/dns.html">dns</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="categories/freebsd.html">freebsd</a> (10)</li><li><a href="categories/github.html">github</a> (1)</li><li><a href="categories/irc.html">irc</a> (2)</li><li><a href="categories/jail.html">jail</a> (3)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (2)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ports.html">ports</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/python.html">python</a> (1)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/ubuntu.html">ubuntu</a> (3)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/debian.html">debian</a> (1)</li><li><a href="categories/dns.html">dns</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="categories/freebsd.html">freebsd</a> (11)</li><li><a href="categories/github.html">github</a> (1)</li><li><a href="categories/irc.html">irc</a> (2)</li><li><a href="categories/jail.html">jail</a> (3)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ports.html">ports</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/python.html">python</a> (1)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/ubuntu.html">ubuntu</a> (3)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/centos.html">centos</a> (2), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/debian.html">debian</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (1), <a href="tags/freebsd.html">freebsd</a> (10), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (2), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/packages.html">packages</a> (2), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/python.html">python</a> (1), <a href="tags/rails.html">rails</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/centos.html">centos</a> (2), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/debian.html">debian</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (1), <a href="tags/freebsd.html">freebsd</a> (11), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/packages.html">packages</a> (2), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/python.html">python</a> (1), <a href="tags/rails.html">rails</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

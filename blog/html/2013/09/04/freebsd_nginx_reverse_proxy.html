@@ -15,7 +15,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="description" content="This is an awesome blog">
         <meta name="viewport" content="width=device-width">
-        <title>ngircdでIRCサーバ &mdash; command not found:</title>
+        <title>Nginxでリバースプロキシ &mdash; command not found:</title>
             <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
@@ -27,7 +27,7 @@
         <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
         <script src="../../../_static/plugins.js"></script>
         <script src="../../../_static/main.js"></script>
-        <link rel="next" title="Nginxでバーチャルホスト" href="../../08/31/freebsd_nginx_virtualhost.html" /><link rel="prev" title="ZNCでIRC Proxy" href="../02/freebsd_irc_znc.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+        <link rel="next" title="jail環境でJenkinsを動かす" href="../03/freebsd_jail_jenkins.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
         VERSION:     '1.1',
@@ -82,130 +82,56 @@
 </div>
 
 <div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../02/freebsd_irc_znc.html">ZNCでIRC Proxy</a></li>
-            <li class="right"><a href="../../08/31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../03/freebsd_jail_jenkins.html">jail環境でJenkinsを動かす</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
-            <span>September 01, 2013</span>
+            <span>September 04, 2013</span>
         </div>
-    <div class="section" id="ngircdirc">
-<h1>ngircdでIRCサーバ</h1>
-<p>IT系のアルバイトをしていたときにNagios,Zabbixなどから定期的にメールがバンバン飛んできて、未読が4万通くらいになってメーラーを立ち上げるのを諦めたことがある。なんでもかんでもメールで飛ばすのは嫌いだ。メール振り分けなどの作業を各々がやらなければいけないなんて時間のムダだし、集約できる情報を各々にわざわざ管理させ余計な負担を強いているのがイケてないと私はいつも思っている。</p>
-<p>このイライラをIRCは解決してくれる。IRCはチャットとして使うよりも、情報を集約させるのに非常に便利である。Nagiosのアラート,SSHのログイン情報などをIRCにポストするようにしている。IRCを積極的に使っている会社に勤めたことがないので個人でひっそりとやっているだけだが、IRCを眺めれば何が起っているかわかり、いい感じである。</p>
-<p>「つかれた」とポストしたら返事をしてくれる(妹)BOTを仕込んで荒んだ心を癒すことも出来る。</p>
-<p>今回はIRCサーバ(<a class="reference external" href="http://ngircd.barton.de/">ngircd</a>)の構築を行う。</p>
-<div class="highlight-python"><pre># ngircd -V
-ngIRCd 20.2-IPv6+IRCPLUS+SSL+SYSLOG+TCPWRAP+ZLIB-amd64/portbld/freebsd9.1
-Copyright (c)2001-2013 Alexander Barton (&lt;alex@barton.de&gt;) and Contributors.
-Homepage: &lt;http://ngircd.barton.de/&gt;
-
-This is free software; see the source for copying conditions. There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</pre>
+    <div class="section" id="nginx">
+<h1>Nginxでリバースプロキシ</h1>
+<p>「<a class="reference internal" href="../03/freebsd_jail_jenkins.html"><em>jail環境でJenkinsを動かす</em></a>」からの続きでlocalhostでListenしているJenkinsをNginxのリバースプロキシを使いlocalhost以外からもアクセスできるようにする。</p>
+<p>Nginxのディレクトリ構成は下記を参考に</p>
+<ul class="simple">
+<li><a class="reference internal" href="../../08/31/freebsd_nginx_virtualhost.html"><em>Nginxでバーチャルホスト</em></a></li>
+</ul>
+<div class="highlight-python"><pre># nginx -v
+nginx version: nginx/1.4.2</pre>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/local/etc</span>
-<span class="c"># touch ngircd.conf</span>
-<span class="c"># yes | ngircd -t | tee ngircd.conf</span>
-<span class="c"># echo &quot;SUPER SONIKO&quot; | tee ngircd.motd</span>
-<span class="c"># cp ngircd.conf ngircd.conf.org</span>
-</pre></div>
+<div class="highlight-python"><pre># vi /usr/local/etc/nginx/nginx.conf
+http {
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        location /jenkins {
+            proxy_pass http://127.0.0.1:8180;
+        }
+}</pre>
 </div>
-<div class="highlight-python"><pre># mkdir ngircd_ssl
-# cd ngircd_ssl
+<p>proxy_passを設定するだけでJenkinsに接続できるようになる。</p>
+<p>「Python+<a class="reference external" href="http://flask.pocoo.org/">Flask</a>+<a class="reference external" href="http://projects.unbit.it/uwsgi/">uWSGI</a>」で作ったAPサーバをバックエンドに置き、リバースプロキシにNginxを使った場合を考えると、上記の設定ではAPサーバのアクセスログにはリバースプロキシのIPアドレスが記録されてしまいアクセス元はどこなのかがわからない状態になってしまう。アクセス元のIPアドレスがAPサーバに記録されるようにするにはproxy_set_headerを設定する必要がある。</p>
+<div class="highlight-python"><pre># vi /usr/local/etc/nginx/nginx.conf
+http {
 
-# openssl dhparam -out dhparams.pem 2048.
-# openssl req -newkey rsa:2048 -x509 -keyout server-key.pem -out server-cert.pem -days 3650
-writing new private key to 'server-key.pem'
-Enter PEM pass phrase:
-Verifying - Enter PEM pass phrase:
------
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Country Name (2 letter code) [AU]:
-State or Province Name (full name) [Some-State]:
-Locality Name (eg, city) []:
-Organization Name (eg, company) [Internet Widgits Pty Ltd]:
-Organizational Unit Name (eg, section) []:
-Common Name (e.g. server FQDN or YOUR name) []:
-Email Address []:</pre>
-</div>
-<div class="highlight-python"><pre># diff -u ngircd.conf.org ngircd.conf
---- ngircd.conf.org     2013-08-31 12:44:37.665880056 +0900
-+++ ngircd.conf 2013-08-31 12:45:03.457801026 +0900
-@@ -1,17 +1,17 @@
- [GLOBAL]
--  Name =
-+  Name = irc.hoge.localnet
-   AdminInfo1 =
-   AdminInfo2 =
--  AdminEMail =
-+  AdminEMail = hoge@mail.localnet
-   Info = ngIRCd 20.2
-   Listen = ::,0.0.0.0
-   MotdFile = /usr/local/etc/ngircd.motd
-   MotdPhrase =
--  Password =
-+  Password = aiueo
-   PidFile =
-   Ports = 6667
--  ServerGID = wheel
--  ServerUID = root
-+  ServerGID = nobody
-+  ServerUID = nobody
+    server {
+        listen       80;
+        server_name  localhost;
 
- [LIMITS]
-   ConnectRetry = 60
-@@ -28,10 +28,10 @@
-   ChrootDir =
-   CloakHost =
-   CloakHostModeX =
--  CloakHostSalt = salt_mogemoge
-+  CloakHostSalt = salt_fugafuga
-   CloakUserToNick = no
-   ConnectIPv4 = yes
--  ConnectIPv6 = yes
-+  ConnectIPv6 = no
-   DNS = yes
-   MorePrivacy = no
-   NoticeAuth = no
-@@ -45,9 +45,9 @@
-   WebircPassword =
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Real-IP $remote_addr;
 
- [SSL]
--  CertFile =
--  DHFile =
--  KeyFile =
--  KeyFilePassword =
--  Ports =
-+  CertFile = /usr/local/etc/ngircd_ssl/server-cert.pem
-+  DHFile = /usr/local//etc/ngircd_ssl/dhparams.pem
-+  KeyFile = /usr/local/etc/ngircd_ssl/server-key.pem
-+  KeyFilePassword = kakikukeko
-+  Ports = 6669</pre>
-</div>
-<p>設定ファイルのチェックをするオプションがあるので、これを使い設定をチェックする。下記のように表示されれば設定は問題ない。</p>
-<div class="highlight-python"><pre># ngircd -t
-ngIRCd 20.2-IPv6+IRCPLUS+SSL+SYSLOG+TCPWRAP+ZLIB-amd64/portbld/freebsd9.1
-Copyright (c)2001-2013 Alexander Barton (&lt;alex@barton.de&gt;) and Contributors.
-Homepage: &lt;http://ngircd.barton.de/&gt;
-
-This is free software; see the source for copying conditions. There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-Reading configuration from "/usr/local/etc/ngircd.conf" ...
-OK, press enter to see a dump of your server configuration ...</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">ngircd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-
-<span class="c"># service ngircd start</span>
-</pre></div>
+        location /myapp {
+            proxy_pass http://127.0.0.1:9090;
+        }
+}</pre>
 </div>
 <ul class="simple">
-<li><a class="reference external" href="http://ngircd.barton.de/documentation.php.en">http://ngircd.barton.de/documentation.php.en</a></li>
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass</a></li>
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header</a></li>
 </ul>
 </div>
 
@@ -216,27 +142,27 @@ OK, press enter to see a dump of your server configuration ...</pre>
         <div class="categories">
             <span>
                 Filed under:
-                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/irc.html">irc</a>, <a href="../../../categories/ngircd.html">ngircd</a></span>
+                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/nginx.html">nginx</a></span>
         </div>
         <div class="tags">
             <span>
                 Tags:
-                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/irc.html">irc</a>, <a href="../../../tags/ngircd.html">ngircd</a></span>
+                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/nginx.html">nginx</a></span>
         </div>
         </div>
     <ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../02/freebsd_irc_znc.html">ZNCでIRC Proxy</a></li>
-            <li class="right"><a href="../../08/31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../03/freebsd_jail_jenkins.html">jail環境でJenkinsを動かす</a> &raquo; </li>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
-            <a href="../04/freebsd_nginx_reverse_proxy.html">Nginxでリバースプロキシ</a>
+            <a href="#">Nginxでリバースプロキシ</a>
         </li><li>
             <a href="../03/freebsd_jail_jenkins.html">jail環境でJenkinsを動かす</a>
         </li><li>
             <a href="../02/freebsd_irc_znc.html">ZNCでIRC Proxy</a>
         </li><li>
-            <a href="#">ngircdでIRCサーバ</a>
+            <a href="../01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a>
         </li><li>
             <a href="../../08/31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a>
         </li><li>

@@ -5,8 +5,64 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 03 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Wed, 04 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html</guid>
+            <title><![CDATA[Nginxでリバースプロキシ]]></title>
+            <description><![CDATA[<div class="section" id="nginx">
+<h1>Nginxでリバースプロキシ</h1>
+<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html"><em>jail環境でJenkinsを動かす</em></a>」からの続きでlocalhostでListenしているJenkinsをNginxのリバースプロキシを使いlocalhost以外からもアクセスできるようにする。</p>
+<p>Nginxのディレクトリ構成は下記を参考に</p>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html"><em>Nginxでバーチャルホスト</em></a></li>
+</ul>
+<div class="highlight-python"><pre># nginx -v
+nginx version: nginx/1.4.2</pre>
+</div>
+<div class="highlight-python"><pre># vi /usr/local/etc/nginx/nginx.conf
+http {
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        location /jenkins {
+            proxy_pass http://127.0.0.1:8180;
+        }
+}</pre>
+</div>
+<p>proxy_passを設定するだけでJenkinsに接続できるようになる。</p>
+<p>「Python+<a class="reference external" href="http://flask.pocoo.org">Flask</a>+<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>」で作ったAPサーバをバックエンドに置き、リバースプロキシにNginxを使った場合を考えると、上記の設定ではAPサーバのアクセスログにはリバースプロキシのIPアドレスが記録されてしまいアクセス元はどこなのかがわからない状態になってしまう。アクセス元のIPアドレスがAPサーバに記録されるようにするにはproxy_set_headerを設定する必要がある。</p>
+<div class="highlight-python"><pre># vi /usr/local/etc/nginx/nginx.conf
+http {
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        location /myapp {
+            proxy_pass http://127.0.0.1:9090;
+        }
+}</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass</a></li>
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ freebsd ]]></category>
+            <category><![CDATA[ nginx ]]></category>
+             <pubDate>Wed, 04 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html</guid>
