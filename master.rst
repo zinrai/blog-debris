@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/09/06/debian_wheezy_sshfs
    2013/09/05/freebsd_python_uwsgi_logformat
    2013/09/04/freebsd_nginx_reverse_proxy
    2013/09/03/freebsd_jail_jenkins

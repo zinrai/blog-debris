@@ -5,8 +5,46 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 05 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 06 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/06/debian_wheezy_sshfs.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/06/debian_wheezy_sshfs.html</guid>
+            <title><![CDATA[sshfs]]></title>
+            <description><![CDATA[<div class="section" id="sshfs">
+<h1>sshfs</h1>
+<p>言わずと知れたSSH経由でリモートサーバのディレクトリをマウントしてくれるツール</p>
+<p>いつも便利に使わせてもらっている。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get instal sshfs</span>
+</pre></div>
+</div>
+<p>fuseグループに所属していないと「fuse: failed to open /dev/fuse: Permission denied」となる。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># usermod -a -G fuse hoge</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.1 (wheezy)
+Release:        7.1
+Codename:       wheezy</pre>
+</div>
+<div class="highlight-python"><pre>$ sshfs --version
+SSHFS version 2.4
+FUSE library version: 2.9.0
+using FUSE kernel interface version 7.18</pre>
+</div>
+<div class="highlight-python"><pre>$ sshfs -p 18465 hoge@192.168.2.1:/home/hoge remote_dir
+$ fusermount -u remote_dir</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://fuse.sourceforge.net/sshfs.html">http://fuse.sourceforge.net/sshfs.html</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ sshfs ]]></category>
+             <pubDate>Fri, 06 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/05/freebsd_python_uwsgi_logformat.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/05/freebsd_python_uwsgi_logformat.html</guid>
