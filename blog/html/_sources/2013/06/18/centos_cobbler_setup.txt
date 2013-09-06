@@ -4,7 +4,7 @@ CentOS6.4にCobblerサーバ構築
 
 
 .. author:: default
-.. categories:: centos,cobbler
+.. categories:: cobbler
 .. tags:: centos,cobbler
 .. comments::
 

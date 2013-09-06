@@ -4,7 +4,7 @@ Debian wheezyでNested KVMを試してみる
 
 
 .. author:: default
-.. categories:: debian,kvm
+.. categories:: kvm
 .. tags:: debian,kvm
 .. comments::
 

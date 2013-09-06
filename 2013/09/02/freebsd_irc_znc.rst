@@ -4,7 +4,7 @@ ZNCでIRC Proxy
 
 
 .. author:: default
-.. categories:: freebsd, irc, znc
+.. categories:: znc
 .. tags:: freebsd, irc, znc
 .. comments::
 

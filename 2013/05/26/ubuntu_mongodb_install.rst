@@ -4,7 +4,7 @@ Ubuntu12.04にMongoDBをインストール
 
 
 .. author:: default
-.. categories:: ubuntu,mongodb
+.. categories:: mongodb
 .. tags:: ubuntu,mongodb
 .. comments::
 

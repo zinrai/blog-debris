@@ -1,0 +1,192 @@
+<!DOCTYPE html><!--[if lt IE 7]>      <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="This is an awesome blog">
+        <meta name="viewport" content="width=device-width">
+        <title>Page 7 &mdash; command not found:</title>
+            <link rel="stylesheet" href="_static/normalize.css" type="text/css">
+            <link rel="stylesheet" href="_static/main.css" type="text/css">
+            <link rel="stylesheet" href="_static/dark.css" type="text/css">
+            <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+            <link rel="stylesheet" href="_static/webfont.css" type="text/css">
+        <link rel="shortcut icon" href="_static/tinkerer.ico" /><!-- Load modernizr and JQuery -->
+        <script src="_static/vendor/modernizr-2.6.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
+        <script src="_static/plugins.js"></script>
+        <script src="_static/main.js"></script>
+        <link rel="prev" title="Newer" href="page6.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="rss.html" /><script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script><script type="text/javascript" src="_static/underscore.js"></script><script type="text/javascript" src="_static/doctools.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Adjusts document height if sidebar is taller
+            var documentwrapper = document.getElementsByTagName('article')[0];
+            var sidebar = document.getElementsByTagName('aside')[0];
+
+            if (sidebar.offsetHeight > documentwrapper.offsetHeight)
+            {
+                documentwrapper.style.minHeight = sidebar.offsetHeight + "px";
+            }
+
+            // Scroll to content if on small screen
+            if (screen.width < 480)
+            {
+                $(document).scrollTop(documentwrapper.offsetTop - 44);
+            }
+        });
+    </script></head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+        <![endif]-->
+
+      <div id="container"><div class="header-container">
+    <header class="wrapper clearfix">
+        <div class="title">
+          <h1><a href="index.html">command not found:</a></h1>
+          <h4>Hello World</h4>
+        </div>
+        <nav>
+          <ul>
+            <li class="main-nav">
+              <a href="index.html">Home</a>
+            </li>
+            <li class="main-nav">
+              <a href="pages/about.html">About</a>
+            </li>
+            <li class="quicklink"><div class="rss">
+        <a href="rss.html" title="Subscribe via RSS"><span class="webfont">B</span></a>
+    </div></li></ul>
+        </nav>
+    </header>
+</div>
+
+<div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
+            <li class="left"> &laquo; <a href="page6.html">Newer</a></li>
+            <li class="right"></li>
+        </ul><div class="timestamp postmeta">
+            <span>March 23, 2013</span>
+        </div>
+        <div class="section" id="tinkerer-github">
+<h1><a href="2013/03/23/tinkerer_github.html">Tinkerer + Github</a></h1>
+<p>jekyll + Githubを使ってブログを書いていたのだけれどローカルで確認するのにWEBRick動かすということに面倒くささを感じ流らく放置してしまっていた。</p>
+<p>もっと手軽な(Sphinxみたいにhtmlが掃き出される)ものはないかと探してみたところTinkererというものを見付けた。</p>
+<div class="highlight-python"><pre>$ pip install tinkerer</pre>
+</div>
+<div class="highlight-python"><pre>$ tinker -s</pre>
+</div>
+<div class="highlight-python"><pre>$ wget http://dl.dropbox.com/u/218108/files/japanesesupport.py
+$ mkdir _exts
+$ mv japanesesupport.py _exts
+$ hg clone https://bitbucket.org/vladris/tinkerer-contrib
+$ cp `find tinkerer-contrib -name withgithub.py` _exts
+$ rm -rf tinkerer-contrib
+$ touch .nojekyll</pre>
+</div>
+<div class="section" id="conf-py">
+<h2>conf.py 修正</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s">'tinkerer.ext.blog'</span><span class="p">,</span> <span class="s">'tinkerer.ext.disqus'</span><span class="p">,</span> <span class="s">'japanesesupport'</span><span class="p">,</span> <span class="s">'withgithub'</span><span class="p">]</span>
+
+<span class="c"># Add templates to be rendered in sidebar here</span>
+<span class="n">html_sidebars</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;**&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s">&quot;recent.html&quot;</span><span class="p">,</span> <span class="s">&quot;categories.html&quot;</span><span class="p">,</span> <span class="s">&quot;tags.html&quot;</span><span class="p">,</span> <span class="s">&quot;searchbox.html&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>$ tinker -p 'first post'
+$ tinker -b
+$ git init
+$ git add .
+$ git commit -m 'first post'
+$ git remote add origin git@github.com:zinrai/zinrai.github.com.git
+$ git push -u origin master</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.tinkerer.me/exts/withgithub.html">http://www.tinkerer.me/exts/withgithub.html</a></li>
+<li><a class="reference external" href="http://sphinx-users.jp/reverse-dict/html/japanese.html">http://sphinx-users.jp/reverse-dict/html/japanese.html</a></li>
+</ul>
+</div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/tinkerer.html">tinkerer</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/python.html">python</a>, <a href="tags/github.html">github</a>, <a href="tags/tinkerer.html">tinkerer</a></span>
+        </div>
+        </div><div class="archive_link">
+        <a href="archive.html"> &mdash;  Blog Archive  &mdash; </a>
+    </div><ul class="related clearfix">
+            <li class="left"> &laquo; <a href="page6.html">Newer</a></li>
+            <li class="right"></li>
+        </ul></article><aside class="sidebar"><section><div class="widget">
+    <h1>Recent Posts</h1>
+    <ul><li>
+            <a href="2013/09/05/freebsd_python_uwsgi_logformat.html">uWSGIのログフォーマット</a>
+        </li><li>
+            <a href="2013/09/04/freebsd_nginx_reverse_proxy.html">Nginxでリバースプロキシ</a>
+        </li><li>
+            <a href="2013/09/03/freebsd_jail_jenkins.html">jail環境でJenkinsを動かす</a>
+        </li><li>
+            <a href="2013/09/02/freebsd_irc_znc.html">ZNCでIRC Proxy</a>
+        </li><li>
+            <a href="2013/09/01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a>
+        </li><li>
+            <a href="2013/08/31/freebsd_nginx_virtualhost.html">Nginxでバーチャルホスト</a>
+        </li><li>
+            <a href="2013/08/30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a>
+        </li><li>
+            <a href="2013/08/29/freebsd_packages_nginx.html">packages配布サーバ構築</a>
+        </li><li>
+            <a href="2013/08/28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a>
+        </li><li>
+            <a href="2013/08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a>
+        </li></ul>
+</div>
+</section><section><div class="widget">
+    <h1>Categories</h1>
+    <ul><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+</div></section><section><div class="widget">
+    <h1>Tags</h1><a href="tags/centos.html">centos</a> (2), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/debian.html">debian</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (1), <a href="tags/freebsd.html">freebsd</a> (12), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/packages.html">packages</a> (2), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/python.html">python</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (1), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Search</h1>
+    <form action="search.html" method="get">
+        <input type="text" name="q" />
+        <button type="submit"><span class="webfont">L</span></button>
+    </form>
+</div></section></aside></div> <!-- #main --></div> <!-- #main-container -->
+
+        <div class="footer-container"><footer class="wrapper">&copy; Copyright 2012, zinrai. Powered by <a href="http://www.tinkerer.me/">Tinkerer</a> and <a href="http://sphinx.pocoo.org/">Sphinx</a>.</footer></div> <!-- footer-container -->
+
+      </div> <!--! end of #container --><!--[if lt IE 7 ]>
+          <script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.3/CFInstall.min.js"></script>
+          <script>window.attachEvent('onload',function(){CFInstall.check({mode:'overlay'})})</script>
+        <![endif]-->
+    </body>
+</html>

@@ -4,7 +4,7 @@ Cobbler + Puppet
 
 
 .. author:: default
-.. categories:: centos,puppet,cobbler
+.. categories:: puppet,cobbler
 .. tags:: centos,puppet,cobbler
 .. comments::
 

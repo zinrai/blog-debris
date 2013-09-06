@@ -4,7 +4,7 @@ Unbound + NSD
 
 
 .. author:: default
-.. categories:: ubuntu,dns,nsd,unbound
+.. categories:: nsd,unbound
 .. tags:: unbound,nsd,dns,ubuntu
 .. comments::
 

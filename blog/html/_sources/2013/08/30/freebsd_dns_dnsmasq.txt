@@ -4,7 +4,7 @@ dnsmasqを使ったDNSサーバ
 
 
 .. author:: default
-.. categories:: freebsd, dnsmasq
+.. categories:: dnsmasq
 .. tags:: freebsd, dnsmasq, dns
 .. comments::
 

@@ -5,8 +5,86 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 04 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 05 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/05/freebsd_python_uwsgi_logformat.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/05/freebsd_python_uwsgi_logformat.html</guid>
+            <title><![CDATA[uWSGIのログフォーマット]]></title>
+            <description><![CDATA[<div class="section" id="uwsgi">
+<h1>uWSGIのログフォーマット</h1>
+<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html"><em>Nginxでリバースプロキシ</em></a>」でバックエンドにアクセス元のIPアドレスがログに記録されると書いたが、バックエンド側でも設定しなければログには記録されない。個人でひっそりとWebサービスを運営していてもディレクトリトラバーサルや某CMSを攻撃しているのかなと思われるリクエストがログに記録されている。ログを眺めるのは楽しいものだ。</p>
+<p>今回はバックエンドに「<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>」を置いた場合のログ設定について書く。動作するまでを書いた記事はよく見掛けるが、ログについて書いている記事は見たことがない。ドキュメントに書いてある通りに設定すればいいだけなので、わざわざ書き留めるほどの情報ではないのだろうか。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># pw groupadd uwsgi -g 9090</span>
+<span class="c"># pw useradd uwsgi -u 9090 -g 9090 -c &quot;uWSGI&quot; -d /nonexistent -s /usr/sbin/nologin</span>
+</pre></div>
+</div>
+<p>アクセスしたら「Hellow World」を出力するだけの<a class="reference external" href="http://flask.pocoo.org">Flask</a>を使ったアプリケーション</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi sample.py</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">'/myapp'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">&quot;Hello World!&quot;</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>の設定をいろいろと書いているが大事なのはlog-x-forwarded-forとlog-formatの部分である。log-x-forwarded-forを有効にすればlog-formatの%(addr)にアクセス元のIPアドレスが記録される。</p>
+<p>ログフォーマットは「<a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html">Formatting uWSGI requests logs</a>」に詳しく書いてある。</p>
+<div class="highlight-python"><pre># vi development.ini
+[uwsgi]
+http = :9090
+workers = 3
+threads = 2
+virtualenv = ${virtualenv_path}
+python-path = ${application_path}
+wsgi = sample
+callable = app
+pidfile = /var/run/uwsgi.pid
+uid = uwsgi
+gid = uwsgi
+log-x-forwarded-for = true
+daemonize = uwsgi.log
+touch-reload = reload.txt
+log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;</pre>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%"/>
+<col width="77%"/>
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>virtualenv</td>
+<td>virtualenvを使用している場合、virtualenvのパスを指定する</td>
+</tr>
+<tr class="row-even"><td>python-path</td>
+<td>アプリケーションのパスを指定する。</td>
+</tr>
+<tr class="row-odd"><td>touch-reload</td>
+<td>指定したファイルをtouchすることでアプリと<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>の設定がリロードされる</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># touch reload.txt</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># uwsgi development.ini</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html">http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html</a></li>
+<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/Options.html">http://uwsgi-docs.readthedocs.org/en/latest/Options.html</a></li>
+<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html">http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ uwsgi ]]></category>
+             <pubDate>Thu, 05 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html</guid>
@@ -58,7 +136,6 @@ http {
 <li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header</a></li>
 </ul>
 </div>]]></description>
-            <category><![CDATA[ freebsd ]]></category>
             <category><![CDATA[ nginx ]]></category>
              <pubDate>Wed, 04 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -119,8 +196,6 @@ jenkins {
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ freebsd ]]></category>
-            <category><![CDATA[ jail ]]></category>
             <category><![CDATA[ jenkins ]]></category>
              <pubDate>Tue, 03 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -338,8 +413,6 @@ Version = 1.0
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ freebsd ]]></category>
-            <category><![CDATA[ irc ]]></category>
             <category><![CDATA[ znc ]]></category>
              <pubDate>Mon, 02 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -469,8 +542,6 @@ OK, press enter to see a dump of your server configuration ...</pre>
 <li><a class="reference external" href="http://ngircd.barton.de/documentation.php.en">http://ngircd.barton.de/documentation.php.en</a></li>
 </ul>
 </div>]]></description>
-            <category><![CDATA[ freebsd ]]></category>
-            <category><![CDATA[ irc ]]></category>
             <category><![CDATA[ ngircd ]]></category>
              <pubDate>Sun, 01 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -550,7 +621,6 @@ server {
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ freebsd ]]></category>
             <category><![CDATA[ nginx ]]></category>
              <pubDate>Sat, 31 Aug 2013 00:00:00 +0900</pubDate>
         </item>
@@ -638,7 +708,6 @@ domain=localnet</pre>
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ freebsd ]]></category>
             <category><![CDATA[ dnsmasq ]]></category>
              <pubDate>Fri, 30 Aug 2013 00:00:00 +0900</pubDate>
         </item>
@@ -806,7 +875,6 @@ buildbox {
 </ul>
 </div>]]></description>
             <category><![CDATA[ freebsd ]]></category>
-            <category><![CDATA[ ports ]]></category>
              <pubDate>Wed, 28 Aug 2013 00:00:00 +0900</pubDate>
         </item>
     
@@ -1566,7 +1634,6 @@ $SNIPPET('kickstart_done')
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ centos ]]></category>
             <category><![CDATA[ puppet ]]></category>
             <category><![CDATA[ cobbler ]]></category>
              <pubDate>Sat, 22 Jun 2013 00:00:00 +0900</pubDate>
@@ -1683,7 +1750,6 @@ default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
 <li><a class="reference external" href="http://www.ibm.com/developerworks/jp/linux/library/l-cobbler">http://www.ibm.com/developerworks/jp/linux/library/l-cobbler/</a></li>
 </ul>
 </div>]]></description>
-            <category><![CDATA[ centos ]]></category>
             <category><![CDATA[ cobbler ]]></category>
              <pubDate>Tue, 18 Jun 2013 00:00:00 +0900</pubDate>
         </item>
@@ -1744,7 +1810,6 @@ posts
 <li><a class="reference external" href="http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3">http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3/</a></li>
 </ul>
 </div>]]></description>
-            <category><![CDATA[ ubuntu ]]></category>
             <category><![CDATA[ mongodb ]]></category>
             <category><![CDATA[ rails ]]></category>
              <pubDate>Sat, 08 Jun 2013 00:00:00 +0900</pubDate>
@@ -1897,7 +1962,6 @@ default              inactive   no
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ debian ]]></category>
             <category><![CDATA[ kvm ]]></category>
              <pubDate>Wed, 05 Jun 2013 00:00:00 +0900</pubDate>
         </item>
@@ -1969,7 +2033,6 @@ db.users.find({username: &quot;hoge&quot;})
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ ubuntu ]]></category>
             <category><![CDATA[ mongodb ]]></category>
              <pubDate>Sun, 26 May 2013 00:00:00 +0900</pubDate>
         </item>
@@ -2078,8 +2141,6 @@ stub-zone:
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ ubuntu ]]></category>
-            <category><![CDATA[ dns ]]></category>
             <category><![CDATA[ nsd ]]></category>
             <category><![CDATA[ unbound ]]></category>
              <pubDate>Mon, 20 May 2013 00:00:00 +0900</pubDate>
@@ -2129,8 +2190,7 @@ $ git push -u origin master</pre>
 </ul>
 </div>
 </div>]]></description>
-            <category><![CDATA[ python ]]></category>
-            <category><![CDATA[ github ]]></category>
+            <category><![CDATA[ tinkerer ]]></category>
              <pubDate>Sat, 23 Mar 2013 00:00:00 +0900</pubDate>
         </item>
     

@@ -4,7 +4,7 @@ portsのパッケージをビルドする環境を構築する
 
 
 .. author:: default
-.. categories:: freebsd, ports
+.. categories:: freebsd
 .. tags:: freebsd, ports, packages, nullfs, zfs
 .. comments::
 

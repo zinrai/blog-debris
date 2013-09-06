@@ -4,8 +4,8 @@ Tinkerer + Github
 
 
 .. author:: default
-.. categories:: python,github
-.. tags:: python,github
+.. categories:: tinkerer
+.. tags:: python, github, tinkerer
 .. comments::
 
 

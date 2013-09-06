@@ -4,7 +4,7 @@ ngircdでIRCサーバ
 
 
 .. author:: default
-.. categories:: freebsd, irc, ngircd
+.. categories:: ngircd
 .. tags:: freebsd, irc, ngircd
 .. comments::
 

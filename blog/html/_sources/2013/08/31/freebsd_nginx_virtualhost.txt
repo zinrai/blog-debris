@@ -4,7 +4,7 @@ Nginxでバーチャルホスト
 
 
 .. author:: default
-.. categories:: freebsd, nginx
+.. categories:: nginx
 .. tags:: freebsd, nginx
 .. comments::
 

@@ -4,7 +4,7 @@ jail環境でJenkinsを動かす
 
 
 .. author:: default
-.. categories:: freebsd, jail, jenkins
+.. categories:: jenkins
 .. tags:: freebsd, jail, jenkins
 .. comments::
 

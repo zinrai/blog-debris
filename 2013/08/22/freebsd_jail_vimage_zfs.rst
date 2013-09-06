@@ -5,7 +5,7 @@ FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築
 
 .. author:: default
 .. categories:: freebsd, jail, zfs
-.. tags:: freebsd, jail, zfs
+.. tags:: freebsd, jail, zfs, vimage
 .. comments::
 
 

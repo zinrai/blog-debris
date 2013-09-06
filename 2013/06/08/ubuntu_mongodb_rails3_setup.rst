@@ -4,7 +4,7 @@ Rails3でMongoDBを使ってみる
 
 
 .. author:: default
-.. categories:: ubuntu,mongodb,rails
+.. categories:: mongodb,rails
 .. tags:: ubuntu,mongodb,rails
 .. comments::
 
