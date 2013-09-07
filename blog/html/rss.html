@@ -5,8 +5,240 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Fri, 06 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Sat, 07 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html</guid>
+            <title><![CDATA[PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化]]></title>
+            <description><![CDATA[<div class="section" id="pxe-boot-debian-wheezy">
+<h1>PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化</h1>
+<p>みなさん、Debianのインストール作業はどうやっているだろうか。私は、OSのインストール作業なんてお金を貰わない限り手動でやりたくないので自動化している。OSの手動インストールをするだけでお金が発生するのであれば喜んでやらせていただく所存である。RedHat系の「<a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">Kickstart</a>」と同じような仕組みの「<a class="reference external" href="http://www.debian.org/releases/stable/amd64/apb.html.ja">preseed</a>」というものがDebianにも存在するが、これを使わずに「pxeboot + debootstrap + シェルスクリプト」でインストールの自動化をしている。</p>
+<div class="section" id="pxeboot">
+<h2>pxeboot</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install debootstrap syslinux dnsmasq nfs-kernel-server</span>
+</pre></div>
+</div>
+<div class="section" id="dnsmasq">
+<h3>dnsmasq</h3>
+<p>DNSサーバ以外にもDHCP,TFTPサーバとしても使える便利なdnsmasq</p>
+<div class="highlight-python"><pre># vi /etc/dnsmasq.d/pxe.conf
+enable-tftp
+tftp-root=/var/lib/tftpboot
+dhcp-range=192.168.2.200,192.168.2.250,2h
+dhcp-option=3,192.168.2.254
+dhcp-boot=pxelinux.0</pre>
+</div>
+</div>
+<div class="section" id="nfs">
+<h3>NFS</h3>
+<div class="highlight-python"><pre># vi /etc/exports
+/var/lib/tftpboot/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)</pre>
+</div>
+</div>
+<div class="section" id="debootstrap">
+<h3>debootstrap</h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir -p /var/lib/tftpboot/wheezy</span>
+<span class="c"># debootstrap stable /var/lib/tftpboot/wheezy http://ftp.jp.debian.org/debian</span>
+<span class="c"># chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 debootstrap</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="syslinux">
+<h3>syslinux</h3>
+<div class="highlight-python"><pre># cp /boot/initrd* /var/lib/tftpboot
+# cp /boot/vmlinuz* /var/lib/tftpboot
+
+# cp /usr/lib/syslinux/pxelinux.0 /var/lib/tftpboot
+# mkdir /var/lib/tftpboot/pxelinux.cfg
+
+# vi /var/lib/tftpboot/pxelinux.cfg/default
+default Debian
+prompt 1
+timeout 10
+label Debian
+kernel vmlinuz-3.2.0-4-amd64
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy ro single</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># service dnsmasq start</span>
+<span class="c"># service nfs-kernel-server start</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="debian">
+<h2>Debianインストールスクリプト</h2>
+<p>仕組みは「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」と同じである。</p>
+<p>debootstrapで取得した最小構成のWheezyをコピーするスクリプトを書いただけ。</p>
+<p>grub2のインストール時にブートローダをどのディスクにインストールするかを設定するダイアログが出てきてしまうので「DEBIAN_FRONTEND=noninteractive」を環境変数として設定しダイアログを出さないのがポイントである。</p>
+<p>代わりにダイアログで実行されるコマンドをスクリプト内で実行する。</p>
+<p>この環境変数は解決方法はないかとdebconf(1)を眺めていたら</p>
+<div class="highlight-python"><pre>Debconf is a configuration system for Debian packages. For a debconf overview and documentation for sysadmins, see debconf(7) (in the debconf-doc package).</pre>
+</div>
+<p>書かれており、説明に従いdebconf-docをインストールし、debconf(7)を眺めたところ見付けた。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir -p /var/scripts/wheezy</span>
+<span class="c"># debootstrap stable /var/scripts/wheezy http://ftp.jp/debian.org/debian</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/os_install.sh</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
+
+get_conf<span class="o">()</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;</span>
+  <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/HWaddr/ {print $NF}'`&quot;</span>
+  <span class="k">fi</span>
+
+<span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
+<span class="k">    </span>find . -name <span class="k">${</span><span class="nv">a</span><span class="k">}</span>.conf
+  <span class="k">done</span>
+<span class="o">}</span>
+
+<span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
+<span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($3 ~ /^UG$/) print $6}'</span><span class="sb">`</span>
+  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
+  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
+<span class="k">fi</span>
+
+mkdir /mnt/<span class="k">${</span><span class="nv">DIRNAME</span><span class="k">}</span>
+
+<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$DIRNAME</span>
+<span class="k">fi</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/01:23:45:67:89:ab.conf</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>#!/bin/bash -x
+
+DISK=&quot;/dev/vda&quot;
+IFACE=$1
+CHROOT_DEBIAN=&quot;/mnt/$2&quot;
+
+dd if=/dev/zero of=$DISK bs=1024 count=1
+
+parted $DISK -s 'mklabel msdos'
+parted $DISK -s 'mkpart primary 1 500'
+parted $DISK -s 'mkpart primary 501 35000'
+parted $DISK -s 'mkpart extended 35001 -0'
+parted $DISK -s 'mkpart logical 35001 38000'
+parted $DISK -s 'mkpart logical 38001 -0'
+parted $DISK -s 'set 1 boot on'
+
+mkswap ${DISK}5
+swapon ${DISK}5
+mkfs.ext2 ${DISK}1
+mkfs.ext4 ${DISK}2
+mkfs.ext4 ${DISK}6
+
+mount ${DISK}2 ${CHROOT_DEBIAN}
+
+cp -Rp wheezy/* $CHROOT_DEBIAN
+
+mount ${DISK}1 ${CHROOT_DEBIAN}/boot
+mount ${DISK}6 ${CHROOT_DEBIAN}/home
+
+mount --rbind /dev ${CHROOT_DEBIAN}/dev
+mount -t proc none ${CHROOT_DEBIAN}/proc
+mount --rbind /sys ${CHROOT_DEBIAN}/sys
+
+cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/hostname
+install.localnet
+EOF
+
+
+cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/resolv.conf
+nameserver 8.8.8.8
+EOF
+
+cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/network/interfaces
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address  192.168.2.100
+netmask 255.255.255.0
+gateway 192.168.2.254
+EOF
+
+cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/fstab
+${DISK}1               /boot           ext2            defaults        0 2
+${DISK}2               /               ext4            defaults        0 1
+${DISK}6               /home           ext4            defaults        0 2
+${DISK}5               none            swap            sw              0 0
+EOF
+
+
+cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/tmp/debian_setup.sh
+#!/bin/bash
+
+export DEBIAN_FRONTEND=noninteractive
+cp /usr/local/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+apt-get install -y linux-image-`uname -r` grub2 openssh-server
+
+grub-mkconfig -o /boot/grub/grub.cfg
+grub-install --no-floppy --root-directory=/ $DISK
+
+grep -v rootfs /proc/mounts &gt; /etc/mtab
+
+useradd -m -G sudo nanashi
+echo &quot;nanashi:ebifuraibutsukenzo&quot; | chpasswd
+echo &quot;root:hogefugamoge&quot; | chpasswd
+EOF
+
+chroot ${CHROOT_DEBIAN} /bin/bash /tmp/debian_setup.sh
+
+rm ${CHROOT_DEBIAN}/tmp/debian_setup.sh
+
+cd /
+umount -l ${CHROOT_DEBIAN}/{boot,home,proc,dev,sys}
+umount -l $CHROOT_DEBIAN
+sleep 2
+rmdir $CHROOT_DEBIAN
+reboot</pre>
+</div>
+<p>pxeboot時にインストールスクリプトが実行されるようrc.localに書いておく。</p>
+<div class="highlight-python"><pre># vi /var/lib/tftpboot/wheezy/etc/rc.local
+
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will &quot;exit 0&quot; on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+/var/scripts/os_install.sh
+
+exit 0</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">http://fedoraproject.org/wiki/Anaconda/Kickstart</a></li>
+<li><a class="reference external" href="http://www.debian.org/releases/stable/amd64/apb.html.ja">http://www.debian.org/releases/stable/amd64/apb.html.ja</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ debian ]]></category>
+            <category><![CDATA[ pxeboot ]]></category>
+             <pubDate>Sat, 07 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/06/debian_wheezy_sshfs.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/06/debian_wheezy_sshfs.html</guid>
@@ -1175,38 +1407,40 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 <div class="section" id="freebsd">
 <h2>FreeBSDインストールスクリプト</h2>
 <p>このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。</p>
-<div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/os_install.sh
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/os_install.sh</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
-#!/bin/sh
+get_conf<span class="o">()</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;</span>
+  <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/HWaddr/ {print $NF}'`&quot;</span>
+  <span class="k">fi</span>
 
-get_conf() {
-  if [ &quot;$OS&quot; = &quot;FreeBSD&quot; ]; then
-    local MACADDR=&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;
-  elif [ &quot;$OS&quot; = &quot;Linux&quot; ]; then
-    local MACADDR=&quot;`ifconfig | awk '/HWaddr/ {print $NF}'`&quot;
-  fi
+<span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
+<span class="k">    </span>find . -name <span class="k">${</span><span class="nv">a</span><span class="k">}</span>.conf
+  <span class="k">done</span>
+<span class="o">}</span>
 
-  for a in $MACADDR; do
-    find . -name ${a}.conf
-  done
-}
+<span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
+<span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
 
-OS=`uname`
-CONFFILE=`get_conf`
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($3 ~ /^UG$/) print $6}'</span><span class="sb">`</span>
+  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
+  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
+<span class="k">fi</span>
 
-if [ &quot;$OS&quot; = &quot;FreeBSD&quot; ]; then
-  IFACE=`netstat -nr | awk '{if($3 ~ /^UG$/) print $6}'`
-  DIRNAME=`sha256 -q $CONFFILE`
-elif [ &quot;$OS&quot; = &quot;Linux&quot; ]; then
-  IFACE=`netstat -nr | awk '{if($4 ~ /^UG$/) print $8}'`
-  DIRNAME=`sha256sum $CONFFILE | awk '{print $1}'`
-fi
+mkdir /mnt/<span class="k">${</span><span class="nv">DIRNAME</span><span class="k">}</span>
 
-mkdir /mnt/${DIRNAME}
-
-if [ -n &quot;$CONFFILE&quot; ]; then
-  sh $CONFFILE $IFACE $DIRNAME
-fi</pre>
+<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$DIRNAME</span>
+<span class="k">fi</span>
+</pre></div>
 </div>
 <div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/01:23:45:67:89:ab.conf
 
@@ -1295,6 +1529,7 @@ reboot</pre>
 </div>
 </div>]]></description>
             <category><![CDATA[ freebsd ]]></category>
+            <category><![CDATA[ pxeboot ]]></category>
              <pubDate>Sat, 20 Jul 2013 00:00:00 +0900</pubDate>
         </item>
     

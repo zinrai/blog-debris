@@ -144,38 +144,40 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 <div class="section" id="freebsd">
 <h2>FreeBSDインストールスクリプト</h2>
 <p>このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。</p>
-<div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/os_install.sh
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/os_install.sh</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
-#!/bin/sh
+get_conf<span class="o">()</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk &#39;/ether/ {print $NF}&#39;`&quot;</span>
+  <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk &#39;/HWaddr/ {print $NF}&#39;`&quot;</span>
+  <span class="k">fi</span>
 
-get_conf() {
-  if [ "$OS" = "FreeBSD" ]; then
-    local MACADDR="`ifconfig | awk '/ether/ {print $NF}'`"
-  elif [ "$OS" = "Linux" ]; then
-    local MACADDR="`ifconfig | awk '/HWaddr/ {print $NF}'`"
-  fi
+<span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
+<span class="k">    </span>find . -name <span class="k">${</span><span class="nv">a</span><span class="k">}</span>.conf
+  <span class="k">done</span>
+<span class="o">}</span>
 
-  for a in $MACADDR; do
-    find . -name ${a}.conf
-  done
-}
+<span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
+<span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
 
-OS=`uname`
-CONFFILE=`get_conf`
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">&#39;{if($3 ~ /^UG$/) print $6}&#39;</span><span class="sb">`</span>
+  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">&#39;{if($4 ~ /^UG$/) print $8}&#39;</span><span class="sb">`</span>
+  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span>
+<span class="k">fi</span>
 
-if [ "$OS" = "FreeBSD" ]; then
-  IFACE=`netstat -nr | awk '{if($3 ~ /^UG$/) print $6}'`
-  DIRNAME=`sha256 -q $CONFFILE`
-elif [ "$OS" = "Linux" ]; then
-  IFACE=`netstat -nr | awk '{if($4 ~ /^UG$/) print $8}'`
-  DIRNAME=`sha256sum $CONFFILE | awk '{print $1}'`
-fi
+mkdir /mnt/<span class="k">${</span><span class="nv">DIRNAME</span><span class="k">}</span>
 
-mkdir /mnt/${DIRNAME}
-
-if [ -n "$CONFFILE" ]; then
-  sh $CONFFILE $IFACE $DIRNAME
-fi</pre>
+<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$DIRNAME</span>
+<span class="k">fi</span>
+</pre></div>
 </div>
 <div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/01:23:45:67:89:ab.conf
 
@@ -271,12 +273,12 @@ reboot</pre>
         <div class="categories">
             <span>
                 Filed under:
-                <a href="../../../categories/freebsd.html">freebsd</a></span>
+                <a href="../../../categories/freebsd.html">freebsd</a>, <a href="../../../categories/pxeboot.html">pxeboot</a></span>
         </div>
         <div class="tags">
             <span>
                 Tags:
-                <a href="../../../tags/freebsd.html">freebsd</a></span>
+                <a href="../../../tags/freebsd.html">freebsd</a>, <a href="../../../tags/pxeboot.html">pxeboot</a></span>
         </div>
         </div>
     <ul class="related clearfix">
@@ -285,6 +287,8 @@ reboot</pre>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="../../09/07/debian_wheezy_pxeboot.html">PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化</a>
+        </li><li>
             <a href="../../09/06/debian_wheezy_sshfs.html">sshfs</a>
         </li><li>
             <a href="../../09/05/freebsd_python_uwsgi_logformat.html">uWSGIのログフォーマット</a>
@@ -302,15 +306,13 @@ reboot</pre>
             <a href="../../08/30/freebsd_dns_dnsmasq.html">dnsmasqを使ったDNSサーバ</a>
         </li><li>
             <a href="../../08/29/freebsd_packages_nginx.html">packages配布サーバ構築</a>
-        </li><li>
-            <a href="../../08/28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (1)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/debian.html">debian</a> (1)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (1)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="../../../tags/centos.html">centos</a> (2), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/debian.html">debian</a> (2), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (1), <a href="../../../tags/freebsd.html">freebsd</a> (12), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/python.html">python</a> (2), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (3), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (1), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (1), <a href="../../../tags/zfs.html">zfs</a> (3), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="../../../tags/centos.html">centos</a> (2), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/debian.html">debian</a> (3), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (12), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (2), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (3), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (1), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (2), <a href="../../../tags/zfs.html">zfs</a> (3), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="../../../search.html" method="get">
         <input type="text" name="q" />
