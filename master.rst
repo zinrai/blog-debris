@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/09/08/gentoo_install_script
    2013/09/07/debian_wheezy_pxeboot
    2013/09/06/debian_wheezy_sshfs
    2013/09/05/freebsd_python_uwsgi_logformat
