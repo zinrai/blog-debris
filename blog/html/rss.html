@@ -5,8 +5,80 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sun, 08 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Mon, 09 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/09/centos_chroot.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/09/centos_chroot.html</guid>
+            <title><![CDATA[CentOSでchroot環境構築]]></title>
+            <description><![CDATA[<div class="section" id="centoschroot">
+<h1>CentOSでchroot環境構築</h1>
+<p>yum(8)では役割単位(Web,Mailサーバなど)でパッケージがグループ化されており、グループ名を指定することでグループに属しているパッケージをまとめてインストールできるようになっている。</p>
+<p>グループ名はサブコマンドgrouplistで調べることができる。</p>
+<div class="highlight-python"><pre>% yum grouplist
+Loaded plugins: fastestmirror
+Setting up Group Process
+Loading mirror speeds from cached hostfile
+ * base: ftp.iij.ad.jp
+ * extras: ftp.iij.ad.jp
+ * updates: ftp.iij.ad.jp
+Installed Groups:
+   E-mail server
+Available Groups:
+   Additional Development
+   Backup Client
+   Backup Server
+   Base
+   CIFS file server
+   Client management tools
+   Compatibility libraries
+   ~~~~~~~~~~以下略~~~~~~~~~~</pre>
+</div>
+<p>サブコマンドgroupifnoでグループに属しているパッケージを調べられる。</p>
+<div class="highlight-python"><pre>% yum groupinfo &quot;E-mail Server&quot;
+Loaded plugins: fastestmirror
+Setting up Group Process
+Loading mirror speeds from cached hostfile
+ * base: ftp.iij.ad.jp
+ * extras: ftp.iij.ad.jp
+ * updates: ftp.iij.ad.jp
+
+Group: E-mail server
+ Description: Allows the system to act as a SMTP and/or IMAP e-mail server.
+ Default Packages:
+   dovecot
+   postfix
+   spamassassin
+ Optional Packages:
+   cyrus-imapd
+   dovecot-mysql
+   dovecot-pgsql
+   dovecot-pigeonhole
+   mailman
+   sendmail
+   sendmail-cf</pre>
+</div>
+<p>BaseはCentOSのベースシステムがグループ化されている。</p>
+<p>さらに「–installroot」オプションで指定したディレクトリにベースシステムを展開できる。</p>
+<p>これを使えばCentOSのchroot環境を簡単に構築できる。</p>
+<div class="highlight-python"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall &quot;Base&quot;
+% cd /root/centos6
+% cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
+% cp /etc/resolv.conf etc/
+% chroot /root/centos6 ntpdate ntp.jst.mfeed.ad.jp
+% chroot /root/centos6 hwclock --systohc
+
+% mount --rbind /dev /root/centos6/dev
+% mount -t proc none /root/centos6/proc
+% mount --rbind /sys /root/centos6/sys
+
+% chroot /root/centos6 /bin/bash</pre>
+</div>
+</div>]]></description>
+            <category><![CDATA[ centos ]]></category>
+             <pubDate>Mon, 09 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/08/gentoo_install_script.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/08/gentoo_install_script.html</guid>
