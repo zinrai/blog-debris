@@ -91,6 +91,9 @@
 <h1><a href="2013/09/09/centos_chroot.html">CentOSでchroot環境構築</a></h1>
 <p>yum(8)では役割単位(Web,Mailサーバなど)でパッケージがグループ化されており、グループ名を指定することでグループに属しているパッケージをまとめてインストールできるようになっている。</p>
 <p>グループ名はサブコマンドgrouplistで調べることができる。</p>
+<div class="highlight-python"><pre># cat /etc/centos-release
+CentOS release 6.4 (Final)</pre>
+</div>
 <div class="highlight-python"><pre>% yum grouplist
 Loaded plugins: fastestmirror
 Setting up Group Process

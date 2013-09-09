@@ -16,6 +16,12 @@ yum(8)では役割単位(Web,Mailサーバなど)でパッケージがグルー�
 
 ::
 
+  # cat /etc/centos-release
+  CentOS release 6.4 (Final)
+
+
+::
+
   % yum grouplist
   Loaded plugins: fastestmirror
   Setting up Group Process
