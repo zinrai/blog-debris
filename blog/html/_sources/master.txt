@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/09/10/debian_wheezy_chroot_aufs
    2013/09/09/centos_chroot
    2013/09/08/gentoo_install_script
    2013/09/07/debian_wheezy_pxeboot
