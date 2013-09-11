@@ -5,8 +5,65 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 10 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Wed, 11 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/11/debian_wheezy_cowbuilder_chroot.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/11/debian_wheezy_cowbuilder_chroot.html</guid>
+            <title><![CDATA[cowbuilderを使ったsandbox環境]]></title>
+            <description><![CDATA[<div class="section" id="cowbuildersandbox">
+<h1>cowbuilderを使ったsandbox環境</h1>
+<p>今回もchrootネタである。cowbuilderを使うとホスト環境を汚さずにいろいろできる。</p>
+<ul class="simple">
+<li>気になるパッケージをとりあえずインストールして使ってみたい</li>
+<li>Debianのパッケージが古く最新のソースをビルドして使ってみる</li>
+<li>Texを使いたいがホスト環境には入れたくない</li>
+</ul>
+<p>などのシーンで私は使っている。</p>
+<div class="highlight-python"><pre>lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.1 (wheezy)
+Release:        7.1
+Codename:       wheezy</pre>
+</div>
+<div class="highlight-python"><pre>% apt-get install cowbuilder</pre>
+</div>
+<div class="highlight-python"><pre>% cowbuilder --create --distribution wheezy --architecture amd64 --basepath  /var/cache/pbuilder/base_wheezy_amd64.cow</pre>
+</div>
+<p>ベース環境を毎回取ってくるのはサーバに負荷がかかるので同じバージョンとアーキテクチャを使うときはコピーする。</p>
+<div class="highlight-python"><pre>% cd /var/cache/pbuilder
+% cp -R base_wheezy_amd64.cow rails3_wheezy_amd64.cow</pre>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="18%"/>
+<col width="82%"/>
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>–distribution</td>
+<td>作成するディストリビューションの指定。sidもしくはコードネームを選ぶ。(省略した場合のデフォルトはsid)</td>
+</tr>
+<tr class="row-even"><td>–architecture</td>
+<td>アーキテクチャの指定。(省略した場合のデフォルトはホストと同じ)</td>
+</tr>
+<tr class="row-odd"><td>–basepath</td>
+<td>テンプレートのディレクトリパス(省略した場合のデフォルトは/var/cache/pbuilder/base.cow)</td>
+</tr>
+</tbody>
+</table>
+<p>「–save」オプションを付けると変更を保存できる。オプションなしの場合はログアウトすると変更は消える。</p>
+<div class="highlight-python"><pre>% cowbuilder --login --save --basepath /var/cache/pbuilder/base_wheezy_amd64.cow</pre>
+</div>
+<p>「–bindmount」オプションでホストのディレクトリをchroot環境にマウントできる。</p>
+<div class="highlight-python"><pre>% cowbuilder --login --save --bindmount /home/hoge/dir --basepath /var/cache/pbuilder/base_wheezy_amd64.cow</pre>
+</div>
+<p>ほかにもいろいろオプションがあるのでcowbuilder(8)を眺めてみるといい。</p>
+</div>]]></description>
+            <category><![CDATA[ cowbuilder ]]></category>
+             <pubDate>Wed, 11 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/10/debian_wheezy_chroot_aufs.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/10/debian_wheezy_chroot_aufs.html</guid>
