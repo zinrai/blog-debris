@@ -5,8 +5,152 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 11 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 19 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/19/debian_wheezy_schroot_chroot.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/19/debian_wheezy_schroot_chroot.html</guid>
+            <title><![CDATA[schrootを使って一般ユーザでchroot]]></title>
+            <description><![CDATA[<div class="section" id="schrootchroot">
+<h1>schrootを使って一般ユーザでchroot</h1>
+<p>schrootはroot権限を持たない一般ユーザでもchrootできるようにするwrapperである。オプションや設定ひとつでホストの環境,環境変数を引き継ぐことができとても便利なツールだ。</p>
+<div class="highlight-python"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.1 (wheezy)
+Release:        7.1
+Codename:       wheezy</pre>
+</div>
+<div class="highlight-python"><pre>% apt-get install schroot</pre>
+</div>
+<div class="highlight-python"><pre>% schroot --version
+schroot (Debian sbuild) 1.6.4 (26 Oct 2012)
+Written by Roger Leigh
+
+Copyright © 2004–2012 Roger Leigh
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Configured features:
+  DEVLOCK      Device locking
+  PAM          Pluggable Authentication Modules
+  PERSONALITY  Linux kernel Application Binary Interface switching
+  UNION        Support for filesystem unioning
+
+Available chroot types:
+  BLOCKDEV     Support for ‘block-device’ chroots
+  BTRFSSNAP    Support for ‘btrfs-snapshot’ chroots
+  CUSTOM       Support for ‘custom’ chroots
+  DIRECTORY    Support for ‘directory’ chroots
+  FILE         Support for ‘file’ chroots
+  LOOPBACK     Support for ‘loopback’ chroots
+  LVMSNAP      Support for ‘lvm-snapshot’ chroots
+  PLAIN        Support for ‘plain’ chroots</pre>
+</div>
+<div class="highlight-python"><pre>$ mkdir -p /var/chroot/wheezy
+% debootstrap stable /var/chroot/wheezy http://ftp.jp.debian.org/debian</pre>
+</div>
+<div class="highlight-python"><pre>% find /etc/schroot
+/etc/schroot
+/etc/schroot/buildd
+/etc/schroot/buildd/nssdatabases
+/etc/schroot/buildd/copyfiles
+/etc/schroot/buildd/fstab
+/etc/schroot/desktop
+/etc/schroot/desktop/nssdatabases
+/etc/schroot/desktop/copyfiles
+/etc/schroot/desktop/fstab
+/etc/schroot/default
+/etc/schroot/default/nssdatabases
+/etc/schroot/default/copyfiles
+/etc/schroot/default/fstab
+/etc/schroot/setup.d
+/etc/schroot/setup.d/05file
+/etc/schroot/setup.d/00check
+/etc/schroot/setup.d/70services
+/etc/schroot/setup.d/50chrootname
+/etc/schroot/setup.d/15killprocs
+/etc/schroot/setup.d/99check
+/etc/schroot/setup.d/15binfmt
+/etc/schroot/setup.d/05lvm
+/etc/schroot/setup.d/05btrfs
+/etc/schroot/setup.d/05union
+/etc/schroot/setup.d/10mount
+/etc/schroot/setup.d/20copyfiles
+/etc/schroot/setup.d/20nssdatabases
+/etc/schroot/minimal
+/etc/schroot/minimal/nssdatabases
+/etc/schroot/minimal/copyfiles
+/etc/schroot/minimal/fstab
+/etc/schroot/sbuild
+/etc/schroot/sbuild/nssdatabases
+/etc/schroot/sbuild/copyfiles
+/etc/schroot/sbuild/fstab
+/etc/schroot/chroot.d
+/etc/schroot/schroot.conf</pre>
+</div>
+<p>ホストのfstabにschroot用の設定を書いていたり、ホストのfstabに設定を書くのがイケてないと言っている記事を見掛けるが、schroot(1),schroot.conf(5)を眺めたのだろうか。/etc/schroot以下の構成は上記のようになっている。ホストからchroot環境へコピーするファイル(passwd,resolv.confなど)やマウントするディレクトリの設定などは/etc/schroot以下にディレクトリを切り設定ファイルを書いていく(このディレクトリをプロファイルと呼ぶことにする)。下記はdefaultプロファイルの設定ファイルである。</p>
+<div class="highlight-python"><pre>$ cat /etc/schroot/default/copyfiles
+# Files to copy into the chroot from the host system.
+#
+# &lt;source and destination&gt;
+/etc/resolv.conf</pre>
+</div>
+<div class="highlight-python"><pre>$ cat /etc/schroot/default/nssdatabases
+# System databases to copy into the chroot from the host system.
+#
+# &lt;database name&gt;
+passwd
+shadow
+group
+gshadow
+services
+protocols
+networks
+hosts</pre>
+</div>
+<div class="highlight-python"><pre>$ cat /etc/schroot/default/fstab
+# fstab: static file system information for chroots.
+# Note that the mount point will be prefixed by the chroot path
+# (CHROOT_PATH)
+#
+# &lt;file system&gt; &lt;mount point&gt;   &lt;type&gt;  &lt;options&gt;       &lt;dump&gt;  &lt;pass&gt;
+/proc           /proc           none    rw,bind        0       0
+/sys            /sys            none    rw,bind        0       0
+/dev            /dev            none    rw,bind         0       0
+/dev/pts        /dev/pts        none    rw,bind         0       0
+/home           /home           none    rw,bind         0       0
+/tmp            /tmp            none    rw,bind         0       0
+
+# It may be desirable to have access to /run, especially if you wish
+# to run additional services in the chroot.  However, note that this
+# may potentially cause undesirable behaviour on upgrades, such as
+# killing services on the host.
+#/run           /run            none    rw,bind         0       0
+#/run/lock      /run/lock       none    rw,bind         0       0
+#/dev/shm       /dev/shm        none    rw,bind         0       0
+#/run/shm       /run/shm        none    rw,bind         0       0</pre>
+</div>
+<p>プロファイルはprofileオプションを使い呼び出す。デフォルトではdefaultプロファイルが呼び出される。</p>
+<div class="highlight-python"><pre>% vi /etc/schroot/chroot.d/wheezy.conf
+[wheezy]
+type=directory
+directory=/var/chroot/wheezy
+profile=desktop
+users=zinrai
+root-groups=root</pre>
+</div>
+<p>環境変数を引き継ぐ場合は「-p」オプションを付ける。</p>
+<div class="highlight-python"><pre>$ schroot -c wheezy -p bash</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="https://wiki.debian.org/Schroot">https://wiki.debian.org/Schroot</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ schroot ]]></category>
+             <pubDate>Thu, 19 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/11/debian_wheezy_cowbuilder_chroot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/11/debian_wheezy_cowbuilder_chroot.html</guid>

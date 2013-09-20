@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/09/19/debian_wheezy_schroot_chroot
    2013/09/11/debian_wheezy_cowbuilder_chroot
    2013/09/10/debian_wheezy_chroot_aufs
    2013/09/09/centos_chroot
