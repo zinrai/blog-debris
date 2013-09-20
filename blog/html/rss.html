@@ -5,8 +5,41 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 19 Sep 2013 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 20 Sep 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/09/20/ssh_proxycommand.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/09/20/ssh_proxycommand.html</guid>
+            <title><![CDATA[netcatを使わずに多段SSH]]></title>
+            <description><![CDATA[<div class="section" id="netcatssh">
+<h1>netcatを使わずに多段SSH</h1>
+<p>netcatを使い多段SSHをしている記事をよく見掛けるが、私はnetcatのプロセスが動くのが気持ち悪いのでこちらの方法で多段SSHをしている。いつからあるオプションなのかは知らないがCentOS 6.4のSSH(OpenSSH 5.3)ではすでに存在している。</p>
+<p>ssh(1)より。</p>
+<div class="highlight-python"><pre>-W host:port
+             Requests that standard input and output on the client be forwarded to host on
+             port over the secure channel.  Implies -N, -T, ExitOnForwardFailure and
+             ClearAllForwardings and works with Protocol version 2 only.</pre>
+</div>
+<div class="highlight-python"><pre>$ vi $HOME/.ssh/config
+Host fumidai
+  HostName 192.168.2.1
+  User hoge
+  Port 22
+  IdentityFile ~/.ssh/id_rsa
+Host server1
+  Hostname 192.168.0.2
+  User fuga
+  Port 22
+  IdentityFile ~/.ssh/id_rsa
+  ProxyCommand ssh fumidai -W %h:%p</pre>
+</div>
+<div class="highlight-python"><pre>$ ssh server1</pre>
+</div>
+</div>]]></description>
+            <category><![CDATA[ ssh ]]></category>
+             <pubDate>Fri, 20 Sep 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/19/debian_wheezy_schroot_chroot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/19/debian_wheezy_schroot_chroot.html</guid>
