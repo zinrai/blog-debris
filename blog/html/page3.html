@@ -146,8 +146,7 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.2
 <h2>Debianインストールスクリプト</h2>
 <p>仕組みは「<a class="reference internal" href="2013/07/20/freebsd_pxeboot.html"><em>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」と同じである。</p>
 <p>debootstrapで取得した最小構成のWheezyをコピーするスクリプトを書いただけ。</p>
-<p>grub2のインストール時にブートローダをどのディスクにインストールするかを設定するダイアログが出てきてしまうので「DEBIAN_FRONTEND=noninteractive」を環境変数として設定しダイアログを出さないのがポイントである。</p>
-<p>代わりにダイアログで実行されるコマンドをスクリプト内で実行する。</p>
+<p>パッケージインストール時にダイアログが表示され入力待ちにならないよう環境変数「DEBIAN_FRONTEND=noninteractive」を設定しておくのがポイントである。</p>
 <p>この環境変数は解決方法はないかとdebconf(1)を眺めていたら</p>
 <div class="highlight-python"><pre>Debconf is a configuration system for Debian packages. For a debconf overview and documentation for sysadmins, see debconf(7) (in the debconf-doc package).</pre>
 </div>
@@ -191,98 +190,101 @@ mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class
 <span class="k">fi</span>
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/01:23:45:67:89:ab.conf</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/debian_install.conf</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>#!/bin/bash -x
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash -x</span>
 
-DISK=&quot;/dev/vda&quot;
-IFACE=$1
-CHROOT_DEBIAN=&quot;/mnt/$2&quot;
+<span class="c"># 01:23:45:67:89:ab</span>
 
-dd if=/dev/zero of=$DISK bs=1024 count=1
+<span class="nv">DISK</span><span class="o">=</span><span class="s2">&quot;/dev/vda&quot;</span>
+<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">&quot;/mnt/$2&quot;</span>
 
-parted $DISK -s 'mklabel msdos'
-parted $DISK -s 'mkpart primary 1 500'
-parted $DISK -s 'mkpart primary 501 35000'
-parted $DISK -s 'mkpart extended 35001 -0'
-parted $DISK -s 'mkpart logical 35001 38000'
-parted $DISK -s 'mkpart logical 38001 -0'
-parted $DISK -s 'set 1 boot on'
+dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
 
-mkswap ${DISK}5
-swapon ${DISK}5
-mkfs.ext2 ${DISK}1
-mkfs.ext4 ${DISK}2
-mkfs.ext4 ${DISK}6
+parted <span class="nv">$DISK</span> -s <span class="s1">'mklabel msdos'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 1 500'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 501 35000'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart extended 35001 -0'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 35001 38000'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 38001 -0'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'set 1 boot on'</span>
 
-mount ${DISK}2 ${CHROOT_DEBIAN}
+mkswap <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
+swapon <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
+mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1
+mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
+mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
 
-cp -Rp wheezy/* $CHROOT_DEBIAN
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>
 
-mount ${DISK}1 ${CHROOT_DEBIAN}/boot
-mount ${DISK}6 ${CHROOT_DEBIAN}/home
+cp -Rp wheezy/* <span class="nv">$CHROOT_DEBIAN</span>
 
-mount --rbind /dev ${CHROOT_DEBIAN}/dev
-mount -t proc none ${CHROOT_DEBIAN}/proc
-mount --rbind /sys ${CHROOT_DEBIAN}/sys
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/boot
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/home
 
-cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/hostname
-install.localnet
-EOF
+mount --rbind /dev <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/dev
+mount -t proc none <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/proc
+mount --rbind /sys <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/sys
 
-
-cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/resolv.conf
-nameserver 8.8.8.8
-EOF
-
-cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/network/interfaces
-auto lo
-iface lo inet loopback
-
-auto eth0
-iface eth0 inet static
-address  192.168.2.100
-netmask 255.255.255.0
-gateway 192.168.2.254
-EOF
-
-cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/fstab
-${DISK}1               /boot           ext2            defaults        0 2
-${DISK}2               /               ext4            defaults        0 1
-${DISK}6               /home           ext4            defaults        0 2
-${DISK}5               none            swap            sw              0 0
-EOF
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/hostname</span>
+<span class="s">install.localnet</span>
+<span class="s">EOF</span>
 
 
-cat &lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/tmp/debian_setup.sh
-#!/bin/bash
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/resolv.conf</span>
+<span class="s">nameserver 8.8.8.8</span>
+<span class="s">EOF</span>
 
-export DEBIAN_FRONTEND=noninteractive
-cp /usr/local/share/zoneinfo/Asia/Tokyo /etc/localtime
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/network/interfaces</span>
+<span class="s">auto lo</span>
+<span class="s">iface lo inet loopback</span>
 
-apt-get install -y linux-image-`uname -r` grub2 openssh-server
+<span class="s">auto eth0</span>
+<span class="s">iface eth0 inet static</span>
+<span class="s">address  192.168.2.100</span>
+<span class="s">netmask 255.255.255.0</span>
+<span class="s">gateway 192.168.2.254</span>
+<span class="s">EOF</span>
 
-grub-mkconfig -o /boot/grub/grub.cfg
-grub-install --no-floppy --root-directory=/ $DISK
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/fstab</span>
+<span class="s">${DISK}1               /boot           ext2            defaults        0 2</span>
+<span class="s">${DISK}2               /               ext4            defaults        0 1</span>
+<span class="s">${DISK}6               /home           ext4            defaults        0 2</span>
+<span class="s">${DISK}5               none            swap            sw              0 0</span>
+<span class="s">EOF</span>
 
-grep -v rootfs /proc/mounts &gt; /etc/mtab
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/tmp/debian_setup.sh</span>
+<span class="s">export DEBIAN_FRONTEND=noninteractive</span>
+<span class="s">cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime</span>
+<span class="s">grep -v rootfs /proc/mounts &gt; /etc/mtab</span>
 
-useradd -m -G sudo nanashi
-echo &quot;nanashi:ebifuraibutsukenzo&quot; | chpasswd
-echo &quot;root:hogefugamoge&quot; | chpasswd
-EOF
+<span class="s">apt-get install -y linux-image-`uname -r` grub2 openssh-server</span>
 
-chroot ${CHROOT_DEBIAN} /bin/bash /tmp/debian_setup.sh
+<span class="s">grub-mkconfig -o /boot/grub/grub.cfg</span>
+<span class="s">grub-install --no-floppy --root-directory=/ $DISK</span>
+<span class="s">EOF</span>
 
-rm ${CHROOT_DEBIAN}/tmp/debian_setup.sh
+cat <span class="s">&lt;&lt; 'EOF' &gt; ${CHROOT_DEBIAN}/tmp/user_acount.sh</span>
+<span class="s">useradd -m -G sudo nanashi</span>
+<span class="s">printf 'nanashi:$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs.' | chpasswd -e</span>
+<span class="s">printf 'root:$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1' | chpasswd -e</span>
+<span class="s">EOF</span>
 
-cd /
-umount -l ${CHROOT_DEBIAN}/{boot,home,proc,dev,sys}
-umount -l $CHROOT_DEBIAN
+chroot <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span> /bin/bash /tmp/debian_setup.sh
+chroot <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span> /bin/bash /tmp/user_acount.sh
+
+rm <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/tmp/debian_setup.sh
+rm <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/tmp/user_acount.sh
+
+<span class="nb">cd</span> /
+umount -l <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/<span class="o">{</span>boot,home,proc,dev,sys<span class="o">}</span>
+umount -l <span class="nv">$CHROOT_DEBIAN</span>
 sleep 2
-rmdir $CHROOT_DEBIAN
-reboot</pre>
+rmdir <span class="nv">$CHROOT_DEBIAN</span>
+reboot
+</pre></div>
 </div>
 <p>pxeboot時にインストールスクリプトが実行されるようrc.localに書いておく。</p>
 <div class="highlight-python"><pre># vi /var/lib/tftpboot/wheezy/etc/rc.local

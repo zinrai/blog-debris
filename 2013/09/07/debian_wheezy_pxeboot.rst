@@ -90,10 +90,8 @@ Debianインストールスクリプト
 
 debootstrapで取得した最小構成のWheezyをコピーするスクリプトを書いただけ。
 
-grub2のインストール時にブートローダをどのディスクにインストールするかを設定するダイアログが出てきてしまうので
-「DEBIAN_FRONTEND=noninteractive」を環境変数として設定しダイアログを出さないのがポイントである。
-
-代わりにダイアログで実行されるコマンドをスクリプト内で実行する。
+パッケージインストール時にダイアログが表示され入力待ちにならないよう
+環境変数「DEBIAN_FRONTEND=noninteractive」を設定しておくのがポイントである。
 
 この環境変数は解決方法はないかとdebconf(1)を眺めていたら
 
@@ -119,100 +117,11 @@ grub2のインストール時にブートローダをどのディスクにイン
 
 ::
 
-  # vi /var/scripts/01:23:45:67:89:ab.conf
+  # vi /var/scripts/debian_install.conf
 
+.. literalinclude:: debian_install.conf
+   :language: bash
 
-::
-
-  #!/bin/bash -x
-
-  DISK="/dev/vda"
-  IFACE=$1
-  CHROOT_DEBIAN="/mnt/$2"
-
-  dd if=/dev/zero of=$DISK bs=1024 count=1
-
-  parted $DISK -s 'mklabel msdos'
-  parted $DISK -s 'mkpart primary 1 500'
-  parted $DISK -s 'mkpart primary 501 35000'
-  parted $DISK -s 'mkpart extended 35001 -0'
-  parted $DISK -s 'mkpart logical 35001 38000'
-  parted $DISK -s 'mkpart logical 38001 -0'
-  parted $DISK -s 'set 1 boot on'
-
-  mkswap ${DISK}5
-  swapon ${DISK}5
-  mkfs.ext2 ${DISK}1
-  mkfs.ext4 ${DISK}2
-  mkfs.ext4 ${DISK}6
-
-  mount ${DISK}2 ${CHROOT_DEBIAN}
-
-  cp -Rp wheezy/* $CHROOT_DEBIAN
-
-  mount ${DISK}1 ${CHROOT_DEBIAN}/boot
-  mount ${DISK}6 ${CHROOT_DEBIAN}/home
-
-  mount --rbind /dev ${CHROOT_DEBIAN}/dev
-  mount -t proc none ${CHROOT_DEBIAN}/proc
-  mount --rbind /sys ${CHROOT_DEBIAN}/sys
-
-  cat << EOF > ${CHROOT_DEBIAN}/etc/hostname
-  install.localnet
-  EOF
-
-
-  cat << EOF > ${CHROOT_DEBIAN}/etc/resolv.conf
-  nameserver 8.8.8.8
-  EOF
-
-  cat << EOF > ${CHROOT_DEBIAN}/etc/network/interfaces
-  auto lo
-  iface lo inet loopback
-
-  auto eth0
-  iface eth0 inet static
-  address  192.168.2.100
-  netmask 255.255.255.0
-  gateway 192.168.2.254
-  EOF
-
-  cat << EOF > ${CHROOT_DEBIAN}/etc/fstab
-  ${DISK}1               /boot           ext2            defaults        0 2
-  ${DISK}2               /               ext4            defaults        0 1
-  ${DISK}6               /home           ext4            defaults        0 2
-  ${DISK}5               none            swap            sw              0 0
-  EOF
-
-
-  cat << EOF > ${CHROOT_DEBIAN}/tmp/debian_setup.sh
-  #!/bin/bash
-
-  export DEBIAN_FRONTEND=noninteractive
-  cp /usr/local/share/zoneinfo/Asia/Tokyo /etc/localtime
-
-  apt-get install -y linux-image-`uname -r` grub2 openssh-server
-
-  grub-mkconfig -o /boot/grub/grub.cfg
-  grub-install --no-floppy --root-directory=/ $DISK
-
-  grep -v rootfs /proc/mounts > /etc/mtab
-
-  useradd -m -G sudo nanashi
-  echo "nanashi:ebifuraibutsukenzo" | chpasswd
-  echo "root:hogefugamoge" | chpasswd
-  EOF
-
-  chroot ${CHROOT_DEBIAN} /bin/bash /tmp/debian_setup.sh
-
-  rm ${CHROOT_DEBIAN}/tmp/debian_setup.sh
-
-  cd /
-  umount -l ${CHROOT_DEBIAN}/{boot,home,proc,dev,sys}
-  umount -l $CHROOT_DEBIAN
-  sleep 2
-  rmdir $CHROOT_DEBIAN
-  reboot
 
 pxeboot時にインストールスクリプトが実行されるようrc.localに書いておく。
 
