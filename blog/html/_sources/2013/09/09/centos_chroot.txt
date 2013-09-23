@@ -89,3 +89,9 @@ BaseはCentOSのベースシステムがグループ化されている。
   % mount --rbind /sys /root/centos6/sys
 
   % chroot /root/centos6 /bin/bash
+
+chroot環境のアップグレードは下記のようにすればいい。
+
+::
+
+  % yum upgrade --releasever=6 --installroot=/root/centos6 -y
