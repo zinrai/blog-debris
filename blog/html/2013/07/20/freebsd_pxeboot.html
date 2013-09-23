@@ -115,7 +115,7 @@ tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var
 
 # vi /usr/local/etc/dhcpd.conf
 ddns-update-style none;
-server-name "pxeboot";               # name of the tftp-server
+server-name "pxeboot";            # name of the tftp-server
 server-identifier 192.168.0.253;  # address of the tftp-server
 next-server 192.168.0.253;        # address of the NFS-server
 
@@ -123,7 +123,7 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
     range 192.168.0.220 192.168.0.250;
     option routers 192.168.0.254;
     option root-path "/var/pxeboot"; # root-path for NFS
-    filename "pxeboot";                    # filename of NBP (network bootstrap program)
+    filename "pxeboot";              # filename of NBP (network bootstrap program)
 }
 
 # /usr/local/etc/rc.d/isc-dhcpd onestart</pre>
@@ -137,13 +137,14 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
 <span class="n">inetd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
 <span class="n">dhcpd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">dhcpd_ifaces</span><span class="o">=</span><span class="s">&quot;em0&quot;</span>
 <span class="n">nfs_server_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="freebsd">
 <h2>FreeBSDインストールスクリプト</h2>
-<p>このシェルスクリプトはPXE bootしたマシンのMACアドレスを見てマッチした[MACアドレス].confファイルに書かれたシェルスクリプトを実行するようになっている。</p>
+<p>PXE BootしたマシンのMACアドレスが書かれたシェルスクリプトを探し、実行するようになっている。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/os_install.sh</span>
 </pre></div>
 </div>
@@ -157,7 +158,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>find . -name <span class="k">${</span><span class="nv">a</span><span class="k">}</span>.conf
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> *.conf | awk -F: <span class="s1">&#39;{print $1}&#39;</span>
   <span class="k">done</span>
 <span class="o">}</span>
 
@@ -166,90 +167,99 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 
 <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">&#39;{if($3 ~ /^UG$/) print $6}&#39;</span><span class="sb">`</span>
-  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
+  <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
 <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">&#39;{if($4 ~ /^UG$/) print $8}&#39;</span><span class="sb">`</span>
-  <span class="nv">DIRNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span>
+  <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span>
 <span class="k">fi</span>
 
-mkdir /mnt/<span class="k">${</span><span class="nv">DIRNAME</span><span class="k">}</span>
+mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
 <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$DIRNAME</span>
+  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$MOUNTNAME</span>
 <span class="k">fi</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /var/pxeboot/var/scripts/01:23:45:67:89:ab.conf
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/freebsd_install.conf</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
-#!/bin/sh
+<span class="c"># 01:23:45:67:89:ab</span>
 
-IFACE=$1
-DISK=ada1
-MOUNTDIR="/mnt/$2"
-DIST_TXZ=`ls /usr/freebsd-dist/*.txz`
+<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">DISK</span><span class="o">=</span>ada1
+<span class="nv">CHROOT_FREEBSD</span><span class="o">=</span><span class="s2">&quot;/mnt/$2&quot;</span>
+<span class="nv">DIST_TXZ</span><span class="o">=</span><span class="sb">`</span>ls /usr/freebsd-dist/*.txz<span class="sb">`</span>
 
-gpart destroy -F $DISK
-gpart create -s gpt $DISK
-gpart add -s 64K -t freebsd-boot $DISK
-gpart add -s 8G -t freebsd-swap -l swap0 $DISK
-gpart add -t freebsd-ufs $DISK
-gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 $DISK
+gpart destroy -F <span class="nv">$DISK</span>
+gpart create -s gpt <span class="nv">$DISK</span>
+gpart add -s 64K -t freebsd-boot <span class="nv">$DISK</span>
+gpart add -s 8G -t freebsd-swap -l swap0 <span class="nv">$DISK</span>
+gpart add -t freebsd-ufs <span class="nv">$DISK</span>
+gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 <span class="nv">$DISK</span>
 
-newfs -U /dev/${DISK}p3
+newfs -U /dev/<span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>p3
 
-mount /dev/${DISK}p3 $MOUNTDIR
+mount /dev/<span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>p3 <span class="nv">$CHROOT_FREEBSD</span>
 
-cd $MOUNTDIR
+<span class="nb">cd</span> <span class="nv">$CHROOT_FREEBSD</span>
 
-for FILE in $DIST_TXZ; do
-  tar xfzp $FILE
-done
+<span class="k">for </span>FILE in <span class="nv">$DIST_TXZ</span>; <span class="k">do</span>
+<span class="k">  </span>tar xfzp <span class="nv">$FILE</span>
+<span class="k">done</span>
 
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/rc.conf
-hostname="freebsd.local"
-keymap="us.iso.kbd"
-ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"
-defaultrouter="192.168.0.254"
-sshd_enable="YES"
-# Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
-dumpdev="AUTO"
-EOF
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/rc.conf</span>
+<span class="s">hostname=&quot;freebsd.local&quot;</span>
+<span class="s">keymap=&quot;us.iso.kbd&quot;</span>
+<span class="s">ifconfig_${IFACE}=&quot; inet 192.168.0.252 netmask 255.255.255.0&quot;</span>
+<span class="s">defaultrouter=&quot;192.168.0.254&quot;</span>
+<span class="s">sshd_enable=&quot;YES&quot;</span>
+<span class="s"># Set dumpdev to &quot;AUTO&quot; to enable crash dumps, &quot;NO&quot; to disable</span>
+<span class="s">dumpdev=&quot;AUTO&quot;</span>
+<span class="s">EOF</span>
 
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/resolv.conf
-nameserver 8.8.8.8
-EOF
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/resolv.conf</span>
+<span class="s">nameserver 8.8.8.8</span>
+<span class="s">EOF</span>
 
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/etc/fstab
-# Device        Mountpoint      FStype  Options Dump    Pass#
-/dev/${DISK}p3     /               ufs     rw      1       1
-/dev/${DISK}p2     none            swap    sw      0       0
-EOF
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/fstab</span>
+<span class="s"># Device        Mountpoint      FStype  Options Dump    Pass#</span>
+<span class="s">/dev/${DISK}p3     /               ufs     rw      1       1</span>
+<span class="s">/dev/${DISK}p2     none            swap    sw      0       0</span>
+<span class="s">EOF</span>
 
-cat &lt;&lt; EOF &gt; ${MOUNTDIR}/tmp/freebsd_setup.sh
-newaliases
-touch /etc/wall_cmos_clock
-tzsetup Asia/Tokyo
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/tmp/freebsd_setup.sh</span>
+<span class="s">newaliases</span>
+<span class="s">touch /etc/wall_cmos_clock</span>
+<span class="s">tzsetup Asia/Tokyo</span>
 
-printf "hogefugamoge" | pw usermod -n root -h 0
+<span class="s">dumpon /dev/${DISK}p2</span>
+<span class="s">ln -sf /dev/${DISK}p2 /dev/dumpdev</span>
+<span class="s">EOF</span>
 
-pw useradd -n nanashi -s /bin/tcsh -G wheel -m
-printf "ebifuraibutsukenzo" | pw usermod -n nanashi -h 0
+cat <span class="s">&lt;&lt; &#39;EOF&#39; &gt; ${CHROOT_FREEBSD}/tmp/user_acount.sh</span>
+<span class="s">printf &quot;$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs.&quot; | pw usermod -n root -H 0</span>
 
-dumpon /dev/${DISK}p2
-ln -sf /dev/${DISK}p2 /dev/dumpdev
-EOF
+<span class="s">pw useradd -n nanashi -s /bin/tcsh -G wheel -m</span>
+<span class="s">printf &quot;$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1&quot; | pw usermod -n nanashi -H 0</span>
+<span class="s">EOF</span>
 
-mount -t devfs dev ${MOUNTDIR}/dev
-chroot $MOUNTDIR /bin/sh /tmp/freebsd_setup.sh
+mount -t devfs dev <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/dev
 
-rm ${MOUNTDIR}/tmp/freebsd_setup.sh
+chroot <span class="nv">$CHROOT_FREEBSD</span> /bin/sh /tmp/freebsd_setup.sh
+chroot <span class="nv">$CHROOT_FREEBSD</span> /bin/sh /tmp/user_acount.sh
 
-cd /
-umount ${MOUNTDIR}/dev
-umount $MOUNTDIR
+rm <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/tmp/freebsd_setup.sh
+rm <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/tmp/user_acount.sh
 
-rmdir $MOUNTDIR
-reboot</pre>
+<span class="nb">cd</span> /
+umount <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/dev
+umount <span class="nv">$CHROOT_FREEBSD</span>
+
+rmdir <span class="nv">$CHROOT_FREEBSD</span>
+reboot
+</pre></div>
 </div>
 <p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
 <div class="highlight-python"><pre># vi /var/pxeboot/etc/rc.local
