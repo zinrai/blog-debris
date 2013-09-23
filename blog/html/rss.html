@@ -385,16 +385,18 @@ Group: E-mail server
 <p>などが今回のモチベーションである。</p>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化</em></a>」で構築した環境にスクリプトを配置する。</p>
 <p>その他に、<a class="reference external" href="http://www.gentoo.org/main/en/where.xml">stage3</a>,<a class="reference external" href="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots">portage</a>, カーネルのコンフィグファイルをスクリプトのあるディレクトリに用意しておく。</p>
-<p>実機,仮想環境(KVM)ともに動作確認は出来ている。Gentooを複数台セットアップする予定はいまのところない。</p>
+<p>実機,仮想環境(KVM)ともに動作することは確認した。Gentooを複数台セットアップする予定はいまのところない。</p>
 <div class="highlight-python"><pre>% cp /boot/config-* /var/scripts
 % cd /var/scripts
 % wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-20130830.tar.bz2
 % wget http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3/stage3-amd64-20130822.tar.bz2</pre>
 </div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/01:23:45:67:89:ab.conf</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/gentoo_install.conf</span>
 </pre></div>
 </div>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash -x</span>
+
+<span class="c"># 01:23:45:67:89:ab</span>
 
 <span class="nv">DATETIME</span><span class="o">=</span><span class="sb">`</span>date +<span class="s2">&quot;%m%d%H%M%Y&quot;</span><span class="sb">`</span>
 
@@ -504,15 +506,20 @@ cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/tmp/gentoo_setup.sh</span
 <span class="s">grub2-install --no-floppy --root-directory=/ $DISK</span>
 
 <span class="s">grep -v rootfs /proc/mounts &gt; /etc/mtab</span>
+<span class="s">EOF</span>
 
+
+cat <span class="s">&lt;&lt; 'EOF' &gt; ${CHROOT_DEBIAN}/tmp/user_acount.sh</span>
 <span class="s">useradd -m -G wheel nanashi</span>
-<span class="s">echo &quot;nanashi:ebifuraibutsukenzo&quot; | chpasswd</span>
-<span class="s">echo &quot;root:hogefugamoge&quot; | chpasswd</span>
+<span class="s">printf 'nanashi:$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs.' | chpasswd -e</span>
+<span class="s">printf 'root:$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1' | chpasswd -e</span>
 <span class="s">EOF</span>
 
 chroot <span class="nv">$CHROOT_GENTOO</span> /bin/bash /tmp/gentoo_setup.sh
+chroot <span class="nv">$CHROOT_GENTOO</span> /bin/bash /tmp/user_acount.sh
 
 rm <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/tmp/gentoo_setup.sh
+rm <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/tmp/user_acount.sh
 
 <span class="nb">cd</span> /
 umount -l <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/<span class="o">{</span>boot,home,proc,dev,sys<span class="o">}</span>
