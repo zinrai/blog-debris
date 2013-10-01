@@ -618,6 +618,8 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.2
 </div>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
+<span class="nv">CWD</span><span class="o">=</span><span class="sb">`</span>dirname <span class="nv">$0</span><span class="sb">`</span>
+
 get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;</span>
@@ -626,7 +628,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> *.conf | awk -F: <span class="s1">'{print $1}'</span>
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">'{print $1}'</span>
   <span class="k">done</span>
 <span class="o">}</span>
 
@@ -644,7 +646,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
 <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$MOUNTNAME</span>
+  <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 <span class="k">fi</span>
 </pre></div>
 </div>
@@ -657,7 +659,8 @@ mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class
 
 <span class="nv">DISK</span><span class="o">=</span><span class="s2">&quot;/dev/vda&quot;</span>
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">&quot;/mnt/$2&quot;</span>
+<span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">&quot;/mnt/$3&quot;</span>
 
 dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
 
@@ -677,7 +680,7 @@ mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}
 
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>
 
-cp -Rp wheezy/* <span class="nv">$CHROOT_DEBIAN</span>
+cp -Rp <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/wheezy/* <span class="nv">$CHROOT_DEBIAN</span>
 
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/boot
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/home
@@ -1949,6 +1952,8 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 </div>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
+<span class="nv">CWD</span><span class="o">=</span><span class="sb">`</span>dirname <span class="nv">$0</span><span class="sb">`</span>
+
 get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;</span>
@@ -1957,7 +1962,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> *.conf | awk -F: <span class="s1">'{print $1}'</span>
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">'{print $1}'</span>
   <span class="k">done</span>
 <span class="o">}</span>
 
@@ -1975,7 +1980,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
 <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$MOUNTNAME</span>
+  <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 <span class="k">fi</span>
 </pre></div>
 </div>

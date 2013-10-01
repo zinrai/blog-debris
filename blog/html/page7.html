@@ -17,6 +17,7 @@
         <meta name="viewport" content="width=device-width">
         <title>Page 7 &mdash; command not found:</title>
             <link rel="stylesheet" href="_static/normalize.css" type="text/css">
+            <link rel="stylesheet" href="_static/sphinx.css" type="text/css">
             <link rel="stylesheet" href="_static/main.css" type="text/css">
             <link rel="stylesheet" href="_static/dark.css" type="text/css">
             <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -29,8 +30,8 @@
         <script src="_static/main.js"></script>
         <link rel="next" title="Older" href="page8.html" /><link rel="prev" title="Newer" href="page6.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.1',
+        URL_ROOT:    '',
+        VERSION:     '1.2.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -283,6 +284,8 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 </div>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
+<span class="nv">CWD</span><span class="o">=</span><span class="sb">`</span>dirname <span class="nv">$0</span><span class="sb">`</span>
+
 get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;</span>
@@ -291,7 +294,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> *.conf | awk -F: <span class="s1">'{print $1}'</span>
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">'{print $1}'</span>
   <span class="k">done</span>
 <span class="o">}</span>
 
@@ -309,7 +312,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
 <span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-  ./<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$MOUNTNAME</span>
+  <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 <span class="k">fi</span>
 </pre></div>
 </div>
@@ -810,7 +813,7 @@ $SNIPPET('kickstart_done')
                 <a href="tags/centos.html">centos</a>, <a href="tags/puppet.html">puppet</a>, <a href="tags/cobbler.html">cobbler</a></span>
         </div>
         </div><div class="archive_link">
-        <a href="archive.html"> &mdash;  Blog Archive  &mdash; </a>
+        <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
             <li class="left"> &laquo; <a href="page6.html">Newer</a></li>
             <li class="right"><a href="page8.html">Older</a> &raquo; </li>

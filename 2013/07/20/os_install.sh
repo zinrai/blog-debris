@@ -1,5 +1,7 @@
 #!/bin/sh
 
+CWD=`dirname $0`
+
 get_conf() {
   if [ "$OS" = "FreeBSD" ]; then
     local MACADDR="`ifconfig | awk '/ether/ {print $NF}'`"
@@ -8,7 +10,7 @@ get_conf() {
   fi
 
   for a in $MACADDR; do
-    grep -r $MACADDR *.conf | awk -F: '{print $1}'
+    grep -r $MACADDR ${CWD}/*.conf | awk -F: '{print $1}'
   done
 }
 
@@ -26,5 +28,5 @@ fi
 mkdir /mnt/${MOUNTNAME}
 
 if [ -n "$CONFFILE" ]; then
-  ./$CONFFILE $IFACE $MOUNTNAME
+  $CONFFILE $IFACE $CWD $MOUNTNAME
 fi
