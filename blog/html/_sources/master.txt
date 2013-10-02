@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/10/02/xdm_setting
    2013/09/20/ssh_proxycommand
    2013/09/19/debian_wheezy_schroot_chroot
    2013/09/11/debian_wheezy_cowbuilder_chroot
