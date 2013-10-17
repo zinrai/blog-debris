@@ -5,8 +5,104 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 02 Oct 2013 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 17 Oct 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/10/17/freebsd_supervisor_uwsgi.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/10/17/freebsd_supervisor_uwsgi.html</guid>
+            <title><![CDATA[Supervisorを使ってuWSGIを管理]]></title>
+            <description><![CDATA[<div class="section" id="supervisoruwsgi">
+<h1>Supervisorを使ってuWSGIを管理</h1>
+<p>uWSGIのプロセスをSupervisorを使って管理してみる。</p>
+<div class="highlight-python"><pre>% uname -a
+FreeBSD uwsgi.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013
+
+% python -V
+Python 2.7.5
+
+% supervisord -v
+3.0b1
+
+% uwsgi --version
+1.9.18.1</pre>
+</div>
+<div class="section" id="uwsgi">
+<h2>uWSGI</h2>
+<div class="highlight-python"><pre>% vi /path/app/dev.ini
+
+[uwsgi]
+http = :9090
+workers = 3
+virtualenv = /path/test
+python-path = /path/app
+wsgi = sample
+callable = app
+uid = www
+gid = www
+pidfile = /path/app/uwsgi.pid
+logto = /path/app/uwsgi.log
+log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;</pre>
+</div>
+</div>
+<div class="section" id="supervisor">
+<h2>Supervisor</h2>
+<div class="highlight-python"><pre>% cd /usr/local/etc
+% grep -v &quot;^;&quot; supervisord.conf.sample &gt; supervisord.conf</pre>
+</div>
+<div class="highlight-python"><pre>% vi /usr/local/etc/supervisord.conf
+
+[unix_http_server]
+file=/var/run/supervisor/supervisor.sock   ; (the path to the socket file)
+
+[supervisord]
+logfile=/var/log/supervisord.log ; (main log file;default $CWD/supervisord.log)
+logfile_maxbytes=50MB       ; (max main logfile bytes b4 rotation;default 50MB)
+logfile_backups=10          ; (num of main logfile rotation backups;default 10)
+loglevel=info               ; (log level;default info; others: debug,warn,trace)
+pidfile=/var/run/supervisor/supervisord.pid ; (supervisord pidfile;default supervisord.pid)
+nodaemon=false              ; (start in foreground if true;default false)
+minfds=1024                 ; (min. avail startup file descriptors;default 1024)
+minprocs=200                ; (min. avail process descriptors;default 200)
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///var/run/supervisor/supervisor.sock ; use a unix:// URL  for a unix socket
+
+[include]
+files = /usr/local/etc/supervisord.d/*.ini</pre>
+</div>
+<div class="highlight-python"><pre>% vi /usr/local/etc/supervisord.d/uwsgi.ini
+
+[program:uwsgi]
+command = /path/bin/uwsgi /path/app/dev.ini
+stopasgroup = true</pre>
+</div>
+<p>子プロセスまでkillするにはstopasgroupオプションが必要</p>
+<p>stopasgroupオプションを有効にしなければ、Supervisor経由でuWSGIを止められない。(stopasgroupオプションなしでは、Supervisorのstopを実行したときにuWSGIの親プロセスしかkillされず、子プロセスが残ったままになってしまう。)</p>
+<div class="highlight-python"><pre>% vi /etc/rc.conf
+supervisord_enable=&quot;YES&quot;
+supervisord_flags=&quot;-c /usr/local/etc/supervisord.conf&quot;</pre>
+</div>
+<div class="highlight-python"><pre>% service supervisord start</pre>
+</div>
+<div class="highlight-python"><pre>% supervisorctl status
+uwsgi                            RUNNING    pid 58014, uptime 0:15:23
+
+% supervisorctl stop uwsgi
+% supervisorctl start uwsgi</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://supervisord.org/configuration.html">http://supervisord.org/configuration.html</a></li>
+<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/Options.html">http://uwsgi-docs.readthedocs.org/en/latest/Options.html</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ supervisor ]]></category>
+             <pubDate>Thu, 17 Oct 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/10/02/xdm_setting.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/02/xdm_setting.html</guid>
