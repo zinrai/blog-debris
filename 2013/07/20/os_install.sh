@@ -1,6 +1,4 @@
-#!/bin/sh
-
-CWD=`dirname $0`
+#!/bin/sh -x
 
 get_conf() {
   if [ "$OS" = "FreeBSD" ]; then
@@ -10,9 +8,11 @@ get_conf() {
   fi
 
   for a in $MACADDR; do
-    grep -r $MACADDR ${CWD}/*.conf | awk -F: '{print $1}'
+    grep -r $MACADDR ${CWD} | awk -F: '{print $1}'
   done
 }
+
+CWD=`dirname $0`
 
 OS=`uname`
 CONFFILE=`get_conf`

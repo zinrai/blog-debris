@@ -55,7 +55,7 @@ debootstrap
 
   # mkdir -p /var/lib/tftpboot/wheezy
   # debootstrap stable /var/lib/tftpboot/wheezy http://ftp.jp.debian.org/debian
-  # chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 debootstrap
+  # chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 grub2 debootstrap
 
 
 syslinux
@@ -101,10 +101,16 @@ debootstrapで取得した最小構成のWheezyをコピーするスクリプト
 
 書かれており、説明に従いdebconf-docをインストールし、debconf(7)を眺めたところ見付けた。
 
+os_install.shはconfファイルが1つだとうまく動いてくれないのでダミーのconfファイルを1つ作っておく。
+
+::
+
+  # touch /var/scripts/dummy.conf
+
 ::
 
   # mkdir -p /var/scripts/wheezy
-  # debootstrap stable /var/scripts/wheezy http://ftp.jp/debian.org/debian
+  # debootstrap stable /var/scripts/wheezy http://ftp.jp.debian.org/debian
 
 
 ::
