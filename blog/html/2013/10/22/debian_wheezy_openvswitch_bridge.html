@@ -1,0 +1,244 @@
+<!DOCTYPE html><!--[if lt IE 7]>      <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="This is an awesome blog">
+        <meta name="viewport" content="width=device-width">
+        <title>Open vSwitchを使ってみる &mdash; command not found:</title>
+            <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/sphinx.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+            <link rel="stylesheet" href="../../../_static/webfont.css" type="text/css">
+        <link rel="shortcut icon" href="../../../_static/tinkerer.ico" /><!-- Load modernizr and JQuery -->
+        <script src="../../../_static/vendor/modernizr-2.6.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
+        <script src="../../../_static/plugins.js"></script>
+        <script src="../../../_static/main.js"></script>
+        <link rel="next" title="Supervisorを使ってuWSGIを管理" href="../17/freebsd_supervisor_uwsgi.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script><script type="text/javascript" src="../../../_static/underscore.js"></script><script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Adjusts document height if sidebar is taller
+            var documentwrapper = document.getElementsByTagName('article')[0];
+            var sidebar = document.getElementsByTagName('aside')[0];
+
+            if (sidebar.offsetHeight > documentwrapper.offsetHeight)
+            {
+                documentwrapper.style.minHeight = sidebar.offsetHeight + "px";
+            }
+
+            // Scroll to content if on small screen
+            if (screen.width < 480)
+            {
+                $(document).scrollTop(documentwrapper.offsetTop - 44);
+            }
+        });
+    </script></head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+        <![endif]-->
+
+      <div id="container"><div class="header-container">
+    <header class="wrapper clearfix">
+        <div class="title">
+          <h1><a href="../../../index.html">command not found:</a></h1>
+          <h4>Hello World</h4>
+        </div>
+        <nav>
+          <ul>
+            <li class="main-nav">
+              <a href="../../../index.html">Home</a>
+            </li>
+            <li class="main-nav">
+              <a href="../../../pages/about.html">About</a>
+            </li>
+            <li class="quicklink"><div class="rss">
+        <a href="../../../rss.html" title="Subscribe via RSS"><span class="webfont">B</span></a>
+    </div></li></ul>
+        </nav>
+    </header>
+</div>
+
+<div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a> &raquo; </li>
+        </ul><div class="timestamp postmeta">
+            <span>October 22, 2013</span>
+        </div>
+    <div class="section" id="open-vswitch">
+<h1>Open vSwitchを使ってみる</h1>
+<p>bridgeをOpen vSwitchに変えてみた。</p>
+<div class="highlight-python"><pre>% lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.2 (wheezy)
+Release:        7.2
+Codename:       wheezy</pre>
+</div>
+<div class="section" id="bridge">
+<h2>bridge停止</h2>
+<div class="highlight-python"><pre>% service networking stop
+
+% brctl delif br0 eth0
+% brctl delif br1 eth1
+% brctl delbr br0
+% brctl delbr br1
+
+% modprobe -r bridge</pre>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Open vSwitch インストール</h2>
+<div class="highlight-python"><pre>% apt-get install -y openvswitch-switch openvswitch-datapath-source openvswitch-brcompat module-assistant
+% module-assistant auto-install openvswitch-datapath-source
+% modprobe openvswitch_mod
+% modprobe brcompat_mod
+% service openvswitch-switch start</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/default/openvswitch-switch
+BRCOMPAT=yes</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/modules
+openvswitch_mod
+brcompat_mod</pre>
+</div>
+</div>
+<div class="section" id="open-vswitch-bridge">
+<h2>Open vSwitch bridge設定</h2>
+<div class="highlight-python"><pre>% ovs-vsctl add-br br0
+% ovs-vsctl add-br br1
+% ovs-vsctl add-port br0 eth0
+% ovs-vsctl add-port br1 eth1</pre>
+</div>
+<div class="highlight-python"><pre>% ovs-vsctl show
+2a8eb1c3-4273-42b3-9f84-108918d53d15
+    Bridge "br0"
+        Port "eth0"
+            Interface "eth0"
+        Port "br0"
+            Interface "br0"
+                type: internal
+    Bridge "br1"
+        Port "eth1"
+            Interface "eth1"
+        Port "br1"
+            Interface "br1"
+                type: internal
+    ovs_version: "1.4.2"</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/network/interfaces
+auto eth0
+iface eth0 inet manual
+  up /sbin/ifconfig eth0 up
+  down /sbin/ifconfig eth0 down
+
+auto eth1
+iface eth1 inet manual
+  up /sbin/ifconfig eth1 up
+  down /sbin/ifconfig eth1 down</pre>
+</div>
+</div>
+<div class="section" id="libvirt">
+<h2>libvirt</h2>
+<p>openvswitch-brcompat使わず仮想マシンをOpen vSwitchのbridgeに接続するには、&lt;virtualport type=&#8217;openvswitch&#8217;&gt;を追加する。</p>
+<div class="highlight-python"><pre>% libvirtd --version
+libvirtd (libvirt) 0.9.12</pre>
+</div>
+<div class="highlight-python"><pre>% virsh edit vm01
+&lt;interface type='bridge'&gt;
+      &lt;source bridge='br1'/&gt;
+      &lt;virtualport type='openvswitch'&gt;
+      &lt;model type='virtio'/&gt;
+&lt;/interface&gt;</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://libvirt.org/formatnetwork.html">http://libvirt.org/formatnetwork.html</a></li>
+</ul>
+</div>
+</div>
+
+    <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="../../../categories/openvswitch.html">openvswitch</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="../../../tags/openvswitch.html">openvswitch</a>, <a href="../../../tags/debian.html">debian</a></span>
+        </div>
+        </div>
+    <ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a> &raquo; </li>
+        </ul></article><aside class="sidebar"><section><div class="widget">
+    <h1>Recent Posts</h1>
+    <ul><li>
+            <a href="#">Open vSwitchを使ってみる</a>
+        </li><li>
+            <a href="../17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a>
+        </li><li>
+            <a href="../02/xdm_setting.html">XDM 設定</a>
+        </li><li>
+            <a href="../../09/20/ssh_proxycommand.html">netcatを使わずに多段SSH</a>
+        </li><li>
+            <a href="../../09/19/debian_wheezy_schroot_chroot.html">schrootを使って一般ユーザでchroot</a>
+        </li><li>
+            <a href="../../09/11/debian_wheezy_cowbuilder_chroot.html">cowbuilderを使ったsandbox環境</a>
+        </li><li>
+            <a href="../../09/10/debian_wheezy_chroot_aufs.html">aufsを使ったchroot環境</a>
+        </li><li>
+            <a href="../../09/09/centos_chroot.html">CentOSでchroot環境構築</a>
+        </li><li>
+            <a href="../../09/08/gentoo_install_script.html">Gentoo Linux インストールスクリプト</a>
+        </li><li>
+            <a href="../../09/07/debian_wheezy_pxeboot.html">PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化</a>
+        </li></ul>
+</div>
+</section><section><div class="widget">
+    <h1>Categories</h1>
+    <ul><li><a href="../../../categories/centos.html">centos</a> (1)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (2)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (1)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (1)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+</div></section><section><div class="widget">
+    <h1>Tags</h1><a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (3), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (8), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (13), <a href="../../../tags/gentoo.html">gentoo</a> (1), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (2), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (3), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (4), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (3), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Search</h1>
+    <form action="../../../search.html" method="get">
+        <input type="text" name="q" />
+        <button type="submit"><span class="webfont">L</span></button>
+    </form>
+</div></section></aside></div> <!-- #main --></div> <!-- #main-container -->
+
+        <div class="footer-container"><footer class="wrapper">&copy; Copyright 2012, zinrai. Powered by <a href="http://www.tinkerer.me/">Tinkerer</a> and <a href="http://sphinx.pocoo.org/">Sphinx</a>.</footer></div> <!-- footer-container -->
+
+      </div> <!--! end of #container --><!--[if lt IE 7 ]>
+          <script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.3/CFInstall.min.js"></script>
+          <script>window.attachEvent('onload',function(){CFInstall.check({mode:'overlay'})})</script>
+        <![endif]-->
+    </body>
+</html>

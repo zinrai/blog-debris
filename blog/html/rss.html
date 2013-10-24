@@ -5,8 +5,107 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 17 Oct 2013 00:00:00 +0900</pubDate>
+        <pubDate>Tue, 22 Oct 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/10/22/debian_wheezy_openvswitch_bridge.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/10/22/debian_wheezy_openvswitch_bridge.html</guid>
+            <title><![CDATA[Open vSwitchを使ってみる]]></title>
+            <description><![CDATA[<div class="section" id="open-vswitch">
+<h1>Open vSwitchを使ってみる</h1>
+<p>bridgeをOpen vSwitchに変えてみた。</p>
+<div class="highlight-python"><pre>% lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.2 (wheezy)
+Release:        7.2
+Codename:       wheezy</pre>
+</div>
+<div class="section" id="bridge">
+<h2>bridge停止</h2>
+<div class="highlight-python"><pre>% service networking stop
+
+% brctl delif br0 eth0
+% brctl delif br1 eth1
+% brctl delbr br0
+% brctl delbr br1
+
+% modprobe -r bridge</pre>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Open vSwitch インストール</h2>
+<div class="highlight-python"><pre>% apt-get install -y openvswitch-switch openvswitch-datapath-source openvswitch-brcompat module-assistant
+% module-assistant auto-install openvswitch-datapath-source
+% modprobe openvswitch_mod
+% modprobe brcompat_mod
+% service openvswitch-switch start</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/default/openvswitch-switch
+BRCOMPAT=yes</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/modules
+openvswitch_mod
+brcompat_mod</pre>
+</div>
+</div>
+<div class="section" id="open-vswitch-bridge">
+<h2>Open vSwitch bridge設定</h2>
+<div class="highlight-python"><pre>% ovs-vsctl add-br br0
+% ovs-vsctl add-br br1
+% ovs-vsctl add-port br0 eth0
+% ovs-vsctl add-port br1 eth1</pre>
+</div>
+<div class="highlight-python"><pre>% ovs-vsctl show
+2a8eb1c3-4273-42b3-9f84-108918d53d15
+    Bridge &quot;br0&quot;
+        Port &quot;eth0&quot;
+            Interface &quot;eth0&quot;
+        Port &quot;br0&quot;
+            Interface &quot;br0&quot;
+                type: internal
+    Bridge &quot;br1&quot;
+        Port &quot;eth1&quot;
+            Interface &quot;eth1&quot;
+        Port &quot;br1&quot;
+            Interface &quot;br1&quot;
+                type: internal
+    ovs_version: &quot;1.4.2&quot;</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/network/interfaces
+auto eth0
+iface eth0 inet manual
+  up /sbin/ifconfig eth0 up
+  down /sbin/ifconfig eth0 down
+
+auto eth1
+iface eth1 inet manual
+  up /sbin/ifconfig eth1 up
+  down /sbin/ifconfig eth1 down</pre>
+</div>
+</div>
+<div class="section" id="libvirt">
+<h2>libvirt</h2>
+<p>openvswitch-brcompat使わず仮想マシンをOpen vSwitchのbridgeに接続するには、&lt;virtualport type=’openvswitch’&gt;を追加する。</p>
+<div class="highlight-python"><pre>% libvirtd --version
+libvirtd (libvirt) 0.9.12</pre>
+</div>
+<div class="highlight-python"><pre>% virsh edit vm01
+&lt;interface type='bridge'&gt;
+      &lt;source bridge='br1'/&gt;
+      &lt;virtualport type='openvswitch'&gt;
+      &lt;model type='virtio'/&gt;
+&lt;/interface&gt;</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://libvirt.org/formatnetwork.html">http://libvirt.org/formatnetwork.html</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ openvswitch ]]></category>
+             <pubDate>Tue, 22 Oct 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/10/17/freebsd_supervisor_uwsgi.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/17/freebsd_supervisor_uwsgi.html</guid>
