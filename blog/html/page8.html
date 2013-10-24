@@ -86,6 +86,86 @@
             <li class="left"> &laquo; <a href="page7.html">Newer</a></li>
             <li class="right"><a href="page9.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>August 23, 2013</span>
+        </div>
+        <div class="section" id="nullfsjailports">
+<h1><a href="2013/08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a></h1>
+<p>jailを複数動かしているとports(Ports Collection)をどのように取り扱うかという壁にブチ当たると思う。jailごとにportsnap fetchしているとportsnapサーバに負荷がかかるし、管理が面倒くさい。ということでjailのportsは共有し、ホストからしかfetch,updateなどが出来ないようにしてみた。</p>
+<p><a class="reference internal" href="2013/08/22/freebsd_jail_vimage_zfs.html"><em>前回</em></a>からの続きということで。</p>
+<div class="highlight-python"><pre># cd 9.1.0/sys/amd64/conf
+# cp VIMAGE NULLFS
+
+# vi VIMAGE
+options         NULLFS
+
+# cd /usr/src/9.1.0
+# make buildkernel KERNCONF=NULLFS
+# make installkernel KERNCONF=NULLFS
+# reboot</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/ports</span>
+<span class="c"># portsnap -p /jails/ports fetch</span>
+<span class="c"># portsnap -p /jails/ports extract</span>
+<span class="c"># portsnap -p /jails/ports update</span>
+</pre></div>
+</div>
+<p>設定があちこちに散らばると管理が面倒なのでnullfsのマウントはホストのfstabではなくjail.conf(5)に書く。</p>
+<div class="highlight-python"><pre># vi /etc/jail.conf
+
+exec.prestart  = &quot;ifconfig epair${if} create up &gt; /dev/null&quot;;
+exec.prestart += &quot;ifconfig vswitch0 addm epair${if}a&quot;;
+exec.prestart += &quot;mount -t nullfs -o ro /jails/ports /jails/${name}/usr/ports&quot;;
+exec.start     = &quot;ifconfig lo0 up 127.0.0.1&quot;;
+exec.start    += &quot;ifconfig epair${if}b up $ipaddr&quot;;
+exec.start    += &quot;route add default 192.168.0.254&quot;;
+exec.start    += &quot;sh /etc/rc&quot;;
+exec.stop      = &quot;sh /etc/rc.shutdown&quot;;
+exec.poststop  = &quot;ifconfig epair${if}a destroy&quot;;
+exec.poststop += &quot;umount /jails/${name}/usr/ports&quot;;
+host.hostname = &quot;${name}.localnet&quot;;
+mount.devfs;
+devfs_ruleset = 5;
+vnet;
+vnet.interface = &quot;epair${if}b&quot;;
+path = &quot;/jails/${name}&quot;;
+persist;
+
+test01 {
+        $if = 1;
+        $ipaddr = 192.168.0.1;
+}
+
+test02 {
+        $if = 2;
+        $ipaddr = 192.168.0.2;
+}</pre>
+</div>
+<p>portsをリードオンリーでマウントしているのでビルド時の作業用ディレクトリが作成できない。そのためjail環境のmake.conf(5)に作業ディレクトリの指定、ディレクトリを作成する必要がある。設定した環境変数の説明はports(5)に書いてある。</p>
+<div class="highlight-python"><pre># vi /jails/test01/etc/make.conf
+
+WRKDIRPREFIX = /var/ports/
+DISTDIR = /var/ports/distfiles/
+PACKAGES = /var/ports/packages/
+
+# mkdir -p /jails/test01/var/ports/distfiles
+# mkdir -p /jails/test01/var/ports/packages</pre>
+</div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/freebsd.html">freebsd</a>, <a href="categories/jail.html">jail</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/nullfs.html">nullfs</a>, <a href="tags/zfs.html">zfs</a>, <a href="tags/ports.html">ports</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>August 22, 2013</span>
         </div>
         <div class="section" id="freebsd-9-1-vimage-zfs-jail">
@@ -221,8 +301,8 @@ test02 {
         </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>July 20, 2013</span>
         </div>
-        <div class="section" id="pxe-boot-freebsd-9-1">
-<h1><a href="2013/07/20/freebsd_pxeboot.html">PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</a></h1>
+        <div class="section" id="freebsd-9-1">
+<h1><a href="2013/07/20/freebsd_pxeboot.html">シェルスクリプトでFreeBSD 9.1のインストール自動化</a></h1>
 <p>OSインストールをするだけでお金が貰えるならば喜んでやるが、趣味の時間をOSインストールに奪われるのはつらいので、自動化してみた。</p>
 <div class="section" id="pxe-boot">
 <h2>PXE boot サーバ構築</h2>
@@ -425,393 +505,6 @@ reboot
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/pxeboot.html">pxeboot</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>June 22, 2013</span>
-        </div>
-        <div class="section" id="cobbler-puppet">
-<h1><a href="2013/06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a></h1>
-<p>前回はCobblerでとりあえずOSインストールが出来るところまでやったので、今回はkickstartファイルの編集、Puppet(Puppet client)のインストールとセットアップを自動化してみる。</p>
-<div class="section" id="dnsmasq">
-<h2>dnsmasq</h2>
-<p>DHCP,DNSサーバにdnsmasqを使用する。ISC DHCPよりもdnsmasqを使ったほうがPuppetと連携させやすいことに気が付いた。</p>
-<div class="highlight-python"><pre># vi /etc/cobbler/settings
-
-manage_dns: 1
-manage_dhcp: 1
-server: 192.168.0.1
-next_server: 192.168.0.254 &lt;- Gateway</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/cobbler/modules.conf</span>
-
-<span class="p">[</span><span class="n">dns</span><span class="p">]</span>
-<span class="n">module</span> <span class="o">=</span> <span class="n">manage_dnsmasq</span>
-
-<span class="p">[</span><span class="n">dhcp</span><span class="p">]</span>
-<span class="n">module</span> <span class="o">=</span> <span class="n">manage_dnsmasq</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># yum install dnsmasq</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre># vi /etc/cobbler/dnsmasq.template
-
-# Cobbler generated configuration file for dnsmasq
-# $date
-#
-
-# resolve.conf .. ?
-#no-poll
-#enable-dbus
-read-ethers
-addn-hosts = /var/lib/cobbler/cobbler_hosts
-
-dhcp-range=192.168.0.220,192.168.0.250
-dhcp-option=3,$next_server
-dhcp-lease-max=1000
-dhcp-authoritative
-dhcp-boot=pxelinux.0
-dhcp-boot=net:normalarch,pxelinux.0
-dhcp-boot=net:ia64,$elilo
-
-$insert_cobbler_system_definitions</pre>
-</div>
-<div class="highlight-python"><pre># vi /etc/hosts
-192.168.0.1 cobbler.localnet</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># chkconfig dnsmasq on</span>
-<span class="c"># service dnsmasq start</span>
-<span class="c"># service cobblerd restart</span>
-<span class="c"># cobbler sync</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="cobbler">
-<h2>Cobbler</h2>
-<div class="highlight-python"><pre># cobbler profile report
-Name                           : CentOS6.4-x86_64
-TFTP Boot Files                : {}
-Comment                        :
-DHCP Tag                       : default
-Distribution                   : CentOS6.4-x86_64
-Enable gPXE?                   : 0
-Enable PXE Menu?               : 1
-Fetchable Files                : {}
-Kernel Options                 : {}
-Kernel Options (Post Install)  : {}
-Kickstart                      : /var/lib/cobbler/kickstarts/sample.ks
-Kickstart Metadata             : {}
-Management Classes             : []
-Management Parameters          : &lt;&lt;inherit&gt;&gt;
-Name Servers                   : []
-Name Servers Search Path       : []
-Owners                         : ['admin']
-Parent Profile                 :
-Proxy                          :
-Red Hat Management Key         : &lt;&lt;inherit&gt;&gt;
-Red Hat Management Server      : &lt;&lt;inherit&gt;&gt;
-Repos                          : []
-Server Override                : &lt;&lt;inherit&gt;&gt;
-Template Files                 : {}
-Virt Auto Boot                 : 1
-Virt Bridge                    : xenbr0
-Virt CPUs                      : 1
-Virt Disk Driver Type          : raw
-Virt File Size(GB)             : 5
-Virt Path                      :
-Virt RAM (MB)                  : 512
-Virt Type                      : qemu</pre>
-</div>
-<p>登録しているprofileからPuppet Server,Puppet Clientのprofileを作成する。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile copy --name=CentOS6.4-x86_64 --newname=CentOS6.4-puppet_server</span>
-<span class="c"># cobbler profile copy --name=CentOS6.4-x86_64 --newname=CentOS6.4-puppet_client</span>
-</pre></div>
-</div>
-<p>EPELにあるPuppetを使用する。</p>
-<div class="highlight-python"><pre># yum -y install wget
-
-# cobbler repo add --name=CentOS6.4-epel --mirror=http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64 --mirror-locally=no
-# cobbler reposync
-# mkdir /var/www/cobbler/repo_mirror/CentOS6.4-epel/.origin
-# cobbler reposync
-
-# cobbler repo report
-Name                           : CentOS6.4-epel
-Arch                           : x86_64
-Breed                          : yum
-Comment                        :
-Createrepo Flags               : &lt;&lt;inherit&gt;&gt;
-Environment Variables          : {}
-Keep Updated                   : True
-Mirror                         : http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64
-Mirror locally                 : False
-Owners                         : ['admin']
-Priority                       : 99
-RPM List                       : []
-Yum Options                    : {}</pre>
-</div>
-<p>profileにリポジトリの情報を追加</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --repos=&quot;CentOS6.4-epel&quot;</span>
-<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_client --repos=&quot;CentOS6.4-epel&quot;</span>
-</pre></div>
-</div>
-<p>profileをコピーしたままの状態ではsample.ksファイルが読み込まれるので、ksファイルをコピーしてPuppetをインストールするよう書き換える。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /var/lib/cobbler/kickstarts</span>
-<span class="c"># cp sample.ks puppet_server.ks</span>
-<span class="c"># cp sample.ks puppet_client.ks</span>
-
-<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --kickstart=/var/lib/cobbler/kickstarts/puppet_server.ks</span>
-<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_client --kickstart=/var/lib/cobbler/kickstarts/puppet_client.ks</span>
-</pre></div>
-</div>
-<p>固定IPを割り振るためにsystemに登録する。</p>
-<div class="highlight-python"><pre># vi /etc/cobbler/settings
-pxe_just_once: 1
-
-# service cobblerd restart</pre>
-</div>
-<div class="highlight-python"><pre># cobbler system add  \
---name=puppet-server-2 \
---hostname=puppetserver.localnet \
---dns-name=puppetserver.localnet \
---profile=CentOS6.4-puppet_server \
---interface=eth0 \
---mac=XX:XX:XX:XX:XX:XX \
---static=1 \
---ip-address=192.168.0.2 \
---subnet=255.255.255.0 \
---gateway=192.168.0.254 \
---name-servers=192.168.0.1
-
-# cobbler system add  \
---name=puppet-client-003 \
---hostname=puppetclient003.localnet \
---dns-name=puppetclient003.localnet \
---profile=CentOS6.4-puppet_client \
---interface=eth0 \
---mac=XX:XX:XX:XX:XX:XX \
---static=1 \
---ip-address=192.168.0.3 \
---subnet=255.255.255.0 \
---gateway=192.168.0.254 \
---name-servers=192.168.0.1</pre>
-</div>
-<p>pxe_just_onceを有効にすると登録したsystemは1度しかpxe bootしないので、OSインストール後に、もう1度pxe bootさせたくなったら下記を実行する。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler system edit --name=puppet-client-003 --netboot-enabled=1</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="puppet">
-<h2>Puppet</h2>
-<p>PuppetにはPUSHモードとPULLモードがある。</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="14%"/>
-<col width="86%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>PULL</td>
-<td>クライアントからサーバへ定期的にマニュフェストを取得し適用する。</td>
-</tr>
-<tr class="row-even"><td>PUSH</td>
-<td>サーバからクライアントへマニュフェストを取得し適用するよう指示する。</td>
-</tr>
-</tbody>
-</table>
-<p>今回はPUSHモードのPuppet環境を構築する。</p>
-<div class="section" id="puppet-server">
-<h3>Puppet server</h3>
-<p>Puppet clientを自動構築するためにPuppet serverを作り込む。</p>
-<p>Puppet serverのほうはOSインストール後にPuppet serverをインストールするなり、Cobblerサーバのkickstartファイルのpackageセクションに記述するなり好きにすればいいと思う。</p>
-<div class="highlight-python"><pre># puppet --version
-2.6.18</pre>
-</div>
-<div class="highlight-python"><pre># vi /etc/sysconfig/puppet
-
-# The puppetmaster server
-#PUPPET_SERVER=puppet
-
-# If you wish to specify the port to connect to do so here
-PUPPET_PORT=8139
-
-# Where to log to. Specify syslog to send log messages to the system log.
-PUPPET_LOG=/var/log/puppet/puppet.log
-
-# You may specify other parameters to the puppet client here
-#PUPPET_EXTRA_OPTS=--waitforcert=500</pre>
-</div>
-<div class="highlight-python"><pre># vi /etc/puppet/autosign.conf
-
-*.localnet</pre>
-</div>
-<div class="highlight-python"><pre># vi /etc/puppet/fileserver.conf
-
-[files]
- path /etc/puppet/manifests/files
- allow *</pre>
-</div>
-<div class="highlight-python"><pre># vi /etc/puppet/manifests/site.pp
-
-package { 'zsh' :
-        ensure =&gt; present;
-}
-
-file { '/etc/sysconfig/puppet' :
-        owner =&gt; 'root',
-        group =&gt; 'root',
-        mode =&gt; 644,
-        source =&gt; 'puppet://puppetserver.localnet/files/puppet',
-}
-
-file { '/etc/puppet/auth.conf' :
-        owner =&gt; 'root',
-        group =&gt; 'root',
-        mode =&gt; 644,
-        source =&gt; 'puppet://puppetserver.localnet/files/auth.conf',
-}</pre>
-</div>
-<div class="highlight-python"><pre># vi /etc/puppet/manifests/files/puppet
-
-# The puppetmaster server
-PUPPET_SERVER=puppetsrv.localnet
-
-# If you wish to specify the port to connect to do so here
-#PUPPET_PORT=8140
-
-# Where to log to. Specify syslog to send log messages to the system log.
-PUPPET_LOG=/var/log/puppet/puppet.log
-
-# You may specify other parameters to the puppet client here
-#PUPPET_EXTRA_OPTS=--waitforcert=500
-PUPPET_EXTRA_OPTS=&quot;--listen --no-client&quot;</pre>
-</div>
-<div class="highlight-python"><pre># vi /etc/puppet/manifests/files/auth.conf
-
-path /run
-method save
-allow *
-
-path /
-auth any</pre>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># service puppetmaster start</span>
-</pre></div>
-</div>
-<p>これで以下のコマンドを実行すればPuppet clientにマニュフェストが適用される。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># puppet kick --host puppetclient002.localnet</span>
-</pre></div>
-</div>
-</div>
-</div>
-<div class="section" id="kickstart">
-<h2>Kickstart</h2>
-<p>Puppet client用のkickstartファイルは下記のようになっている。</p>
-<p>postセクションに</p>
-<div class="highlight-python"><pre>/sbin/chkconfig puppet on
-puppet agent --server=puppetserver.localnet --no-daemonize --onetime</pre>
-</div>
-<p>を記述することで、Puppetの自動起動、Puppet serverからマニュフェストを取得する処理が1度だけ実行される。これでPuppet clientはOSインストールからPuppetインストール,セットアップまで自動化することが出来た。しかし、今回の設定では各clientの細かい制御(client1にはapache,client2にはmysqlなど)が出来ていないのでそれについては、またの機会に書きたいと思う。</p>
-<div class="highlight-python"><pre># vi /var/lib/cobbler/kickstarts/puppet_client.ks
-
-#platform=x86, AMD64, or Intel EM64T
-# System authorization information
-auth  --useshadow  --enablemd5
-# System bootloader configuration
-bootloader --location=mbr
-# Partition clearing information
-clearpart --all --initlabel
-# Use text mode install
-text
-# Firewall configuration
-#firewall --enabled
-firewall --disabled
-# Run the Setup Agent on first boot
-firstboot --disable
-# Timezone
-timezone Asia/Tokyo
-# System keyboard
-keyboard us
-# System language
-lang en_US
-# Use network installation
-url --url=$tree
-# If any cobbler repo definitions were referenced in the kickstart profile, include them here.
-$yum_repo_stanza
-# Network information
-$SNIPPET('network_config')
-# Reboot after installation
-reboot
-
-#Root password
-rootpw --iscrypted $default_password_crypted
-# SELinux configuration
-selinux --disabled
-# Do not configure the X Window System
-skipx
-# System timezone
-timezone  America/New_York
-# Install OS instead of upgrade
-install
-# Clear the Master Boot Record
-zerombr
-# Allow anaconda to partition the system as needed
-autopart
-
-
-%pre
-$SNIPPET('log_ks_pre')
-$SNIPPET('kickstart_start')
-$SNIPPET('pre_install_network_config')
-# Enable installation monitoring
-$SNIPPET('pre_anamon')
-
-%packages
-$SNIPPET('func_install_if_enabled')
-$SNIPPET('puppet_install_if_enabled')
-puppet
-
-%post
-$SNIPPET('log_ks_post')
-# Start yum configuration
-$yum_config_stanza
-# End yum configuration
-$SNIPPET('post_install_kernel_options')
-$SNIPPET('post_install_network_config')
-$SNIPPET('func_register_if_enabled')
-$SNIPPET('puppet_register_if_enabled')
-$SNIPPET('download_config_files')
-$SNIPPET('koan_environment')
-$SNIPPET('redhat_register')
-$SNIPPET('cobbler_register')
-/sbin/chkconfig puppet on
-puppet agent --server=puppetserver.localnet --no-daemonize --onetime
-# Enable post-install boot notification
-$SNIPPET('post_anamon')
-# Start final steps
-$SNIPPET('kickstart_done')
-# End final steps</pre>
-</div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html">Managing DNS</a></li>
-<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.2.3/4/3/1_-_Managing_DHCP.html">Managing DHCP</a></li>
-<li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
-<li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add">http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add/</a></li>
-</ul>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/puppet.html">puppet</a>, <a href="categories/cobbler.html">cobbler</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/centos.html">centos</a>, <a href="tags/puppet.html">puppet</a>, <a href="tags/cobbler.html">cobbler</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -820,6 +513,8 @@ $SNIPPET('kickstart_done')
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
+        </li><li>
             <a href="2013/10/22/debian_wheezy_openvswitch_bridge.html">Open vSwitchを使ってみる</a>
         </li><li>
             <a href="2013/10/17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a>
@@ -837,15 +532,13 @@ $SNIPPET('kickstart_done')
             <a href="2013/09/09/centos_chroot.html">CentOSでchroot環境構築</a>
         </li><li>
             <a href="2013/09/08/gentoo_install_script.html">Gentoo Linux インストールスクリプト</a>
-        </li><li>
-            <a href="2013/09/07/debian_wheezy_pxeboot.html">PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/centos.html">centos</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (1)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (1)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/centos.html">centos</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (1)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (8), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (2), <a href="tags/freebsd.html">freebsd</a> (13), <a href="tags/gentoo.html">gentoo</a> (1), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (4), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (9), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/freebsd.html">freebsd</a> (13), <a href="tags/gentoo.html">gentoo</a> (1), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (5), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

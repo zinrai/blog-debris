@@ -5,8 +5,76 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 22 Oct 2013 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 24 Oct 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html</guid>
+            <title><![CDATA[Proxy DHCPを使ったディスクレスブート環境構築]]></title>
+            <description><![CDATA[<div class="section" id="proxy-dhcp">
+<h1>Proxy DHCPを使ったディスクレスブート環境構築</h1>
+<p>Proxy DHCPを使ってDHCPサーバとネットワークブートサーバを切り離し、ディスクレスブート環境を構築してみる。</p>
+<p>DHCPサーバ,Proxy DHCPともにdnsmasq、OSはDebian wheezyを使用する。</p>
+<div class="highlight-python"><pre>% lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.2 (wheezy)
+Release:        7.2
+Codename:       wheezy</pre>
+</div>
+<div class="section" id="dhcp">
+<h2>DHCPサーバ</h2>
+<div class="highlight-python"><pre>% apt-get install dnsmasq</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/dnsmasq.d/dhcp.conf
+dhcp-range=192.168.2.230,192.168.2.253,2h
+dhcp-option=3,192.168.2.254</pre>
+</div>
+<div class="highlight-python"><pre>% service dnsmasq restart</pre>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Proxy DHCP</h2>
+<div class="highlight-python"><pre>% apt-get install dnsmasq</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/dnsmasq.d/pxe.conf
+dhcp-range=192.168.2.0,proxy
+pxe-service=x86PC, &quot;os install&quot;, pxelinux
+enable-tftp
+tftp-root=/var/diskless</pre>
+</div>
+</div>
+<div class="section" id="diskless-boot">
+<h2>Diskless Boot</h2>
+<div class="highlight-python"><pre>% apt-get install syslinux nfs-kernel-server debootstrap</pre>
+</div>
+<div class="highlight-python"><pre>% debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/exports
+/var/diskless/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)</pre>
+</div>
+<div class="highlight-python"><pre>% mkdir /var/diskless
+% cp /usr/lib/syslinux/menu.c32 /var/diskless
+% cp /usr/lib/syslinux/pxelinux.0 /var/diskless
+% cp /boot/initrd* /var/diskless
+% cp /boot/vmlinuz* /var/diskless
+% mkdir /var/diskless/pxelinux.cfg</pre>
+</div>
+<div class="highlight-python"><pre>% vi /var/diskless/pxelinux.cfg/default
+default menu.c32
+label Debian Wheezy
+kernel vmlinuz-3.2.0-4-amd64
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy ro single</pre>
+</div>
+<div class="highlight-python"><pre>% service dnsmasq restart
+% service nfs-kernel-server restart</pre>
+</div>
+</div>
+</div>]]></description>
+            <category><![CDATA[ dnsmasq ]]></category>
+             <pubDate>Thu, 24 Oct 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/10/22/debian_wheezy_openvswitch_bridge.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/22/debian_wheezy_openvswitch_bridge.html</guid>
@@ -741,7 +809,7 @@ Group: E-mail server
 <li>Gentoo怖くないよ</li>
 </ul>
 <p>などが今回のモチベーションである。</p>
-<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化</em></a>」で構築した環境にスクリプトを配置する。</p>
+<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」で構築した環境にスクリプトを配置する。</p>
 <p>その他に、<a class="reference external" href="http://www.gentoo.org/main/en/where.xml">stage3</a>,<a class="reference external" href="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots">portage</a>, カーネルのコンフィグファイルをスクリプトのあるディレクトリに用意しておく。</p>
 <p>実機,仮想環境(KVM)ともに動作することは確認した。Gentooを複数台セットアップする予定はいまのところない。</p>
 <div class="highlight-python"><pre>% cp /boot/config-* /var/scripts
@@ -899,9 +967,9 @@ reboot
         <item>
             <link>http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html</guid>
-            <title><![CDATA[PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化]]></title>
-            <description><![CDATA[<div class="section" id="pxe-boot-debian-wheezy">
-<h1>PXE boot + シェルスクリプトでDebian Wheezyのインストール自動化</h1>
+            <title><![CDATA[シェルスクリプトでDebian wheezyのインストール自動化]]></title>
+            <description><![CDATA[<div class="section" id="debian-wheezy">
+<h1>シェルスクリプトでDebian wheezyのインストール自動化</h1>
 <p>みなさん、Debianのインストール作業はどうやっているだろうか。私は、OSのインストール作業なんてお金を貰わない限り手動でやりたくないので自動化している。OSの手動インストールをするだけでお金が発生するのであれば喜んでやらせていただく所存である。RedHat系の「<a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">Kickstart</a>」と同じような仕組みの「<a class="reference external" href="http://www.debian.org/releases/stable/amd64/apb.html.ja">preseed</a>」というものがDebianにも存在するが、これを使わずに「pxeboot + debootstrap + シェルスクリプト」でインストールの自動化をしている。</p>
 <div class="section" id="pxeboot">
 <h2>pxeboot</h2>
@@ -957,7 +1025,7 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.2
 </div>
 <div class="section" id="debian">
 <h2>Debianインストールスクリプト</h2>
-<p>仕組みは「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」と同じである。</p>
+<p>仕組みは「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」と同じである。</p>
 <p>debootstrapで取得した最小構成のWheezyをコピーするスクリプトを書いただけ。</p>
 <p>パッケージインストール時にダイアログが表示され入力待ちにならないよう環境変数「DEBIAN_FRONTEND=noninteractive」を設定しておくのがポイントである。</p>
 <p>この環境変数は解決方法はないかとdebconf(1)を眺めていたら</p>
@@ -2247,9 +2315,9 @@ test02 {
         <item>
             <link>http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html</guid>
-            <title><![CDATA[PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化]]></title>
-            <description><![CDATA[<div class="section" id="pxe-boot-freebsd-9-1">
-<h1>PXE boot + シェルスクリプトでFreeBSD 9.1のインストール自動化</h1>
+            <title><![CDATA[シェルスクリプトでFreeBSD 9.1のインストール自動化]]></title>
+            <description><![CDATA[<div class="section" id="freebsd-9-1">
+<h1>シェルスクリプトでFreeBSD 9.1のインストール自動化</h1>
 <p>OSインストールをするだけでお金が貰えるならば喜んでやるが、趣味の時間をOSインストールに奪われるのはつらいので、自動化してみた。</p>
 <div class="section" id="pxe-boot">
 <h2>PXE boot サーバ構築</h2>
