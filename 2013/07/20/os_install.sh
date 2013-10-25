@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 get_conf() {
   if [ "$OS" = "FreeBSD" ]; then
@@ -17,6 +17,11 @@ CWD=`dirname $0`
 OS=`uname`
 CONFFILE=`get_conf`
 
+if [ -z "$CONFFILE" ]; then
+  printf 'Script Not Found\n'
+  exit 1
+fi
+
 if [ "$OS" = "FreeBSD" ]; then
   IFACE=`netstat -nr | awk '{if($3 ~ /^UG$/) print $6}'`
   MOUNTNAME=`sha256 -q $CONFFILE`
@@ -27,6 +32,4 @@ fi
 
 mkdir /mnt/${MOUNTNAME}
 
-if [ -n "$CONFFILE" ]; then
-  $CONFFILE $IFACE $CWD $MOUNTNAME
-fi
+$CONFFILE $IFACE $CWD $MOUNTNAME

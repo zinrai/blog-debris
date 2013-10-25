@@ -33,7 +33,7 @@ Gentooを複数台セットアップする予定はいまのところない。
   % cp /boot/config-* /var/scripts
   % cd /var/scripts
   % wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-20130830.tar.bz2
-  % wget http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3/stage3-amd64-20130822.tar.bz2
+  % wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/current-stage3/stage3-amd64-20131010.tar.bz2
 
 
 ::
@@ -42,8 +42,6 @@ Gentooを複数台セットアップする予定はいまのところない。
 
 .. literalinclude:: gentoo_install.conf
    :language: bash
-
-
 
 
 .. _stage3: http://www.gentoo.org/main/en/where.xml

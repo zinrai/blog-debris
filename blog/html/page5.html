@@ -86,6 +86,53 @@
             <li class="left"> &laquo; <a href="page4.html">Newer</a></li>
             <li class="right"><a href="page6.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>September 06, 2013</span>
+        </div>
+        <div class="section" id="sshfs">
+<h1><a href="2013/09/06/debian_wheezy_sshfs.html">sshfs</a></h1>
+<p>言わずと知れたSSH経由でリモートサーバのディレクトリをマウントしてくれるツール</p>
+<p>いつも便利に使わせてもらっている。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get instal sshfs</span>
+</pre></div>
+</div>
+<p>fuseグループに所属していないと「fuse: failed to open /dev/fuse: Permission denied」となる。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># usermod -a -G fuse hoge</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.1 (wheezy)
+Release:        7.1
+Codename:       wheezy</pre>
+</div>
+<div class="highlight-python"><pre>$ sshfs --version
+SSHFS version 2.4
+FUSE library version: 2.9.0
+using FUSE kernel interface version 7.18</pre>
+</div>
+<div class="highlight-python"><pre>$ sshfs -p 18465 hoge@192.168.2.1:/home/hoge remote_dir
+$ fusermount -u remote_dir</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://fuse.sourceforge.net/sshfs.html">http://fuse.sourceforge.net/sshfs.html</a></li>
+</ul>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/sshfs.html">sshfs</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/sshfs.html">sshfs</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>September 05, 2013</span>
         </div>
         <div class="section" id="uwsgi">
@@ -236,75 +283,6 @@ http {
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/nginx.html">nginx</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>September 03, 2013</span>
-        </div>
-        <div class="section" id="jailjenkins">
-<h1><a href="2013/09/03/freebsd_jail_jenkins.html">jail環境でJenkinsを動かす</a></h1>
-<p>会社員だったときに仕様書がエルセル方眼紙だったので、「<a class="reference external" href="http://sphinx-doc.org">Sphinx</a>にするとプレーンテキストで管理でき、gitなどのバージョン管理システムの管理下に置け、さらに<a class="reference external" href="http://jenkins-ci.org">Jenkins</a>を使えば手元に<a class="reference external" href="http://sphinx-doc.org">Sphinx</a>がなくてもバージョン管理下に置いたソースをリモートリポジトリにpushするだけでビルドしてくれる環境ができますよ」というようなことをもう少しわかりやすく提案し見事に却下された。エクセル方眼紙は3人で編集していたのでマージ作業が辛かった。</p>
-<p>jail環境の構築は下記を参考に</p>
-<ul class="simple">
-<li><a class="reference internal" href="2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
-</ul>
-<p>FreeBSDにJenkinsをインストールするとインストール後に下記のように表示される。</p>
-<div class="highlight-python"><pre>======================================================================
-
-This OpenJDK implementation requires fdescfs(5) mounted on /dev/fd and
-procfs(5) mounted on /proc.
-
-If you have not done it yet, please do the following:
-
-        mount -t fdescfs fdesc /dev/fd
-        mount -t procfs proc /proc
-
-To make it permanent, you need the following lines in /etc/fstab:
-
-        fdesc   /dev/fd         fdescfs         rw      0       0
-        proc    /proc           procfs          rw      0       0
-
-======================================================================</pre>
-</div>
-<p>jail環境ではマウントできないのでホストのjail.conf(5)にjail起動時にマウントするよう書いておく。</p>
-<div class="highlight-python"><pre># vi /etc/jail.conf
-jenkins {
-        exec.prestart += &quot;mount -t fdescfs fdesc /jails/${name}/dev/fd&quot;;
-        exec.prestart += &quot;mount -t procfs proc /jails/${name}/proc&quot;;
-        exec.poststop += &quot;umount /jails/${name}/dev/fd&quot;;
-        exec.poststop += &quot;umount /jails/${name}/proc&quot;;
-        $if = 9;
-        $ipaddr = 192.168.0.9;
-}</pre>
-</div>
-<div class="section" id="jenkins">
-<h2>jenkins</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">jenkins_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-
-<span class="c"># service jenkins start</span>
-</pre></div>
-</div>
-<p>JenkinsはlocalhostでListenしているので、このままだと他からアクセスできない。</p>
-<p>次回はリバースプロキシにnginxを使いJenkinsにアクセスできるようにする。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://sphinx-users.jp">http://sphinx-users.jp/</a></li>
-<li><a class="reference external" href="http://build-shokunin.org">http://build-shokunin.org/</a></li>
-</ul>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/jenkins.html">jenkins</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/jail.html">jail</a>, <a href="tags/jenkins.html">jenkins</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -313,6 +291,8 @@ jenkins {
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2013/10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
+        </li><li>
             <a href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
         </li><li>
             <a href="2013/10/22/debian_wheezy_openvswitch_bridge.html">Open vSwitchを使ってみる</a>
@@ -330,15 +310,13 @@ jenkins {
             <a href="2013/09/10/debian_wheezy_chroot_aufs.html">aufsを使ったchroot環境</a>
         </li><li>
             <a href="2013/09/09/centos_chroot.html">CentOSでchroot環境構築</a>
-        </li><li>
-            <a href="2013/09/08/gentoo_install_script.html">Gentoo Linux インストールスクリプト</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/centos.html">centos</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (1)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/centos.html">centos</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (9), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/freebsd.html">freebsd</a> (13), <a href="tags/gentoo.html">gentoo</a> (1), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (5), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (9), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/freebsd.html">freebsd</a> (13), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (5), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/10/25/gentoo_emerge_sync_local_mirror
    2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp
    2013/10/22/debian_wheezy_openvswitch_bridge
    2013/10/17/freebsd_supervisor_uwsgi

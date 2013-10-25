@@ -5,8 +5,70 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 24 Oct 2013 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 25 Oct 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/10/25/gentoo_emerge_sync_local_mirror.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/10/25/gentoo_emerge_sync_local_mirror.html</guid>
+            <title><![CDATA[Gentoo Linux rsync ロカールミラー]]></title>
+            <description><![CDATA[<div class="section" id="gentoo-linux-rsync">
+<h1>Gentoo Linux rsync ロカールミラー</h1>
+<p>Gentoo Linuxマシンを複数台動かしている場合、それぞれのGentooマシンからemerge –syncするとリモートのミラーサーバに負荷が掛かるのでローカルにミラーサーバを構築し参照するようにした。</p>
+<div class="section" id="id1">
+<h2>サーバ</h2>
+<div class="highlight-python"><pre>% vi /etc/crontab
+0 23 * * * root emerge-webrsync</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/rsyncd.conf
+# /etc/rsyncd.conf
+
+# Minimal configuration file for rsync daemon
+# See rsync(1) and rsyncd.conf(5) man pages for help
+
+# This line is required by the /etc/init.d/rsyncd script
+pid file = /var/run/rsyncd.pid
+use chroot = yes
+read only = yes
+hosts allow = 192.168.2.0/24
+
+# Simple example for enabling your own local rsync server
+[gentoo-portage]
+        path = /usr/portage
+        comment = Gentoo Portage tree
+        exclude = /distfiles /packages</pre>
+</div>
+<div class="highlight-python"><pre>% /etc/init.d/rsyncd start
+% rc-update add rsyncd default</pre>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>クライアント</h2>
+<div class="highlight-python"><pre>% rsync 192.168.2.1::
+gentoo-portage  Gentoo Portage tree
+
+% rsync 192.168.2.1::gentoo-portage | head
+drwxr-xr-x        4096 2013/10/25 10:30:12 .
+-rw-r--r--         121 2013/01/01 09:31:01 header.txt
+-rw-r--r--        3658 2013/01/01 09:31:01 skel.ChangeLog
+-rw-r--r--        8147 2013/01/01 09:31:01 skel.ebuild
+-rw-r--r--        1232 2013/03/06 06:31:01 skel.metadata.xml
+drwxr-xr-x        4096 2013/10/17 09:31:02 app-accessibility
+drwxr-xr-x       12288 2013/10/17 09:31:02 app-admin
+drwxr-xr-x        4096 2013/10/17 09:31:02 app-antivirus
+drwxr-xr-x        4096 2013/10/25 06:01:12 app-arch
+drwxr-xr-x        4096 2013/10/25 06:01:13 app-backup</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/portage/make.conf
+SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;</pre>
+</div>
+<div class="highlight-python"><pre>% emerge --sync</pre>
+</div>
+</div>
+</div>]]></description>
+            <category><![CDATA[ gentoo ]]></category>
+             <pubDate>Fri, 25 Oct 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html</guid>
@@ -815,7 +877,7 @@ Group: E-mail server
 <div class="highlight-python"><pre>% cp /boot/config-* /var/scripts
 % cd /var/scripts
 % wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-20130830.tar.bz2
-% wget http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3/stage3-amd64-20130822.tar.bz2</pre>
+% wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/current-stage3/stage3-amd64-20131010.tar.bz2</pre>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/gentoo_install.conf</span>
 </pre></div>
@@ -828,7 +890,8 @@ Group: E-mail server
 
 <span class="nv">DISK</span><span class="o">=</span><span class="s2">&quot;/dev/vda&quot;</span>
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">CHROOT_GENTOO</span><span class="o">=</span><span class="s2">&quot;/mnt/$2&quot;</span>
+<span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">CHROOT_GENTOO</span><span class="o">=</span><span class="s2">&quot;/mnt/$3&quot;</span>
 
 dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
 
@@ -848,8 +911,8 @@ mkfs.ext3 <span class="k">${</span><span class="nv">DISK</span><span class="k">}
 
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
 
-tar xvjf stage3-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
-tar xvjf portage-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/usr
+tar xvjf <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/stage3-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
+tar xvjf <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/portage-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/usr
 
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/boot
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/home
@@ -927,8 +990,8 @@ cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/tmp/gentoo_setup.sh</span
 
 <span class="s">emerge --autounmask-write grub:2</span>
 <span class="s">emerge grub:2</span>
-<span class="s">mkdir /boot/grub2</span>
-<span class="s">grub2-mkconfig -o /boot/grub2/grub.cfg</span>
+<span class="s">mkdir /boot/grub</span>
+<span class="s">grub2-mkconfig -o /boot/grub/grub.cfg</span>
 <span class="s">grub2-install --no-floppy --root-directory=/ $DISK</span>
 
 <span class="s">grep -v rootfs /proc/mounts &gt; /etc/mtab</span>
@@ -1043,7 +1106,7 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.2
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/os_install.sh</span>
 </pre></div>
 </div>
-<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh -x</span>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
 get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
@@ -1062,6 +1125,11 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
 <span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
 
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nb">printf</span> <span class="s1">'Script Not Found\n'</span>
+  <span class="nb">exit </span>1
+<span class="k">fi</span>
+
 <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($3 ~ /^UG$/) print $6}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
@@ -1072,9 +1140,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 
 mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
-<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
-<span class="k">fi</span>
+<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/debian_install.conf</span>
@@ -2377,7 +2443,7 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/os_install.sh</span>
 </pre></div>
 </div>
-<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh -x</span>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
 get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
@@ -2396,6 +2462,11 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
 <span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
 
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nb">printf</span> <span class="s1">'Script Not Found\n'</span>
+  <span class="nb">exit </span>1
+<span class="k">fi</span>
+
 <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($3 ~ /^UG$/) print $6}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
@@ -2406,9 +2477,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 
 mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
-<span class="k">if</span> <span class="o">[</span> -n <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
-<span class="k">fi</span>
+<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/freebsd_install.conf</span>
