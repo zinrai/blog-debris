@@ -86,6 +86,75 @@
             <li class="left"></li>
             <li class="right"><a href="page2.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>October 26, 2013</span>
+        </div>
+        <div class="section" id="centos">
+<h1><a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a></h1>
+<p>「<a class="reference internal" href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a>」にCentOSのディスクレスブート環境を追加してみる。</p>
+<div class="highlight-python"><pre>% cat /etc/centos-release
+CentOS release 6.4 (Final)
+
+% uname -a
+Linux localhost.localdomain 2.6.32-358.23.2.el6.x86_64 #1 SMP Wed Oct 16 18:37:12 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux</pre>
+</div>
+<div class="highlight-python"><pre>% yum groupinstall --releasever=6 --installroot=/var/diskless/centos6  Base -y
+% yum upgrade --releasever=6 --installroot=/var/diskless/centos6 -y</pre>
+</div>
+<div class="highlight-python"><pre>% mount --rbind /dev /var/diskless/centos6/dev
+% cd /var/diskless/centos6
+% cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
+% chroot /var/diskless/centos6 passwd
+% chroot /var/diskless/centos6 yum -y install kernel
+
+% vi /var/diskless/centos6/etc/fstab
+none    /tmp        tmpfs   defaults   0 0
+tmpfs   /dev/shm    tmpfs   defaults   0 0
+sysfs   /sys        sysfs   defaults   0 0
+proc    /proc       proc    defaults   0 0
+
+% vi /var/diskless/centos6/etc/resolv.conf
+nameserver 8.8.8.8</pre>
+</div>
+<div class="highlight-python"><pre>% yum -y install dracut-network
+% dracut initramfs-`uname -r`.img</pre>
+</div>
+<div class="highlight-python"><pre>% vi /etc/exports
+/var/diskless/centos6 192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
+
+% service rpcbind start
+% service nfslock start
+% service nfs start</pre>
+</div>
+<p>あとはブートメニューにCentOSを追加するだけ。</p>
+<div class="highlight-python"><pre>% vi /var/diskless/pxelinux.cfg/default
+default menu.c32
+label Debian wheezy
+kernel vmlinuz-3.2.0-4-amd64
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy ro single
+
+label CentOS 6.4
+kernel vmlinuz-2.6.32-358.23.2.el6.x86_64
+append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4">http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4</a></li>
+</ul>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/centos.html">centos</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/centos.html">centos</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>October 25, 2013</span>
         </div>
         <div class="section" id="gentoo-linux-rsync">
@@ -233,114 +302,6 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/dnsmasq.html">dnsmasq</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>October 22, 2013</span>
-        </div>
-        <div class="section" id="open-vswitch">
-<h1><a href="2013/10/22/debian_wheezy_openvswitch_bridge.html">Open vSwitchを使ってみる</a></h1>
-<p>bridgeをOpen vSwitchに変えてみた。</p>
-<div class="highlight-python"><pre>% lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.2 (wheezy)
-Release:        7.2
-Codename:       wheezy</pre>
-</div>
-<div class="section" id="bridge">
-<h2>bridge停止</h2>
-<div class="highlight-python"><pre>% service networking stop
-
-% brctl delif br0 eth0
-% brctl delif br1 eth1
-% brctl delbr br0
-% brctl delbr br1
-
-% modprobe -r bridge</pre>
-</div>
-</div>
-<div class="section" id="id1">
-<h2>Open vSwitch インストール</h2>
-<div class="highlight-python"><pre>% apt-get install -y openvswitch-switch openvswitch-datapath-source openvswitch-brcompat module-assistant
-% module-assistant auto-install openvswitch-datapath-source
-% modprobe openvswitch_mod
-% modprobe brcompat_mod
-% service openvswitch-switch start</pre>
-</div>
-<div class="highlight-python"><pre>% vi /etc/default/openvswitch-switch
-BRCOMPAT=yes</pre>
-</div>
-<div class="highlight-python"><pre>% vi /etc/modules
-openvswitch_mod
-brcompat_mod</pre>
-</div>
-</div>
-<div class="section" id="open-vswitch-bridge">
-<h2>Open vSwitch bridge設定</h2>
-<div class="highlight-python"><pre>% ovs-vsctl add-br br0
-% ovs-vsctl add-br br1
-% ovs-vsctl add-port br0 eth0
-% ovs-vsctl add-port br1 eth1</pre>
-</div>
-<div class="highlight-python"><pre>% ovs-vsctl show
-2a8eb1c3-4273-42b3-9f84-108918d53d15
-    Bridge &quot;br0&quot;
-        Port &quot;eth0&quot;
-            Interface &quot;eth0&quot;
-        Port &quot;br0&quot;
-            Interface &quot;br0&quot;
-                type: internal
-    Bridge &quot;br1&quot;
-        Port &quot;eth1&quot;
-            Interface &quot;eth1&quot;
-        Port &quot;br1&quot;
-            Interface &quot;br1&quot;
-                type: internal
-    ovs_version: &quot;1.4.2&quot;</pre>
-</div>
-<div class="highlight-python"><pre>% vi /etc/network/interfaces
-auto eth0
-iface eth0 inet manual
-  up /sbin/ifconfig eth0 up
-  down /sbin/ifconfig eth0 down
-
-auto eth1
-iface eth1 inet manual
-  up /sbin/ifconfig eth1 up
-  down /sbin/ifconfig eth1 down</pre>
-</div>
-</div>
-<div class="section" id="libvirt">
-<h2>libvirt</h2>
-<p>openvswitch-brcompat使わず仮想マシンをOpen vSwitchのbridgeに接続するには、&lt;virtualport type=’openvswitch’&gt;を追加する。</p>
-<div class="highlight-python"><pre>% libvirtd --version
-libvirtd (libvirt) 0.9.12</pre>
-</div>
-<div class="highlight-python"><pre>% virsh edit vm01
-&lt;interface type='bridge'&gt;
-      &lt;source bridge='br1'/&gt;
-      &lt;virtualport type='openvswitch'&gt;
-      &lt;model type='virtio'/&gt;
-&lt;/interface&gt;</pre>
-</div>
-<ul class="simple">
-<li><a class="reference external" href="http://libvirt.org/formatnetwork.html">http://libvirt.org/formatnetwork.html</a></li>
-</ul>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/openvswitch.html">openvswitch</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/openvswitch.html">openvswitch</a>, <a href="tags/debian.html">debian</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -349,6 +310,8 @@ libvirtd (libvirt) 0.9.12</pre>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
+        </li><li>
             <a href="2013/10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
         </li><li>
             <a href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
@@ -366,15 +329,13 @@ libvirtd (libvirt) 0.9.12</pre>
             <a href="2013/09/11/debian_wheezy_cowbuilder_chroot.html">cowbuilderを使ったsandbox環境</a>
         </li><li>
             <a href="2013/09/10/debian_wheezy_chroot_aufs.html">aufsを使ったchroot環境</a>
-        </li><li>
-            <a href="2013/09/09/centos_chroot.html">CentOSでchroot環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/centos.html">centos</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (9), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/freebsd.html">freebsd</a> (13), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (5), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (9), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/freebsd.html">freebsd</a> (13), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (5), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

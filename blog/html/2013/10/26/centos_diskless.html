@@ -15,7 +15,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="description" content="This is an awesome blog">
         <meta name="viewport" content="width=device-width">
-        <title>XDM 設定 &mdash; command not found:</title>
+        <title>CentOS ディスクレスブートサーバ構築 &mdash; command not found:</title>
             <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/sphinx.css" type="text/css">
             <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
@@ -28,7 +28,7 @@
         <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
         <script src="../../../_static/plugins.js"></script>
         <script src="../../../_static/main.js"></script>
-        <link rel="next" title="netcatを使わずに多段SSH" href="../../09/20/ssh_proxycommand.html" /><link rel="prev" title="Supervisorを使ってuWSGIを管理" href="../17/freebsd_supervisor_uwsgi.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+        <link rel="next" title="Gentoo Linux rsync ロカールミラー" href="../25/gentoo_emerge_sync_local_mirror.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
         VERSION:     '1.2.1',
@@ -83,162 +83,62 @@
 </div>
 
 <div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a></li>
-            <li class="right"><a href="../../09/20/ssh_proxycommand.html">netcatを使わずに多段SSH</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
-            <span>October 02, 2013</span>
+            <span>October 26, 2013</span>
         </div>
-    <div class="section" id="xdm">
-<h1>XDM 設定</h1>
-<p>XDMのログイン画面はデフォルトだと寂しいので、ログイン毎に背景画像が代わるようにしている。</p>
-<div class="highlight-python"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.1 (wheezy)
-Release:        7.1
-Codename:       wheezy</pre>
-</div>
-<div class="highlight-python"><pre>% cd /etc/X11/xdm
-% cp xdm-config xdm-config.bak
-% cp Xsetup Xsetup_0
-% cp Xresources Xresources_0</pre>
-</div>
-<div class="section" id="xdm-config">
-<h2>xdm-config</h2>
-<div class="highlight-python"><pre>% diff -u xdm-config xdm-config.bak
---- xdm-config  2013-10-03 00:28:33.000000000 +0900
-+++ xdm-config.bak      2013-10-02 23:18:35.000000000 +0900
-@@ -15,7 +15,7 @@
- DisplayManager.keyFile:                /etc/X11/xdm/xdm-keys
- DisplayManager.servers:                /etc/X11/xdm/Xservers
- DisplayManager.accessFile:     /etc/X11/xdm/Xaccess
--DisplayManager*resources:      /etc/X11/xdm/Xresources_0
-+DisplayManager*resources:      /etc/X11/xdm/Xresources
- DisplayManager.willing:                su nobody -s /bin/sh -c /etc/X11/xdm/Xwilling
- ! All displays should use authorization, but we cannot be sure
- ! X terminals will be configured to support it, so those that do not will
-@@ -25,7 +25,7 @@
- DisplayManager*chooser:                /usr/lib/X11/xdm/chooser
- DisplayManager*startup:                /etc/X11/xdm/Xstartup
- DisplayManager*session:                /etc/X11/xdm/Xsession
--DisplayManager*setup:          /etc/X11/xdm/Xsetup_0
-+DisplayManager*setup:          /etc/X11/xdm/Xsetup
- DisplayManager*reset:          /etc/X11/xdm/Xreset
- DisplayManager*authComplain:   true</pre>
-</div>
-</div>
-<div class="section" id="xsetup-0">
-<h2>Xsetup_0</h2>
-<p>このファイルに指定したディレクトリにある画像をランダムに背景画像にするスクリプトを書く。</p>
-<p>指定した範囲の値から一つ取り出す処理にathena-jot(1)、背景画像の設定にはxsetbg(1x)を使った。</p>
-<div class="highlight-python"><pre>% apt-get install athena-jot xloadimage</pre>
-</div>
-<div class="highlight-python"><pre>% vi /etc/X11/xdm/Xsetup_0</pre>
-</div>
-<div class="highlight-python"><pre>#!/bin/sh
-#
-# This script is run as root before showing login widget.
+    <div class="section" id="centos">
+<h1>CentOS ディスクレスブートサーバ構築</h1>
+<p>「<a class="reference internal" href="../24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a>」にCentOSのディスクレスブート環境を追加してみる。</p>
+<div class="highlight-python"><pre>% cat /etc/centos-release
+CentOS release 6.4 (Final)
 
-#xsetroot -solid rgb:8/8/8
-
-IMGDIR=/home/hoge/gazo
-
-IMG_COUNT=`ls $IMGDIR | wc -l`
-LINE_NUM=`jot -r 1 1 $IMG_COUNT`
-
-IMG=`ls $IMGDIR | awk 'NR == '$LINE_NUM' { print $1 }'`
-
-if [ -x /usr/bin/xsetbg ]; then
-  /usr/bin/xsetbg -fullscreen $IMGDIR/$IMG
-fi</pre>
+% uname -a
+Linux localhost.localdomain 2.6.32-358.23.2.el6.x86_64 #1 SMP Wed Oct 16 18:37:12 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux</pre>
 </div>
+<div class="highlight-python"><pre>% yum groupinstall --releasever=6 --installroot=/var/diskless/centos6  Base -y
+% yum upgrade --releasever=6 --installroot=/var/diskless/centos6 -y</pre>
 </div>
-<div class="section" id="xresources-0">
-<h2>Xresources_0</h2>
-<div class="highlight-python"><pre>% vi /etc/X11/xdm/Xresources_0</pre>
+<div class="highlight-python"><pre>% mount --rbind /dev /var/diskless/centos6/dev
+% cd /var/diskless/centos6
+% cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
+% chroot /var/diskless/centos6 passwd
+% chroot /var/diskless/centos6 yum -y install kernel
+
+% vi /var/diskless/centos6/etc/fstab
+none    /tmp        tmpfs   defaults   0 0
+tmpfs   /dev/shm    tmpfs   defaults   0 0
+sysfs   /sys        sysfs   defaults   0 0
+proc    /proc       proc    defaults   0 0
+
+% vi /var/diskless/centos6/etc/resolv.conf
+nameserver 8.8.8.8</pre>
 </div>
-<div class="highlight-python"><pre>--- Xresources        2011-10-23 01:48:34.000000000 +0900
-+++ Xresources_0      2013-10-03 01:50:27.000000000 +0900
-@@ -15,34 +15,35 @@
-  Ctrl&lt;Key&gt;Return: set-session-argument(failsafe) finish-field()\n\
-  &lt;Key&gt;Return: set-session-argument() finish-field()
-
--xlogin*greeting: Welcome to CLIENTHOST
--xlogin*namePrompt: \040\040\040\040\040\040\040Login:
-+xlogin*greeting: Hello World
-+xlogin*namePrompt: Login:
- xlogin*fail: Login incorrect or forbidden by policy
-
- #if WIDTH &gt; 800
--xlogin*greetFont: -adobe-helvetica-bold-o-normal--24-240-75-75-p-138-iso8859-1
--xlogin*font: -adobe-helvetica-medium-r-normal--18-180-75-75-p-98-iso8859-1
--xlogin*promptFont: -adobe-helvetica-bold-r-normal--18-180-75-75-p-103-iso8859-1
--xlogin*failFont: -adobe-helvetica-bold-r-normal--18-180-75-75-p-103-iso8859-1
--xlogin*greetFace:    Serif-24:bold:italic
--xlogin*face:                 Helvetica-18
--xlogin*promptFace:   Helvetica-18:bold
--xlogin*failFace:     Helvetica-18:bold
-+xlogin*greetFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*font: -adobe-helvetica-medium-r-normal--10-100-75-75-p-56-iso8859-1
-+xlogin*promptFont: -adobe-helvetica-bold-r-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*failFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*greetFace:       Serif-8:bold:italic
-+xlogin*face:            Helvetica-8
-+xlogin*promptFace:      Helvetica-8:bold
-+xlogin*failFace:        Helvetica-8:bold
- #else
--xlogin*greetFont: -adobe-helvetica-bold-o-normal--17-120-100-100-p-92-iso8859-1
--xlogin*font: -adobe-helvetica-medium-r-normal--12-120-75-75-p-67-iso8859-1
--xlogin*promptFont: -adobe-helvetica-bold-r-normal--12-120-75-75-p-70-iso8859-1
--xlogin*failFont: -adobe-helvetica-bold-o-normal--14-140-75-75-p-82-iso8859-1
--xlogin*greetFace:    Serif-18:bold:italic
--xlogin*face:         Helvetica-12
--xlogin*promptFace:   Helvetica-12:bold
--xlogin*failFace:     Helvetica-14:bold
-+xlogin*greetFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*font: -adobe-helvetica-medium-r-normal--10-100-75-75-p-56-iso8859-1
-+xlogin*promptFont: -adobe-helvetica-bold-r-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*failFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*greetFace:       Serif-8:bold:italic
-+xlogin*face:            Helvetica-8
-+xlogin*promptFace:      Helvetica-8:bold
-+xlogin*failFace:        Helvetica-8:bold
- #endif
-
- #ifdef COLOR
--xlogin*borderWidth: 1
--xlogin*frameWidth: 5
--xlogin*innerFramesWidth: 2
-+xlogin*geometry: 180x120-0-0
-+!xlogin*borderWidth: 1
-+!xlogin*frameWidth: 5
-+!xlogin*innerFramesWidth: 2
- xlogin*shdColor: grey30
- xlogin*hiColor: grey90
- xlogin*background: grey
-@@ -59,13 +60,13 @@
- xlogin*hiColor: black
- #endif
-
--#if PLANES &gt;= 8
--xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debian.xpm
--#else
--xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debianbw.xpm
--#endif
--xlogin*useShape: true
--xlogin*logoPadding: 10
-+!#if PLANES &gt;= 8
-+!xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debian.xpm
-+!#else
-+!xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debianbw.xpm
-+!#endif
-+!xlogin*useShape: true
-+!xlogin*logoPadding: 10
-
-
- XConsole.text.geometry:      480x130</pre>
+<div class="highlight-python"><pre>% yum -y install dracut-network
+% dracut initramfs-`uname -r`.img</pre>
 </div>
+<div class="highlight-python"><pre>% vi /etc/exports
+/var/diskless/centos6 192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
+
+% service rpcbind start
+% service nfslock start
+% service nfs start</pre>
 </div>
+<p>あとはブートメニューにCentOSを追加するだけ。</p>
+<div class="highlight-python"><pre>% vi /var/diskless/pxelinux.cfg/default
+default menu.c32
+label Debian wheezy
+kernel vmlinuz-3.2.0-4-amd64
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy ro single
+
+label CentOS 6.4
+kernel vmlinuz-2.6.32-358.23.2.el6.x86_64
+append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4">http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4</a></li>
+</ul>
 </div>
 
     <div class="postmeta">
@@ -248,21 +148,21 @@ fi</pre>
         <div class="categories">
             <span>
                 Filed under:
-                <a href="../../../categories/xdm.html">xdm</a></span>
+                <a href="../../../categories/centos.html">centos</a></span>
         </div>
         <div class="tags">
             <span>
                 Tags:
-                <a href="../../../tags/debian.html">debian</a>, <a href="../../../tags/xdm.html">xdm</a></span>
+                <a href="../../../tags/centos.html">centos</a></span>
         </div>
         </div>
     <ul class="related clearfix">
-            <li class="left"> &laquo; <a href="../17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a></li>
-            <li class="right"><a href="../../09/20/ssh_proxycommand.html">netcatを使わずに多段SSH</a> &raquo; </li>
+            <li class="left"></li>
+            <li class="right"><a href="../25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a> &raquo; </li>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
-            <a href="../26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
+            <a href="#">CentOS ディスクレスブートサーバ構築</a>
         </li><li>
             <a href="../25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
         </li><li>
@@ -272,7 +172,7 @@ fi</pre>
         </li><li>
             <a href="../17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a>
         </li><li>
-            <a href="#">XDM 設定</a>
+            <a href="../02/xdm_setting.html">XDM 設定</a>
         </li><li>
             <a href="../../09/20/ssh_proxycommand.html">netcatを使わずに多段SSH</a>
         </li><li>
