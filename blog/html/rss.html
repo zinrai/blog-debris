@@ -1120,7 +1120,8 @@ dhcp-boot=pxelinux.0</pre>
 <h3>debootstrap</h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir -p /var/lib/tftpboot/wheezy</span>
 <span class="c"># debootstrap stable /var/lib/tftpboot/wheezy http://ftp.jp.debian.org/debian</span>
-<span class="c"># chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 grub2 debootstrap</span>
+<span class="c"># chroot /var/lib/tftpboot/wheezy passwd root</span>
+<span class="c"># chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 grub2 debootstrap nfs-common</span>
 </pre></div>
 </div>
 </div>
@@ -1138,7 +1139,7 @@ prompt 1
 timeout 10
 label Debian
 kernel vmlinuz-3.2.0-4-amd64
-append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy ro single</pre>
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy rw</pre>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># service dnsmasq start</span>
 <span class="c"># service nfs-kernel-server start</span>

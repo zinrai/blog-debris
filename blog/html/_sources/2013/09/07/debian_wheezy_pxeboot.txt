@@ -55,7 +55,8 @@ debootstrap
 
   # mkdir -p /var/lib/tftpboot/wheezy
   # debootstrap stable /var/lib/tftpboot/wheezy http://ftp.jp.debian.org/debian
-  # chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 grub2 debootstrap
+  # chroot /var/lib/tftpboot/wheezy passwd root
+  # chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 grub2 debootstrap nfs-common
 
 
 syslinux
@@ -75,7 +76,7 @@ syslinux
   timeout 10
   label Debian
   kernel vmlinuz-3.2.0-4-amd64
-  append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy ro single
+  append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy rw
 
 
 ::
