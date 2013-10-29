@@ -265,7 +265,8 @@ tftp-root=/var/diskless</pre>
 <h2>Diskless Boot</h2>
 <div class="highlight-python"><pre>% apt-get install syslinux nfs-kernel-server debootstrap</pre>
 </div>
-<div class="highlight-python"><pre>% debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian</pre>
+<div class="highlight-python"><pre>% debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian
+% chroot /var/diskless/Wheezy passwd root</pre>
 </div>
 <div class="highlight-python"><pre>% vi /etc/exports
 /var/diskless/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)</pre>
@@ -281,7 +282,7 @@ tftp-root=/var/diskless</pre>
 default menu.c32
 label Debian Wheezy
 kernel vmlinuz-3.2.0-4-amd64
-append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy ro single</pre>
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw</pre>
 </div>
 <div class="highlight-python"><pre>% service dnsmasq restart
 % service nfs-kernel-server restart</pre>

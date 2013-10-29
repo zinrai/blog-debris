@@ -66,6 +66,7 @@ Diskless Boot
 ::
 
   % debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian
+  % chroot /var/diskless/Wheezy passwd root
 
 ::
 
@@ -87,7 +88,7 @@ Diskless Boot
   default menu.c32
   label Debian Wheezy
   kernel vmlinuz-3.2.0-4-amd64
-  append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy ro single
+  append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw
 
 ::
 
