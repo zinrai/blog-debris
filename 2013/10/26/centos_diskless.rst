@@ -65,7 +65,7 @@ CentOS ディスクレスブートサーバ構築
   default menu.c32
   label Debian wheezy
   kernel vmlinuz-3.2.0-4-amd64
-  append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy ro single
+  append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw
 
   label CentOS 6.4
   kernel vmlinuz-2.6.32-358.23.2.el6.x86_64
