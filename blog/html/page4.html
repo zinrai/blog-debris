@@ -285,6 +285,8 @@ mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}
 mkfs.ext3 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
 mkfs.ext3 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
 
+mkdir <span class="nv">$CHROOT_GENTOO</span>
+
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
 
 tar xvjf <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/stage3-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>

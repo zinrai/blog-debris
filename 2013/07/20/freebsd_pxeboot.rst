@@ -83,6 +83,12 @@ PXE BootしたマシンのMACアドレスが書かれたシェルスクリプト
 
 ::
 
+  # mkdir /var/scripts/freebsd91
+  # cd /usr/freebsd-dist
+  # cp *.txz /var/scripts/freebsd91
+
+::
+
   # vi /var/pxeboot/var/scripts/os_install.sh
 
 .. literalinclude:: os_install.sh

@@ -174,7 +174,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span> | awk -F: <span class="s1">&#39;{print $1}&#39;</span>
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">&#39;{print $1}&#39;</span>
   <span class="k">done</span>
 <span class="o">}</span>
 
@@ -189,14 +189,12 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="k">fi</span>
 
 <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">&#39;{if($3 ~ /^UG$/) print $6}&#39;</span><span class="sb">`</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">&#39;{if($1 ~ /^default$/) print $6}&#39;</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
 <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">&#39;{if($4 ~ /^UG$/) print $8}&#39;</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">&#39;{print $1}&#39;</span><span class="sb">`</span>
 <span class="k">fi</span>
-
-mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
 <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 </pre></div>
@@ -228,6 +226,8 @@ swapon <span class="k">${</span><span class="nv">DISK</span><span class="k">}</s
 mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1
 mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
 mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
+
+mkdir <span class="nv">$CHROOT_DEBIAN</span>
 
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>
 

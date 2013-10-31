@@ -8,7 +8,7 @@ get_conf() {
   fi
 
   for a in $MACADDR; do
-    grep -r $MACADDR ${CWD} | awk -F: '{print $1}'
+    grep -r $MACADDR ${CWD}/*.conf | awk -F: '{print $1}'
   done
 }
 
@@ -23,13 +23,11 @@ if [ -z "$CONFFILE" ]; then
 fi
 
 if [ "$OS" = "FreeBSD" ]; then
-  IFACE=`netstat -nr | awk '{if($3 ~ /^UG$/) print $6}'`
+  IFACE=`netstat -nr | awk '{if($1 ~ /^default$/) print $6}'`
   MOUNTNAME=`sha256 -q $CONFFILE`
 elif [ "$OS" = "Linux" ]; then
   IFACE=`netstat -nr | awk '{if($4 ~ /^UG$/) print $8}'`
   MOUNTNAME=`sha256sum $CONFFILE | awk '{print $1}'`
 fi
-
-mkdir /mnt/${MOUNTNAME}
 
 $CONFFILE $IFACE $CWD $MOUNTNAME

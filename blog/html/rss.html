@@ -970,6 +970,8 @@ mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}
 mkfs.ext3 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
 mkfs.ext3 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
 
+mkdir <span class="nv">$CHROOT_GENTOO</span>
+
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
 
 tar xvjf <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/stage3-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
@@ -1178,7 +1180,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span> | awk -F: <span class="s1">'{print $1}'</span>
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">'{print $1}'</span>
   <span class="k">done</span>
 <span class="o">}</span>
 
@@ -1193,14 +1195,12 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="k">fi</span>
 
 <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($3 ~ /^UG$/) print $6}'</span><span class="sb">`</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($1 ~ /^default$/) print $6}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
 <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
 <span class="k">fi</span>
-
-mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
 <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 </pre></div>
@@ -1232,6 +1232,8 @@ swapon <span class="k">${</span><span class="nv">DISK</span><span class="k">}</s
 mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1
 mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
 mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
+
+mkdir <span class="nv">$CHROOT_DEBIAN</span>
 
 mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>
 
@@ -2502,6 +2504,11 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 <div class="section" id="freebsd">
 <h2>FreeBSDインストールスクリプト</h2>
 <p>PXE BootしたマシンのMACアドレスが書かれたシェルスクリプトを探し、実行するようになっている。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir /var/scripts/freebsd91</span>
+<span class="c"># cd /usr/freebsd-dist</span>
+<span class="c"># cp *.txz /var/scripts/freebsd91</span>
+</pre></div>
+</div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/os_install.sh</span>
 </pre></div>
 </div>
@@ -2515,7 +2522,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span> | awk -F: <span class="s1">'{print $1}'</span>
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">'{print $1}'</span>
   <span class="k">done</span>
 <span class="o">}</span>
 
@@ -2530,14 +2537,12 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="k">fi</span>
 
 <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($3 ~ /^UG$/) print $6}'</span><span class="sb">`</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($1 ~ /^default$/) print $6}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
 <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
 <span class="k">fi</span>
-
-mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class="k">}</span>
 
 <span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
 </pre></div>
@@ -2549,10 +2554,11 @@ mkdir /mnt/<span class="k">${</span><span class="nv">MOUNTNAME</span><span class
 
 <span class="c"># 01:23:45:67:89:ab</span>
 
+<span class="nv">DISK</span><span class="o">=</span>ada0
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">DISK</span><span class="o">=</span>ada1
-<span class="nv">CHROOT_FREEBSD</span><span class="o">=</span><span class="s2">&quot;/mnt/$2&quot;</span>
-<span class="nv">DIST_TXZ</span><span class="o">=</span><span class="sb">`</span>ls /usr/freebsd-dist/*.txz<span class="sb">`</span>
+<span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">CHROOT_FREEBSD</span><span class="o">=</span><span class="s2">&quot;/mnt/$3&quot;</span>
+<span class="nv">DIST_TXZ</span><span class="o">=</span><span class="sb">`</span>ls <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/freebsd91/*.txz<span class="sb">`</span>
 
 gpart destroy -F <span class="nv">$DISK</span>
 gpart create -s gpt <span class="nv">$DISK</span>
@@ -2562,6 +2568,8 @@ gpart add -t freebsd-ufs <span class="nv">$DISK</span>
 gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 <span class="nv">$DISK</span>
 
 newfs -U /dev/<span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>p3
+
+mkdir <span class="nv">$CHROOT_FREEBSD</span>
 
 mount /dev/<span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>p3 <span class="nv">$CHROOT_FREEBSD</span>
 
