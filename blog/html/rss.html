@@ -5,8 +5,122 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sat, 26 Oct 2013 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 01 Nov 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html</guid>
+            <title><![CDATA[virtioを組み込んだmfsBSDイメージ作成]]></title>
+            <description><![CDATA[<div class="section" id="virtiomfsbsd">
+<h1>virtioを組み込んだmfsBSDイメージ作成</h1>
+<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」だとFreeBSD母艦が必要になるので、どうにかして<a class="reference external" href="http://www.syslinux.org/wiki/index.php/The_Syslinux_Project">Syslinux</a>にまとめられないか調べてみたところ<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>というものを見付けた。今回は「9.1-RELEASE」のmfsBSDを作成した。</p>
+<div class="section" id="mfsbsd">
+<h2>mfsBSDイメージ作成</h2>
+<div class="highlight-python"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
+% tar zvxf mfsbsd-2.1.tar.gz
+% cd mfsbsd-2.1/conf
+% cp rc.conf.sample rc.conf
+% cp rc.local.sample rc.local
+% cp loader.conf.sample loader.conf
+% cd ..
+% mkdir freebsd91
+% cd freebsd91
+% fetch http://ftp.jaist.ac.jp/pub/FreeBSD/releases/amd64/9.1-RELEASE/base.txz
+% fetch http://ftp.jaist.ac.jp/pub/FreeBSD/releases/amd64/9.1-RELEASE/kernel.txz
+% cd ..
+% make RELEASE=9.1-RELEASE BASE=/path/freebsd91
+
+% ls *.img
+mfsbsd-9.1-RELEASE-amd64.img</pre>
+</div>
+<p><a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>のMakefileを眺めてみると「RELEASE」オプションを付けない場合、生成されるイメージファイル名にuname(1)が使われる。「RELEASE」オプションを付けてないとホストが「9.2-RELEASE」「10-CURRENT」のとき「9.1-RELEASE」のイメージファイルを作成するとホストのversionの付いたファイル名でイメージファイルが生成される。</p>
+<p>VirtIOを有効にしている仮想環境でも<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>を使えるようにしてみる。VirtIOのバイナリを作るのが面倒だったので配布されていないか調べてみたら見付けた。</p>
+<div class="highlight-python"><pre>% mkdir virtio
+% cd virtio
+% fetch http://people.freebsd.org/~kuriyama/virtio/9.1/virtio-kmod-9.1-0.250249.tbz
+% tar Jxf virtio-kmod-9.1-0.250249.tbz</pre>
+</div>
+<p>「BOOTMODULES」変数にモジュールをスペース区切り書いておけばイメージファイル作成時にモジュールが組込まれる。VirtIOモジュールのほうはkernel.txzを展開し、boot/kernelにコピーして再度圧縮しておく。</p>
+<div class="highlight-python"><pre>% cd /path/freebsd91
+% tar zxpf kernel.txz
+
+% cd /path/virtio/boot/modules
+% cp `ls` /path/freebsd91/boot/kernel
+
+% cd /path/freebsd91
+% tar Jcvf kernel.txz boot</pre>
+</div>
+<div class="highlight-python"><pre>% diff -u Makefile Makefile.org
+--- Makefile    2013-11-01 12:43:34.000000000 +0900
++++ Makefile.org        2013-11-01 01:34:12.000000000 +0900
+@@ -73,7 +73,7 @@
+ #
+ DOFS=${TOOLSDIR}/doFS.sh
+ SCRIPTS=mdinit mfsbsd interfaces packages
+-BOOTMODULES=acpi ahci virtio virtio_pci virtio_blk virtio_balloon if_vtnet
++BOOTMODULES=acpi ahci
+ MFSMODULES=geom_mirror geom_nop opensolaris zfs ext2fs snp smbus ipmi ntfs nullfs tmpfs
+ #</pre>
+</div>
+</div>
+<div class="section" id="syslinux">
+<h2>Syslinux</h2>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
+</ul>
+<p>これでDebian,CentOS,FreeBSDのディスクレスブート環境が出来上がった。</p>
+<div class="highlight-python"><pre>% vi /path/pxelinux.cfg/default
+
+default menu.c32
+label FreeBSD 9.1
+kernel memdisk
+append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
+</div>
+<p>9.2-RELEASEからVirtIOは標準で入っている。VirtIOを使いたければ、設定をloader.confに書くだけ。シェルスクリプトには下記のような変更を加えておけばいい。</p>
+<div class="highlight-python"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
+--- freebsd_install.conf        2013-11-01 18:05:26.993246593 +0900
++++ freebsd_virtio.conf 2013-11-01 17:48:52.725299517 +0900
+@@ -1,8 +1,8 @@
+ #!/bin/sh -x
+
+-# 01:23:45:67:89:ab
++# 01:23:45:67:89:cd
+
+-DISK=ada0
++DISK=vtbd0
+ IFACE=$1
+ CWD=$2
+ CHROOT_FREEBSD=&quot;/mnt/$3&quot;
+@@ -27,8 +27,16 @@
+   tar xfzp $FILE
+ done
+
++cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/boot/loader.conf
++virtio_load=&quot;YES&quot;
++virtio_pci_load=&quot;YES&quot;
++virtio_blk_load=&quot;YES&quot;
++if_vtnet_load=&quot;YES&quot;
++virtio_balloon_load=&quot;YES&quot;
++EOF
++
+ cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/rc.conf
+-hostname=&quot;freebsd-install.local&quot;
++hostname=&quot;freebsd-virtio.local&quot;
+ keymap=&quot;us.iso.kbd&quot;
+ ifconfig_${IFACE}=&quot; inet 192.168.2.200 netmask 255.255.255.0&quot;
+ defaultrouter=&quot;192.168.2.254&quot;</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://mfsbsd.vx.sk">http://mfsbsd.vx.sk/</a></li>
+<li><a class="reference external" href="http://people.freebsd.org/~kuriyama/virtio">http://people.freebsd.org/~kuriyama/virtio/</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ mfsbsd ]]></category>
+             <pubDate>Fri, 01 Nov 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html</guid>

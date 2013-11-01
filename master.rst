@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/11/01/freebsd_mfsbsd
    2013/10/26/centos_diskless
    2013/10/25/gentoo_emerge_sync_local_mirror
    2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp
