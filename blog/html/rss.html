@@ -5,8 +5,91 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Fri, 01 Nov 2013 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 22 Nov 2013 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2013/11/22/fabric_decorators_task.html</link>
+            <guid>http://127.0.0.1/blog/html/2013/11/22/fabric_decorators_task.html</guid>
+            <title><![CDATA[Fabric decorators task]]></title>
+            <description><![CDATA[<div class="section" id="fabric-decorators-task">
+<h1>Fabric decorators task</h1>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/08/gentoo_install_script.html"><em>Gentoo Linux インストールスクリプト</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html"><em>virtioを組み込んだmfsBSDイメージ作成</em></a></li>
+</ul>
+<p>シェルスクリプトでLinuxをインストールする環境はできたが、サーバに接続してシェルスクリプトをコピー・編集するという状態である。Fabricを使いこの作業をホストから行えるようにしてみる。fabfile.pyひとつにタスクを書いていくのではなくディストリビューションやOSごとにファイルを分割してタスクを書いていく。</p>
+<div class="highlight-python"><pre>$ python -V
+Python 2.7.3
+
+$ fab --version
+Fabric 1.8.0
+Paramiko 1.12.0</pre>
+</div>
+<div class="highlight-python"><pre>$ mkdir fabfile
+$ cd fabfile
+$ touch __init__.py centos.py debian.py freebsd.py gentoo.py</pre>
+</div>
+<div class="highlight-python"><pre>$ vi __init__.py
+
+from . import debian
+from . import centos
+from . import gentoo
+from . import freebsd</pre>
+</div>
+<div class="highlight-python"><pre>$ vi centos.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass</pre>
+</div>
+<div class="highlight-python"><pre>$ vi debian.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass</pre>
+</div>
+<div class="highlight-python"><pre>$ vi gentoo.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass</pre>
+</div>
+<div class="highlight-python"><pre>$ vi freebsd.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass</pre>
+</div>
+<div class="highlight-python"><pre>$ fab -l
+Available commands:
+
+    centos.cmd
+    debian.cmd
+    freebsd.cmd
+    gentoo.cmd</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://docs.fabfile.org/en/1.8">http://docs.fabfile.org/en/1.8/</a></li>
+<li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/core/decorators.html">http://docs.fabfile.org/en/1.8/api/core/decorators.html</a></li>
+<li><a class="reference external" href="https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes">https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ fabric ]]></category>
+             <pubDate>Fri, 22 Nov 2013 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html</link>
             <guid>http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html</guid>
