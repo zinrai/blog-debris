@@ -86,6 +86,139 @@
             <li class="left"> &laquo; <a href="page9.html">Newer</a></li>
             <li class="right"><a href="page11.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>August 22, 2013</span>
+        </div>
+        <div class="section" id="freebsd-9-1-vimage-zfs-jail">
+<h1><a href="2013/08/22/freebsd_jail_vimage_zfs.html">FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</a></h1>
+<p>VIMAGE + ZFSでいくらでも作ったり、壊したり、巻き戻したり出来る環境を構築してみる。jail環境をビルドするためにソースを取ってくる。ソースはsubversionで管理されている。まずsubversionをインストールから。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># portsnap fetch</span>
+<span class="c"># portsnap extract</span>
+<span class="c"># portsnap update</span>
+
+<span class="c"># cd /usr/ports/devel/subversion</span>
+<span class="c"># make install</span>
+</pre></div>
+</div>
+<p>VIMAGEが使えるようにカーネルを再構築する。</p>
+<div class="highlight-python"><pre># cd /usr/src
+# svn checkout svn://svn.freebsd.org/base/release/9.1.0
+# cd 9.1.0/sys/amd64/conf
+# cp GENERIC VIMAGE
+
+# vi VIMAGE
+options         VIMAGE
+
+# cd /usr/src/9.1.0
+# make buildkernel KERNCONF=VIMAGE
+# make installkernel KERNCONF=VIMAGE
+# reboot</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/src/9.1.0</span>
+<span class="c"># make buildworld</span>
+<span class="c"># make installworld DESTDIR=/jails/test01</span>
+<span class="c"># make distribution DESTDIR=/jails/test01</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre># zpool list
+NAME    SIZE  ALLOC   FREE    CAP  DEDUP  HEALTH  ALTROOT
+jails   356G   900M   355G     0%  1.00x  ONLINE  -
+
+# zfs create jails/test01
+# zfs snapshot jails/test01@base
+# zfs clone jails/test01@base jails/test02</pre>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+
+<span class="n">ifconfig_re0</span><span class="o">=</span><span class="s">&quot; inet 192.168.0.253 netmask 255.255.255.0&quot;</span>
+<span class="n">defaultrouter</span><span class="o">=</span><span class="s">&quot;192.168.0.254&quot;</span>
+
+<span class="n">cloned_interfaces</span><span class="o">=</span><span class="s">&quot;bridge0&quot;</span>
+<span class="n">ifconfig_bridge0_name</span><span class="o">=</span><span class="s">&quot;vswitch0&quot;</span>
+<span class="n">ifconfig_vswitch0</span><span class="o">=</span><span class="s">&quot;addm re0&quot;</span>
+</pre></div>
+</div>
+<p>netstatしたときなどに/dev/kmem,/dev/memがないよと言われるので、/etc/default/devfs.rulesを参考に、devfs.rules(5)のルールを追加しておく。</p>
+<div class="highlight-python"><pre># vi /etc/devfs.rules
+
+[devfsrules_jail=5]
+add include $devfsrules_hide_all
+add include $devfsrules_unhide_basic
+add include $devfsrules_unhide_login
+add path zfs unhide
+add path mem unhide
+add path kmem unhide</pre>
+</div>
+<p>jailの設定はrc.conf(5)ではなくjail.conf(5)に書く。jail(8)を眺めながら設定ファイルを書いてみた。変数が使えていい感じ。ネームサーバーを設定するパラメータが見当らないので、ネームサーバーの設定はjail内のresolv.confに書くことにする。</p>
+<div class="highlight-python"><pre># vi /etc/jail.conf
+
+exec.prestart  = &quot;ifconfig epair${if} create up &gt; /dev/null&quot;;
+exec.prestart += &quot;ifconfig vswitch0 addm epair${if}a&quot;;
+exec.start     = &quot;ifconfig lo0 up 127.0.0.1&quot;;
+exec.start    += &quot;ifconfig epair${if}b up $ipaddr&quot;;
+exec.start    += &quot;route add default 192.168.0.254&quot;;
+exec.start    += &quot;sh /etc/rc&quot;;
+exec.stop      = &quot;sh /etc/rc.shutdown&quot;;
+exec.poststop  = &quot;ifconfig epair${if}a destroy&quot;;
+host.hostname  = &quot;${name}.localnet&quot;;
+mount.devfs;
+devfs_ruleset = 5;
+vnet;
+vnet.interface = &quot;epair${if}b&quot;;
+path = &quot;/jails/${name}&quot;;
+persist;
+
+test01 {
+        $if = 1;
+        $ipaddr = 192.168.0.1;
+}
+
+test02 {
+        $if = 2;
+        $ipaddr = 192.168.0.2;
+}</pre>
+</div>
+<div class="highlight-python"><pre># jail -c test01
+# jls
+   JID  IP Address      Hostname                      Path
+    11  -               test01.localnet               /jails/test01
+
+# jexec 11 tcsh
+# jail -r test01</pre>
+</div>
+<p>FreeBSD起動時にjailを起動させたければrc.conf(5)下記のように書いておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
+
+<span class="n">jail_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">jail_list</span><span class="o">=</span><span class="s">&quot;test01 test02&quot;</span>
+</pre></div>
+</div>
+<p>ZFSのスナップショット、ロールバックで何度でもやり直せる。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs snapshot jails/test01@snap01</span>
+<span class="c"># zfs rollback jails/test01@snap01</span>
+<span class="c"># zfs set quota=10g jails/test01</span>
+<span class="c"># zfs clone jails/test01@snap01 jails/test03</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/svn-mirrors.html">http://www.freebsd.org/doc/ja/books/handbook/svn-mirrors.html</a></li>
+<li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/kernelconfig-building.html">http://www.freebsd.org/doc/ja/books/handbook/kernelconfig-building.html</a></li>
+</ul>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/freebsd.html">freebsd</a>, <a href="categories/jail.html">jail</a>, <a href="categories/zfs.html">zfs</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/jail.html">jail</a>, <a href="tags/zfs.html">zfs</a>, <a href="tags/vimage.html">vimage</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>July 20, 2013</span>
         </div>
         <div class="section" id="freebsd-9-1">
@@ -688,130 +821,6 @@ $SNIPPET('kickstart_done')
                 Tags:
                 <a href="tags/centos.html">centos</a>, <a href="tags/puppet.html">puppet</a>, <a href="tags/cobbler.html">cobbler</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>June 18, 2013</span>
-        </div>
-        <div class="section" id="centos6-4cobbler">
-<h1><a href="2013/06/18/centos_cobbler_setup.html">CentOS6.4にCobblerサーバ構築</a></h1>
-<p>サーバ100台くらいにOSインストールする作業が発生するかもしれないので怠けるための作業をメモしておく。まずはCobblerサーバを構築してOSインストールが出来るまで。</p>
-<div class="highlight-python"><pre># uname -a
-Linux localhost.localdomain 2.6.32-358.11.1.el6.x86_64 #1 SMP Wed Jun 12 03:34:52 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
-
-# cat /etc/centos-release
-CentOS release 6.4 (Final)</pre>
-</div>
-<p>SELinuxを無効にしないとCobblerが動作しない。</p>
-<p>下記のファイルを編集して再起動</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/selinux/config</span>
-<span class="n">SELINUX</span><span class="o">=</span><span class="n">disabled</span>
-
-<span class="c"># chkconfig xinetd on</span>
-<span class="c"># chkconfig httpd on</span>
-<span class="c"># chkconfig cobblerd on</span>
-<span class="c"># chkconfig dhcpd on</span>
-<span class="c"># reboot</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre># rpm -i http://mirror.symnds.com/distributions/fedora-epel/6/x86_64/epel-release-6-8.noarch.rpm
-# yum -y install cobbler pykickstart dhcp
-
-# cobbler --version
-Cobbler 2.2.3
-  source: ?, ?
-  build time: Mon Jun 18 01:04:49 2012
-
-# cobbler check
-The following are potential configuration items that you may want to fix:
-
-1 : The 'server' field in /etc/cobbler/settings must be set to something other than localhost, or kickstarting features will not work.  This should be a resolvable hostname or IP for the boot server as reachable by all machines that will use it.
-2 : For PXE to be functional, the 'next_server' field in /etc/cobbler/settings must be set to something other than 127.0.0.1, and should match the IP of the boot server on the PXE network.
-3 : some network boot-loaders are missing from /var/lib/cobbler/loaders, you may run 'cobbler get-loaders' to download them, or, if you only want to handle x86/x86_64 netbooting, you may ensure that you have installed a *recent* version of the syslinux package installed and can ignore this message entirely.  Files in this directory, should you want to support all architectures, should include pxelinux.0, menu.c32, elilo.efi, and yaboot. The 'cobbler get-loaders' command is the easiest way to resolve these requirements.
-4 : change 'disable' to 'no' in /etc/xinetd.d/rsync
-5 : since iptables may be running, ensure 69, 80/443, and 25151 are unblocked
-6 : debmirror package is not installed, it will be required to manage debian deployments and repositories
-7 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: &quot;openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'&quot; to generate new one
-8 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them
-
-Restart cobblerd and then run 'cobbler sync' to apply changes.
-
-# /etc/init.d/cobblerd start
-
-# vi /etc/xinetd.d/rsync
-disable = no
-
-# vi /etc/xinetd.d/tftp
-disable = no
-
-# vi /etc/cobbler/settings
-server: 192.168.0.1
-manage_dhcp: 1
-next_server: 192.168.0.254 &lt;- Gateway
-
-# vi /etc/cobbler/dhcp.template
-subnet 192.168.0.0 netmask 255.255.255.0 {
-     option routers             192.168.0.254;
-     option domain-name-servers 8.8.8.8;
-     option subnet-mask         255.255.255.0;
-     range dynamic-bootp        192.168.0.200 192.168.0.250;
-     filename                   &quot;/pxelinux.0&quot;;
-     default-lease-time         21600;
-     max-lease-time             43200;
-     next-server                $next_server;
-}
-
-# /etc/init.d/iptables stop
-# /etc/init.d/xinetd restart
-# /etc/init.d/cobblerd restart
-
-# cobbler get-loaders
-# cobbler sync
-
-# cobbler import --path=rsync://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/ --name=CentOS6.4_x86_64
-# cobbler sync</pre>
-</div>
-<p>Cobblerを使いインストールするとデフォルトのパスワードはcobblerとなっている。</p>
-<p>変更する場合は</p>
-<div class="highlight-python"><pre># cobbler check
-The following are potential configuration items that you may want to fix:
-
-1 : debmirror package is not installed, it will be required to manage debian deployments and repositories
-2 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: &quot;openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'&quot; to generate new one
-3 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them
-
-Restart cobblerd and then run 'cobbler sync' to apply changes.</pre>
-</div>
-<p>に書いてあるように</p>
-<div class="highlight-python"><pre># openssl passwd -1 -salt &quot;cobbler&quot; &quot;password&quot;
-$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1</pre>
-</div>
-<p>を実行して</p>
-<div class="highlight-python"><pre># vi /etc/cobbler/settings
-default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
-</div>
-<p>設定ファイルを書き換えてCobblerを再起動</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># /etc/init.d/cobblerd restart</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html">http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html</a></li>
-<li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/15/cobbler-install">http://blog.glidenote.com/blog/2012/03/15/cobbler-install/</a></li>
-<li><a class="reference external" href="http://www.ibm.com/developerworks/jp/linux/library/l-cobbler">http://www.ibm.com/developerworks/jp/linux/library/l-cobbler/</a></li>
-</ul>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/cobbler.html">cobbler</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/centos.html">centos</a>, <a href="tags/cobbler.html">cobbler</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -820,6 +829,8 @@ default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2013/11/25/fabric_template_upload.html">Fabric テンプレート アップロード</a>
+        </li><li>
             <a href="2013/11/22/fabric_decorators_task.html">Fabric decorators task</a>
         </li><li>
             <a href="2013/11/01/freebsd_mfsbsd.html">virtioを組み込んだmfsBSDイメージ作成</a>
@@ -837,15 +848,13 @@ default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
             <a href="2013/10/02/xdm_setting.html">XDM 設定</a>
         </li><li>
             <a href="2013/09/20/ssh_proxycommand.html">netcatを使わずに多段SSH</a>
-        </li><li>
-            <a href="2013/09/19/debian_wheezy_schroot_chroot.html">schrootを使って一般ユーザでchroot</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/fabric.html">fabric</a> (1)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (2)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (1)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (9), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/fabric.html">fabric</a> (1), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (3), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (5), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (9), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (4), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (3), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (5), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (3), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
