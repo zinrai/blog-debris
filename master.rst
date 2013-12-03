@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2013/11/28/ubuntu_docker
    2013/11/25/fabric_template_upload
    2013/11/22/fabric_decorators_task
    2013/11/01/freebsd_mfsbsd
