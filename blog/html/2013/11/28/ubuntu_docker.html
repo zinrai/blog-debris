@@ -28,7 +28,7 @@
         <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
         <script src="../../../_static/plugins.js"></script>
         <script src="../../../_static/main.js"></script>
-        <link rel="next" title="Fabric テンプレート アップロード" href="../25/fabric_template_upload.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+        <link rel="next" title="Fabric テンプレート アップロード" href="../25/fabric_template_upload.html" /><link rel="prev" title="Ansibleを使ってみる" href="../../12/03/ubuntu_docker_ansible.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
         VERSION:     '1.2.1',
@@ -83,14 +83,14 @@
 </div>
 
 <div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
-            <li class="left"></li>
+            <li class="left"> &laquo; <a href="../../12/03/ubuntu_docker_ansible.html">Ansibleを使ってみる</a></li>
             <li class="right"><a href="../25/fabric_template_upload.html">Fabric テンプレート アップロード</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
             <span>November 28, 2013</span>
         </div>
     <div class="section" id="docker">
 <h1>Dockerを使ってみる</h1>
-<p><a class="reference external" href="https://www.dotcloud.com/">dotcloud</a>がオープンソースで公開している<a class="reference external" href="http://docs.docker.io/">Docker</a>というソフトウェアを知った。Linuxコンテナの実装の一つである<a class="reference external" href="http://linuxcontainers.org/">LXC</a>を使いOSレベルの仮想化を行い、<a class="reference external" href="http://aufs.sourceforge.net/">Aufs</a>で「<a class="reference internal" href="../../09/10/debian_wheezy_chroot_aufs.html"><em>aufsを使ったchroot環境</em></a>」のようにルートファイルとの差分を保持し、その差分をGitっぽく管理できるフロントエンドだということが使ってみてわかった。</p>
+<p><a class="reference external" href="https://www.dotcloud.com/">dotcloud</a>がオープンソースで公開している<a class="reference external" href="http://docs.docker.io/">Docker</a>というソフトウェアを知った。Linuxコンテナの実装の一つである<a class="reference external" href="http://linuxcontainers.org/">LXC</a>を使いOSレベルの仮想化を行い、<a class="reference external" href="http://aufs.sourceforge.net/">Aufs</a>で「<a class="reference internal" href="../../09/10/debian_wheezy_chroot_aufs.html"><em>aufsを使ったchroot環境</em></a>」のようにベースファイルを書き換えずに、更新が発生した部分は別ディレクトリに書き込み、この差分をGitっぽく管理できるフロントエンドなのかなというのが触ってみた印象だった。</p>
 <div class="highlight-python"><pre>$ uname -a
 Linux asuna 3.8.0-33-generic #48~precise1-Ubuntu SMP Thu Oct 24 16:28:06 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
 
@@ -153,61 +153,113 @@ Description: Linux container runtime
 </div>
 <div class="section" id="id2">
 <h2>Docker 使い方</h2>
-<ul class="simple">
-<li>commitしなければコンテナの変更はコンテナ停止後に破棄される。</li>
-</ul>
 <div class="highlight-python"><pre>% docker -v
-Docker version 0.7.0, build 0d078b6
-
-% docker pull ubuntu
+Docker version 0.7.0, build 0d078b6</pre>
+</div>
+<div class="section" id="pull">
+<h3>pull</h3>
+<div class="highlight-python"><pre>% docker pull ubuntu
 Pulling repository ubuntu
 8dbd9e392a96: Download complete
 b750fe79269d: Download complete
-27cf78414709: Download complete
-
-% docker images
+27cf78414709: Download complete</pre>
+</div>
+<p><a class="reference external" href="https://index.docker.io/">https://index.docker.io/</a>で公開されているコンテナイメージを取得しローカルに展開</p>
+</div>
+<div class="section" id="images">
+<h3>images</h3>
+<div class="highlight-python"><pre>% docker images
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 ubuntu              12.04               8dbd9e392a96        7 months ago        128 MB (virtual 128 MB)
 ubuntu              latest              8dbd9e392a96        7 months ago        128 MB (virtual 128 MB)
 ubuntu              precise             8dbd9e392a96        7 months ago        128 MB (virtual 128 MB)
 ubuntu              12.10               b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)
-ubuntu              quantal             b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)
-
-% docker run -i -t -d --name ubuntu01 ubuntu:12.04 /bin/bash
+ubuntu              quantal             b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)</pre>
+</div>
+<p>コンテナイメージを一覧する。コンテナを作成する際に使用するベースイメージ(<a class="reference external" href="http://aufs.sourceforge.net/">Aufs</a>で重ね、書き変わらない部分)。</p>
+</div>
+<div class="section" id="run">
+<h3>run</h3>
+<div class="highlight-python"><pre>% docker run -i -t -d --name ubuntu01 ubuntu:12.04 /bin/bash
 % docker run -i -t -d --name ubuntu02 ubuntu:12.04 /bin/bash
 % docker run -i -t -d --name ubuntu03 ubuntu:12.04 /bin/bash
 % docker run -i -t -d -p 80 --name ubuntu04 ubuntu:12.04 /bin/bash
-% docker run -i -t -d -p 80 -p 22 --name ubuntu05 ubuntu:12.04 /bin/bash
-
-% docker ps
+% docker run -i -t -d -p 80 -p 22 --name ubuntu05 ubuntu:12.04 /bin/bash</pre>
+</div>
+<p>新規にコンテナを作成し起動する。start,stopというコマンドもあるが、これは作成したコンテナを起動・停止するために使用する。</p>
+</div>
+<div class="section" id="ps">
+<h3>ps</h3>
+<div class="highlight-python"><pre>% docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                                          NAMES
 1734fac49073        ubuntu:12.04        /bin/bash           51 seconds ago      Up 51 seconds       0.0.0.0:49159-&gt;22/tcp, 0.0.0.0:49160-&gt;80/tcp   ubuntu05
 e54ec245fe2a        ubuntu:12.04        /bin/bash           2 minutes ago       Up 2 minutes        0.0.0.0:49158-&gt;80/tcp                          ubuntu04
 fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu03
 46d0ef544132        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu02
-8fcfa5265233        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu01
-
-% docker attach ubuntu01
-「Ctrl-p Ctrl-q」でデタッチ
-
-% docker stop ubuntu01
-
-% docker commit ubuntu02 hoge/ubuntu02
-% docker run -i -t -d --name ubuntu06 hoge/ubuntu02 /bin/bash
-% docker stop ubuntu06
-% docker rm ubuntu06
-% docker rmi hoge/ubuntu02
-
-% docker export ubuntu02 &gt; ubuntu02.tar
-% docker import http://exsample.com/ubuntu02.tar ubuntu02
+8fcfa5265233        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu01</pre>
+</div>
+<ul class="simple">
+<li>「-a」オプションで停止中のコンテナの情報を表示できる。</li>
+<li>「-q」オプションでコンテナIDのみを表示できる。</li>
+</ul>
+</div>
+<div class="section" id="attach">
+<h3>attach</h3>
+<div class="highlight-python"><pre>% docker attach ubuntu01</pre>
+</div>
+<p>起動しているコンテナにアッタッチする。「Ctrl-p Ctrl-q」でデタッチ</p>
+</div>
+<div class="section" id="start">
+<h3>start</h3>
+<div class="highlight-python"><pre>% docker start ubuntu05</pre>
+</div>
+<p>停止しているコンテナを起動する。</p>
+</div>
+<div class="section" id="stop">
+<h3>stop</h3>
+<div class="highlight-python"><pre>% docker stop ubuntu05</pre>
+</div>
+<p>起動しているコンテナを停止する。</p>
+</div>
+<div class="section" id="commit">
+<h3>commit</h3>
+<div class="highlight-python"><pre>% docker commit ubuntu02 python/ubuntu02
+% docker run -i -t -d --name ubuntu06 python/ubuntu02 /bin/bash</pre>
+</div>
+<p>変更を加えたコンテナからコンテナイメージを作成したい場合に使用する。例えば、コンテナにpythonをインストールし、commitすると、python入りのコンテナイメージが作られる。作ったコンテナイメージでrunすればpython入りコンテナが新たに起動する。</p>
+</div>
+<div class="section" id="rm">
+<h3>rm</h3>
+<div class="highlight-python"><pre>% docker rm ubuntu05</pre>
+</div>
+<p>コンテナを削除する。</p>
+</div>
+<div class="section" id="rmi">
+<h3>rmi</h3>
+<div class="highlight-python"><pre>% docker rmi python/ubuntu02</pre>
+</div>
+<p>コンテナイメージを削除する。</p>
+</div>
+<div class="section" id="export">
+<h3>export</h3>
+<div class="highlight-python"><pre>% docker export ubuntu02 &gt; ubuntu02.tar</pre>
+</div>
+<p>コンテナはtarでアーカイブすることができる。</p>
+</div>
+<div class="section" id="import">
+<h3>import</h3>
+<div class="highlight-python"><pre>% docker import http://exsample.com/ubuntu02.tar ubuntu02
 % cat ubuntu02.tar | docker import - ubuntu02:new</pre>
 </div>
+<p>アーカイブは他の<a class="reference external" href="http://docs.docker.io/">Docker</a>にimportすることができる。「<a class="reference internal" href="../../09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」を使って実機やKVMなどの仮想マシンにも展開できそう。</p>
+<p>環境を手軽に作れて差分で新たな環境を作ったりできてすごく便利。次は作成したコンテナでなにか動かしてみたいと思う。</p>
 <ul class="simple">
 <li><a class="reference external" href="https://index.docker.io/">https://index.docker.io/</a></li>
 <li><a class="reference external" href="http://docs.docker.io/en/latest/commandline/cli/">http://docs.docker.io/en/latest/commandline/cli/</a></li>
 <li><a class="reference external" href="http://docs.docker.io/en/latest/installation/ubuntulinux/#ubuntu-precise">http://docs.docker.io/en/latest/installation/ubuntulinux/#ubuntu-precise</a></li>
 <li><a class="reference external" href="http://www.infoq.com/jp/articles/docker-containers">http://www.infoq.com/jp/articles/docker-containers</a></li>
 </ul>
+</div>
 </div>
 </div>
 
@@ -227,11 +279,13 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
         </div>
         </div>
     <ul class="related clearfix">
-            <li class="left"></li>
+            <li class="left"> &laquo; <a href="../../12/03/ubuntu_docker_ansible.html">Ansibleを使ってみる</a></li>
             <li class="right"><a href="../25/fabric_template_upload.html">Fabric テンプレート アップロード</a> &raquo; </li>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="../../12/03/ubuntu_docker_ansible.html">Ansibleを使ってみる</a>
+        </li><li>
             <a href="#">Dockerを使ってみる</a>
         </li><li>
             <a href="../25/fabric_template_upload.html">Fabric テンプレート アップロード</a>
@@ -249,15 +303,13 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
             <a href="../../10/22/debian_wheezy_openvswitch_bridge.html">Open vSwitchを使ってみる</a>
         </li><li>
             <a href="../../10/17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a>
-        </li><li>
-            <a href="../../10/02/xdm_setting.html">XDM 設定</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (2)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (1)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (2)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (1)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (9), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (1), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (1), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (4), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (4), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (5), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (3), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (9), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (1), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (5), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (3), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="../../../search.html" method="get">
         <input type="text" name="q" />

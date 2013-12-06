@@ -11,8 +11,8 @@ Dockerを使ってみる
 `dotcloud`_ がオープンソースで公開している `Docker`_ というソフトウェアを知った。
 Linuxコンテナの実装の一つである `LXC`_ を使いOSレベルの仮想化を行い、
 `Aufs`_ で「 :doc:`../../09/10/debian_wheezy_chroot_aufs` 」
-のようにルートファイルとの差分を保持し、その差分をGitっぽく管理できる
-フロントエンドだということが使ってみてわかった。
+のようにベースファイルを書き換えずに、更新が発生した部分は別ディレクトリに書き込み、
+この差分をGitっぽく管理できるフロントエンドなのかなというのが触ってみた印象だった。
 
 ::
 
@@ -85,18 +85,28 @@ Docker インストール
 Docker 使い方
 ------------------------------
 
-* commitしなければコンテナの変更はコンテナ停止後に破棄される。
-
 ::
 
   % docker -v
   Docker version 0.7.0, build 0d078b6
+
+pull
+^^^^^^^^^^
+
+::
 
   % docker pull ubuntu
   Pulling repository ubuntu
   8dbd9e392a96: Download complete
   b750fe79269d: Download complete
   27cf78414709: Download complete
+
+https://index.docker.io/ で公開されているコンテナイメージを取得しローカルに展開
+
+images
+^^^^^^^^^^
+
+::
 
   % docker images
   REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
@@ -106,11 +116,28 @@ Docker 使い方
   ubuntu              12.10               b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)
   ubuntu              quantal             b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)
 
+コンテナイメージを一覧する。
+コンテナを作成する際に使用するベースイメージ
+( `Aufs`_ で重ね、書き変わらない部分)。
+
+run
+^^^^^^^^^^
+
+::
+
   % docker run -i -t -d --name ubuntu01 ubuntu:12.04 /bin/bash
   % docker run -i -t -d --name ubuntu02 ubuntu:12.04 /bin/bash
   % docker run -i -t -d --name ubuntu03 ubuntu:12.04 /bin/bash
   % docker run -i -t -d -p 80 --name ubuntu04 ubuntu:12.04 /bin/bash
   % docker run -i -t -d -p 80 -p 22 --name ubuntu05 ubuntu:12.04 /bin/bash
+
+新規にコンテナを作成し起動する。
+start,stopというコマンドもあるが、これは作成したコンテナを起動・停止するために使用する。
+
+ps
+^^^^^^^^^^
+
+::
 
   % docker ps
   CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                                          NAMES
@@ -120,20 +147,91 @@ Docker 使い方
   46d0ef544132        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu02
   8fcfa5265233        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu01
 
+* 「-a」オプションで停止中のコンテナの情報を表示できる。
+* 「-q」オプションでコンテナIDのみを表示できる。
+
+attach
+^^^^^^^^^^
+
+::
+
   % docker attach ubuntu01
-  「Ctrl-p Ctrl-q」でデタッチ
 
-  % docker stop ubuntu01
+起動しているコンテナにアッタッチする。「Ctrl-p Ctrl-q」でデタッチ
 
-  % docker commit ubuntu02 hoge/ubuntu02
-  % docker run -i -t -d --name ubuntu06 hoge/ubuntu02 /bin/bash
-  % docker stop ubuntu06
-  % docker rm ubuntu06
-  % docker rmi hoge/ubuntu02
+start
+^^^^^^^^^^
+
+::
+
+  % docker start ubuntu05
+
+停止しているコンテナを起動する。
+
+
+stop
+^^^^^^^^^^
+
+::
+
+  % docker stop ubuntu05
+
+起動しているコンテナを停止する。
+
+commit
+^^^^^^^^^^
+
+::
+
+  % docker commit ubuntu02 python/ubuntu02
+  % docker run -i -t -d --name ubuntu06 python/ubuntu02 /bin/bash
+
+変更を加えたコンテナからコンテナイメージを作成したい場合に使用する。
+例えば、コンテナにpythonをインストールし、
+commitすると、python入りのコンテナイメージが作られる。
+作ったコンテナイメージでrunすればpython入りコンテナが新たに起動する。
+
+rm
+^^^^^^^^^^
+
+::
+
+  % docker rm ubuntu05
+
+コンテナを削除する。
+
+rmi
+^^^^^^^^^^
+
+::
+
+  % docker rmi python/ubuntu02
+
+コンテナイメージを削除する。
+
+
+export
+^^^^^^^^^^
+
+::
 
   % docker export ubuntu02 > ubuntu02.tar
+
+コンテナはtarでアーカイブすることができる。
+
+import
+^^^^^^^^^^
+
+::
+
   % docker import http://exsample.com/ubuntu02.tar ubuntu02
   % cat ubuntu02.tar | docker import - ubuntu02:new
+
+アーカイブは他の `Docker`_ にimportすることができる。
+「 :doc:`../../09/07/debian_wheezy_pxeboot` 」を使って実機やKVMなどの仮想マシンにも展開できそう。
+
+環境を手軽に作れて差分で新たな環境を作ったりできてすごく便利。
+次は作成したコンテナでなにか動かしてみたいと思う。
 
 .. _LXC: http://linuxcontainers.org/
 .. _Aufs: http://aufs.sourceforge.net/
