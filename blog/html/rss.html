@@ -5,8 +5,59 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 03 Dec 2013 00:00:00 +0900</pubDate>
+        <pubDate>Wed, 05 Feb 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html</guid>
+            <title><![CDATA[ZFS on Linux (Debian wheezy)]]></title>
+            <description><![CDATA[<div class="section" id="zfs-on-linux-debian-wheezy">
+<h1>ZFS on Linux (Debian wheezy)</h1>
+<p>LinuxでもZFSがいい感じで動くという話を聞いたので使ってみた。</p>
+<div class="highlight-python"><pre>% uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux</pre>
+</div>
+<div class="highlight-python"><pre>% lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.3 (wheezy)
+Release:        7.3
+Codename:       wheezy</pre>
+</div>
+<div class="highlight-python"><pre>% wget http://archive.zfsonlinux.org/debian/pool/main/z/zfsonlinux/zfsonlinux_2%7Ewheezy_all.deb
+% dpkg -i zfsonlinux_2~wheezy_all.deb
+% apt-get update
+% apt-get install debian-zfs</pre>
+</div>
+<p>2TBのHDDをRAID1してみる。</p>
+<div class="highlight-python"><pre>% parted /dev/sda -s &quot;mklabel gpt&quot;
+% parted /dev/sdc -s &quot;mklabel gpt&quot;
+
+% zpool create zfspool mirror sda sdc
+% zpool list -v
+NAME   SIZE  ALLOC   FREE    CAP  DEDUP  HEALTH  ALTROOT
+zfspool  1.81T   556K  1.81T     0%  1.00x  ONLINE  -
+  mirror  1.81T   556K  1.81T         -
+    sda      -      -      -         -
+    sdc      -      -      -         -</pre>
+</div>
+<div class="highlight-python"><pre>% zfs create zfspool/disk1
+% zfs list
+NAME            USED  AVAIL  REFER  MOUNTPOINT
+zfspool         692K  1.78T   136K  /zfspool
+zfspool/disk1   136K  1.78T   136K  /zfspool/disk1</pre>
+</div>
+<p>ブロックデバイスとして見えたらKVMのGuestOS用のディスクとして使えると思うので、その辺を調べてみる。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://zfsonlinux.org/debian.html">http://zfsonlinux.org/debian.html</a></li>
+<li><a class="reference external" href="http://sourceforge.jp/magazine/13/04/01/133000">http://sourceforge.jp/magazine/13/04/01/133000</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ debian ]]></category>
+            <category><![CDATA[ zfs ]]></category>
+             <pubDate>Wed, 05 Feb 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2013/12/03/ubuntu_docker_ansible.html</link>
             <guid>http://127.0.0.1/blog/html/2013/12/03/ubuntu_docker_ansible.html</guid>
