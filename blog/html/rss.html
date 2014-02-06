@@ -5,8 +5,143 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 05 Feb 2014 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 06 Feb 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/02/06/debian_wheezy_kvm_zfs.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/02/06/debian_wheezy_kvm_zfs.html</guid>
+            <title><![CDATA[KVMのGuestOSにZVOLを使う]]></title>
+            <description><![CDATA[<div class="section" id="kvmguestoszvol">
+<h1>KVMのGuestOSにZVOLを使う</h1>
+<p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html"><em>ZFS on Linux (Debian wheezy)</em></a>」で最後に書いたブロックデバイスとして見えないかを調べてみた。</p>
+<div class="section" id="zvol">
+<h2>ZVOL</h2>
+<p>ZFSの領域をブロックデバイスとして切り出すことができる機能</p>
+<div class="highlight-python"><pre>% zfs create -V 20G zfspool/disk2
+% zfs list
+NAME            USED  AVAIL  REFER  MOUNTPOINT
+zfspool        22.2G  1.76T   144K  /zfspool
+zfspool/disk1   136K  1.76T   136K  /zfspool/disk1
+zfspool/disk2  20.6G  1.78T    72K  -
+
+% ls -l /dev/zvol/zfspool/
+total 0
+lrwxrwxrwx 1 root root 10 Feb  6 12:37 disk2 -&gt; ../../zd16</pre>
+</div>
+</div>
+<div class="section" id="sparse-volume">
+<h2>sparse volume</h2>
+<p>上記だと20GBの領域がまるまる割り当てられてしまうので、thin provisioning的な機能はないかzfs(8)を眺めてみた。</p>
+<p>man zfsして「thin provisioning」で検索して「 “sparse volume” (also known as “thin provisioning”)」の文の見付けて「sparse volume」で検索したらオプションを探し当てることができた。</p>
+<div class="highlight-python"><pre>Though not recommended, a &quot;sparse volume&quot; (also known as &quot;thin provisioning&quot;) can be created by specifying the -s option to the  zfs  create  -V command,  or by changing the reservation after the volume has been created. A &quot;sparse volume&quot; is a volume where the reservation is less then the volume size. Consequently, writes to a sparse volume can fail with ENOSPC when the pool is low on space. For a sparse volume, changes to volsize are not reflected in the reservation.</pre>
+</div>
+<div class="highlight-python"><pre>-s
+
+Creates a sparse volume with no reservation. See volsize in the Native Properties section for more information about sparse volumes.</pre>
+</div>
+<div class="highlight-python"><pre>% zfs create -s -V 50G zfspool/kvm1
+% zfs get all zfspool/kvm1
+NAME          PROPERTY              VALUE                  SOURCE
+zfspool/kvm1  type                  volume                 -
+zfspool/kvm1  creation              Thu Feb  6  1:13 2014  -
+zfspool/kvm1  used                  1.57G                  -
+zfspool/kvm1  available             1.76T                  -
+zfspool/kvm1  referenced            1.57G                  -
+zfspool/kvm1  compressratio         1.00x                  -
+zfspool/kvm1  reservation           none                   default
+zfspool/kvm1  volsize               50G                    local
+zfspool/kvm1  volblocksize          8K                     -
+zfspool/kvm1  checksum              on                     default
+zfspool/kvm1  compression           off                    default
+zfspool/kvm1  readonly              off                    default
+zfspool/kvm1  copies                1                      default
+zfspool/kvm1  refreservation        none                   default
+zfspool/kvm1  primarycache          all                    default
+zfspool/kvm1  secondarycache        all                    default
+zfspool/kvm1  usedbysnapshots       8K                     -
+zfspool/kvm1  usedbydataset         1.57G                  -
+zfspool/kvm1  usedbychildren        0                      -
+zfspool/kvm1  usedbyrefreservation  0                      -
+zfspool/kvm1  logbias               latency                default
+zfspool/kvm1  dedup                 off                    default
+zfspool/kvm1  mlslabel              none                   default
+zfspool/kvm1  sync                  standard               default
+zfspool/kvm1  refcompressratio      1.00x                  -
+zfspool/kvm1  written               8K                     -
+zfspool/kvm1  snapdev               hidden                 default</pre>
+</div>
+</div>
+<div class="section" id="kvm">
+<h2>KVM</h2>
+<p>ZVOLをKVMのGuestOSに使ってみる。</p>
+<div class="highlight-python"><pre>% apt-get install kvm virtinst virt-manager
+% brctl addbr br1
+% brctl addif br1 eth1
+% ifconfig eth1 up
+% ifconfig br1 up</pre>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
+
+<span class="nv">VM_NAME</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">MEM</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$3</span>
+<span class="nv">OS</span><span class="o">=</span><span class="nv">$4</span>
+
+<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">&quot;/dev/zvol/zfspool/$VM_NAME&quot;</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;centos&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># CentOS 6.4 amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;precise&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Ubuntu 12.04 amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;squeeze&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Debian Squeeze amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;wheezy&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+  <span class="c"># Debian Wheezy amd64</span>
+  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
+<span class="k">fi</span>
+
+virt-install --hvm --accelerate --nographics <span class="se">\</span>
+  --name <span class="nv">$VM_NAME</span> <span class="se">\</span>
+  --network <span class="nv">bridge</span><span class="o">=</span><span class="nv">$IFACE</span>,model<span class="o">=</span>virtio <span class="se">\</span>
+  --ram <span class="nv">$MEM</span> <span class="se">\</span>
+  --vcpus 1 <span class="se">\</span>
+  --cpu core2duo <span class="se">\</span>
+  --os-type linux <span class="se">\</span>
+  --location <span class="nv">$DIST</span> <span class="se">\</span>
+  --disk <span class="nv">path</span><span class="o">=</span><span class="nv">$DISKIMAGE</span>,bus<span class="o">=</span>virtio <span class="se">\</span>
+  --extra-args<span class="o">=</span><span class="s1">'console=tty0 console=ttyS0,115200n8'</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>% vm-install.sh kvm1 1024 br1 wheezy
+
+% ls -l /dev/zvol/zfspool/
+total 0
+lrwxrwxrwx 1 root root 10 Feb  6 12:37 disk2 -&gt; ../../zd16
+lrwxrwxrwx 1 root root  9 Feb  6 12:12 kvm1 -&gt; ../../zd0
+lrwxrwxrwx 1 root root 11 Feb  6 12:12 kvm1-part1 -&gt; ../../zd0p1
+lrwxrwxrwx 1 root root 11 Feb  6 12:12 kvm1-part2 -&gt; ../../zd0p2
+lrwxrwxrwx 1 root root 11 Feb  6 12:12 kvm1-part5 -&gt; ../../zd0p5</pre>
+</div>
+<p>ZFSでスナップショットをとったりロールバックできる環境が出来上がった。LVM2やqemu-img(1)とおさらばヒャッハー。GuestOSを停止しないでロールバックしようとすると「devide busy」と怒られる。</p>
+<div class="highlight-python"><pre>% zfs snapshot zfspool/kvm1@snap1
+% zfs list -t snapshot
+NAME                 USED  AVAIL  REFER  MOUNTPOINT
+zfspool/kvm1@snap1   600K      -  1.57G  -
+
+% zfs rollback zfspool/kvm1@snap1</pre>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols">https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ debian ]]></category>
+             <pubDate>Thu, 06 Feb 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html</guid>

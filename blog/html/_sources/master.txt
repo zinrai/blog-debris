@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/02/06/debian_wheezy_kvm_zfs
    2014/02/05/debian_wheezy_zfs
    2013/12/03/ubuntu_docker_ansible
    2013/11/28/ubuntu_docker
