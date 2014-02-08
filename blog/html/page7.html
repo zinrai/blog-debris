@@ -30,8 +30,8 @@
         <script src="_static/main.js"></script>
         <link rel="next" title="Older" href="page8.html" /><link rel="prev" title="Newer" href="page6.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.1',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -86,6 +86,98 @@
             <li class="left"> &laquo; <a href="page6.html">Newer</a></li>
             <li class="right"><a href="page8.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>September 09, 2013</span>
+        </div>
+        <div class="section" id="centoschroot">
+<h1><a href="2013/09/09/centos_chroot.html">CentOSでchroot環境構築</a></h1>
+<p>yum(8)では役割単位(Web,Mailサーバなど)でパッケージがグループ化されており、グループ名を指定することでグループに属しているパッケージをまとめてインストールできるようになっている。</p>
+<p>グループ名はサブコマンドgrouplistで調べることができる。</p>
+<div class="highlight-python"><div class="highlight"><pre># cat /etc/centos-release
+CentOS release 6.4 (Final)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum grouplist
+Loaded plugins: fastestmirror
+Setting up Group Process
+Loading mirror speeds from cached hostfile
+ * base: ftp.iij.ad.jp
+ * extras: ftp.iij.ad.jp
+ * updates: ftp.iij.ad.jp
+Installed Groups:
+   E-mail server
+Available Groups:
+   Additional Development
+   Backup Client
+   Backup Server
+   Base
+   CIFS file server
+   Client management tools
+   Compatibility libraries
+   ~~~~~~~~~~以下略~~~~~~~~~~
+</pre></div>
+</div>
+<p>サブコマンドgroupifnoでグループに属しているパッケージを調べられる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% yum groupinfo &quot;E-mail Server&quot;
+Loaded plugins: fastestmirror
+Setting up Group Process
+Loading mirror speeds from cached hostfile
+ * base: ftp.iij.ad.jp
+ * extras: ftp.iij.ad.jp
+ * updates: ftp.iij.ad.jp
+
+Group: E-mail server
+ Description: Allows the system to act as a SMTP and/or IMAP e-mail server.
+ Default Packages:
+   dovecot
+   postfix
+   spamassassin
+ Optional Packages:
+   cyrus-imapd
+   dovecot-mysql
+   dovecot-pgsql
+   dovecot-pigeonhole
+   mailman
+   sendmail
+   sendmail-cf
+</pre></div>
+</div>
+<p>BaseはCentOSのベースシステムがグループ化されている。</p>
+<p>さらに「–installroot」オプションで指定したディレクトリにベースシステムを展開できる。</p>
+<p>これを使えばCentOSのchroot環境を簡単に構築できる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall &quot;Base&quot;
+% cd /root/centos6
+% cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
+% cp /etc/resolv.conf etc/
+% chroot /root/centos6 ntpdate ntp.jst.mfeed.ad.jp
+% chroot /root/centos6 hwclock --systohc
+
+% mount --rbind /dev /root/centos6/dev
+% mount -t proc none /root/centos6/proc
+% mount --rbind /sys /root/centos6/sys
+
+% chroot /root/centos6 /bin/bash
+</pre></div>
+</div>
+<p>chroot環境のアップグレードは下記のようにすればいい。</p>
+<div class="highlight-python"><div class="highlight"><pre>% yum upgrade --releasever=6 --installroot=/root/centos6 -y
+</pre></div>
+</div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/centos.html">centos</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/centos.html">centos</a>, <a href="tags/chroot.html">chroot</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>September 08, 2013</span>
         </div>
         <div class="section" id="gentoo-linux">
@@ -104,10 +196,11 @@
 <p>「<a class="reference internal" href="2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」で構築した環境にスクリプトを配置する。</p>
 <p>その他に、<a class="reference external" href="http://www.gentoo.org/main/en/where.xml">stage3</a>,<a class="reference external" href="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots">portage</a>, カーネルのコンフィグファイルをスクリプトのあるディレクトリに用意しておく。</p>
 <p>実機,仮想環境(KVM)ともに動作することは確認した。Gentooを複数台セットアップする予定はいまのところない。</p>
-<div class="highlight-python"><pre>% cp /boot/config-* /var/scripts
+<div class="highlight-python"><div class="highlight"><pre>% cp /boot/config-* /var/scripts
 % cd /var/scripts
 % wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-20130830.tar.bz2
-% wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/current-stage3/stage3-amd64-20131010.tar.bz2</pre>
+% wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/current-stage3/stage3-amd64-20131010.tar.bz2
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/gentoo_install.conf</span>
 </pre></div>
@@ -283,18 +376,20 @@ reboot
 <div class="section" id="dnsmasq">
 <h3>dnsmasq</h3>
 <p>DNSサーバ以外にもDHCP,TFTPサーバとしても使える便利なdnsmasq</p>
-<div class="highlight-python"><pre># vi /etc/dnsmasq.d/pxe.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/dnsmasq.d/pxe.conf
 enable-tftp
 tftp-root=/var/lib/tftpboot
 dhcp-range=192.168.2.200,192.168.2.250,2h
 dhcp-option=3,192.168.2.254
-dhcp-boot=pxelinux.0</pre>
+dhcp-boot=pxelinux.0
+</pre></div>
 </div>
 </div>
 <div class="section" id="nfs">
 <h3>NFS</h3>
-<div class="highlight-python"><pre># vi /etc/exports
-/var/lib/tftpboot/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)</pre>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/exports
+/var/lib/tftpboot/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)
+</pre></div>
 </div>
 </div>
 <div class="section" id="debootstrap">
@@ -308,7 +403,7 @@ dhcp-boot=pxelinux.0</pre>
 </div>
 <div class="section" id="syslinux">
 <h3>syslinux</h3>
-<div class="highlight-python"><pre># cp /boot/initrd* /var/lib/tftpboot
+<div class="highlight-python"><div class="highlight"><pre># cp /boot/initrd* /var/lib/tftpboot
 # cp /boot/vmlinuz* /var/lib/tftpboot
 
 # cp /usr/lib/syslinux/pxelinux.0 /var/lib/tftpboot
@@ -320,7 +415,8 @@ prompt 1
 timeout 10
 label Debian
 kernel vmlinuz-3.2.0-4-amd64
-append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy rw</pre>
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy rw
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># service dnsmasq start</span>
 <span class="c"># service nfs-kernel-server start</span>
@@ -334,7 +430,8 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.2
 <p>debootstrapで取得した最小構成のWheezyをコピーするスクリプトを書いただけ。</p>
 <p>パッケージインストール時にダイアログが表示され入力待ちにならないよう環境変数「DEBIAN_FRONTEND=noninteractive」を設定しておくのがポイントである。</p>
 <p>この環境変数は解決方法はないかとdebconf(1)を眺めていたら</p>
-<div class="highlight-python"><pre>Debconf is a configuration system for Debian packages. For a debconf overview and documentation for sysadmins, see debconf(7) (in the debconf-doc package).</pre>
+<div class="highlight-python"><div class="highlight"><pre>Debconf is a configuration system for Debian packages. For a debconf overview and documentation for sysadmins, see debconf(7) (in the debconf-doc package).
+</pre></div>
 </div>
 <p>書かれており、説明に従いdebconf-docをインストールし、debconf(7)を眺めたところ見付けた。</p>
 <p>os_install.shはconfファイルが1つだとうまく動いてくれないのでダミーのconfファイルを1つ作っておく。</p>
@@ -483,7 +580,7 @@ reboot
 </pre></div>
 </div>
 <p>pxeboot時にインストールスクリプトが実行されるようrc.localに書いておく。</p>
-<div class="highlight-python"><pre># vi /var/lib/tftpboot/wheezy/etc/rc.local
+<div class="highlight-python"><div class="highlight"><pre># vi /var/lib/tftpboot/wheezy/etc/rc.local
 
 #!/bin/sh -e
 #
@@ -500,7 +597,8 @@ reboot
 
 /var/scripts/os_install.sh
 
-exit 0</pre>
+exit 0
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">http://fedoraproject.org/wiki/Anaconda/Kickstart</a></li>
@@ -522,53 +620,6 @@ exit 0</pre>
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/pexboot.html">pexboot</a>, <a href="tags/debootstrap.html">debootstrap</a>, <a href="tags/dnsmasq.html">dnsmasq</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>September 06, 2013</span>
-        </div>
-        <div class="section" id="sshfs">
-<h1><a href="2013/09/06/debian_wheezy_sshfs.html">sshfs</a></h1>
-<p>言わずと知れたSSH経由でリモートサーバのディレクトリをマウントしてくれるツール</p>
-<p>いつも便利に使わせてもらっている。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get instal sshfs</span>
-</pre></div>
-</div>
-<p>fuseグループに所属していないと「fuse: failed to open /dev/fuse: Permission denied」となる。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># usermod -a -G fuse hoge</span>
-</pre></div>
-</div>
-<div class="highlight-python"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.1 (wheezy)
-Release:        7.1
-Codename:       wheezy</pre>
-</div>
-<div class="highlight-python"><pre>$ sshfs --version
-SSHFS version 2.4
-FUSE library version: 2.9.0
-using FUSE kernel interface version 7.18</pre>
-</div>
-<div class="highlight-python"><pre>$ sshfs -p 18465 hoge@192.168.2.1:/home/hoge remote_dir
-$ fusermount -u remote_dir</pre>
-</div>
-<ul class="simple">
-<li><a class="reference external" href="http://fuse.sourceforge.net/sshfs.html">http://fuse.sourceforge.net/sshfs.html</a></li>
-</ul>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/sshfs.html">sshfs</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/sshfs.html">sshfs</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -577,6 +628,8 @@ $ fusermount -u remote_dir</pre>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
+        </li><li>
             <a href="2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
         </li><li>
             <a href="2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a>
@@ -594,15 +647,13 @@ $ fusermount -u remote_dir</pre>
             <a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
         </li><li>
             <a href="2013/10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
-        </li><li>
-            <a href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (11), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (7), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (12), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (8), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

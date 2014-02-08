@@ -5,8 +5,127 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 06 Feb 2014 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 07 Feb 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/02/07/debian_wheezy_openvpn.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/02/07/debian_wheezy_openvpn.html</guid>
+            <title><![CDATA[OpenVPN サーバ構築]]></title>
+            <description><![CDATA[<div class="section" id="openvpn">
+<h1>OpenVPN サーバ構築</h1>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.3 (wheezy)
+Release:        7.3
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% sysctl -p
+net.ipv4.ip_forward = 1
+</pre></div>
+</div>
+<div class="section" id="id1">
+<h2>サーバ</h2>
+<p>ルーティングモードとブリッジモードがあり、今回はブリッジモードで動かす。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install openvpn openssl bridge-utils
+
+% openvpn --version
+OpenVPN 2.2.1 x86_64-linux-gnu [SSL] [LZO2] [EPOLL] [PKCS11] [eurephia] [MH] [PF_INET6] [IPv6 payload 20110424-2 (2.2RC2)] built on Jun 18 2013
+Originally developed by James Yonan
+Copyright (C) 2002-2010 OpenVPN Technologies, Inc. &lt;sales@openvpn.net&gt;
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% cp -r /usr/share/doc/openvpn/examples/easy-rsa /etc/openvpn
+% cd /etc/openvpn/easy-rsa/2.0
+% . ./vars
+% ./build-ca
+% ./build-key-server server &lt;- サーバ用の証明書
+% ./build-dh
+
+% ./build-key client01 &lt;- クライアント用の証明書
+
+% cd keys
+% cp ca.crt server.crt server.key dh1024.pem /etc/openvpn
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/openvpn/openvpn.conf
+port 1194
+proto tcp
+dev tap0
+ca ca.crt
+cert server.crt
+key server.key
+dh dh1024.pem
+server-bridge 192.168.2.1 255.255.255.0 192.168.2.250 192.168.2.253
+push &quot;route 192.168.2.0 255.255.255.0&quot;
+duplicate-cn
+keepalive 10 120
+comp-lzo
+persist-key
+persist-tun
+status openvpn-status.log
+verb 4
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/network/interfaces
+auto lo
+iface lo inet loopback
+
+auto br0
+iface br0 inet static
+address 192.168.2.1
+netmask 255.255.255.0
+gateway 192.168.2.254
+bridge_ports eth0
+up openvpn --mktun --dev tap0
+up ifconfig tap0 up
+up brctl addif br0 tap0
+down brctl delif br0 tap0
+down ifconfig tap0 down
+down openvpn --rmtun --dev tap0
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% update-rc.d openvpn defaults
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>クライアント</h2>
+<p>サーバ側で生成したクライアント用の証明書をクライアントPCにもってくる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install openvpn openssl
+
+% vi /etc/openvpn/client.conf
+client
+dev tap
+proto tcp
+remote 10.0.0.1 1194
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+ca ca.crt
+cert client01.crt
+key client01.key
+ns-cert-type server
+comp-lzo
+verb 3
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#RoutedOrBridged">http://www.openvpn.jp/document/how-to/#RoutedOrBridged</a></li>
+<li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#CertificateAuthority">http://www.openvpn.jp/document/how-to/#CertificateAuthority</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ openvpn ]]></category>
+             <pubDate>Fri, 07 Feb 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/02/06/debian_wheezy_kvm_zfs.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/06/debian_wheezy_kvm_zfs.html</guid>
@@ -17,7 +136,7 @@
 <div class="section" id="zvol">
 <h2>ZVOL</h2>
 <p>ZFSの領域をブロックデバイスとして切り出すことができる機能</p>
-<div class="highlight-python"><pre>% zfs create -V 20G zfspool/disk2
+<div class="highlight-python"><div class="highlight"><pre>% zfs create -V 20G zfspool/disk2
 % zfs list
 NAME            USED  AVAIL  REFER  MOUNTPOINT
 zfspool        22.2G  1.76T   144K  /zfspool
@@ -26,20 +145,23 @@ zfspool/disk2  20.6G  1.78T    72K  -
 
 % ls -l /dev/zvol/zfspool/
 total 0
-lrwxrwxrwx 1 root root 10 Feb  6 12:37 disk2 -&gt; ../../zd16</pre>
+lrwxrwxrwx 1 root root 10 Feb  6 12:37 disk2 -&gt; ../../zd16
+</pre></div>
 </div>
 </div>
 <div class="section" id="sparse-volume">
 <h2>sparse volume</h2>
 <p>上記だと20GBの領域がまるまる割り当てられてしまうので、thin provisioning的な機能はないかzfs(8)を眺めてみた。</p>
 <p>man zfsして「thin provisioning」で検索して「 “sparse volume” (also known as “thin provisioning”)」の文の見付けて「sparse volume」で検索したらオプションを探し当てることができた。</p>
-<div class="highlight-python"><pre>Though not recommended, a &quot;sparse volume&quot; (also known as &quot;thin provisioning&quot;) can be created by specifying the -s option to the  zfs  create  -V command,  or by changing the reservation after the volume has been created. A &quot;sparse volume&quot; is a volume where the reservation is less then the volume size. Consequently, writes to a sparse volume can fail with ENOSPC when the pool is low on space. For a sparse volume, changes to volsize are not reflected in the reservation.</pre>
+<div class="highlight-python"><div class="highlight"><pre>Though not recommended, a &quot;sparse volume&quot; (also known as &quot;thin provisioning&quot;) can be created by specifying the -s option to the  zfs  create  -V command,  or by changing the reservation after the volume has been created. A &quot;sparse volume&quot; is a volume where the reservation is less then the volume size. Consequently, writes to a sparse volume can fail with ENOSPC when the pool is low on space. For a sparse volume, changes to volsize are not reflected in the reservation.
+</pre></div>
 </div>
-<div class="highlight-python"><pre>-s
+<div class="highlight-python"><div class="highlight"><pre>-s
 
-Creates a sparse volume with no reservation. See volsize in the Native Properties section for more information about sparse volumes.</pre>
+Creates a sparse volume with no reservation. See volsize in the Native Properties section for more information about sparse volumes.
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% zfs create -s -V 50G zfspool/kvm1
+<div class="highlight-python"><div class="highlight"><pre>% zfs create -s -V 50G zfspool/kvm1
 % zfs get all zfspool/kvm1
 NAME          PROPERTY              VALUE                  SOURCE
 zfspool/kvm1  type                  volume                 -
@@ -68,17 +190,19 @@ zfspool/kvm1  mlslabel              none                   default
 zfspool/kvm1  sync                  standard               default
 zfspool/kvm1  refcompressratio      1.00x                  -
 zfspool/kvm1  written               8K                     -
-zfspool/kvm1  snapdev               hidden                 default</pre>
+zfspool/kvm1  snapdev               hidden                 default
+</pre></div>
 </div>
 </div>
 <div class="section" id="kvm">
 <h2>KVM</h2>
 <p>ZVOLをKVMのGuestOSに使ってみる。</p>
-<div class="highlight-python"><pre>% apt-get install kvm virtinst virt-manager
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install kvm virtinst virt-manager
 % brctl addbr br1
 % brctl addif br1 eth1
 % ifconfig eth1 up
-% ifconfig br1 up</pre>
+% ifconfig br1 up
+</pre></div>
 </div>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
 
@@ -115,7 +239,7 @@ virt-install --hvm --accelerate --nographics <span class="se">\</span>
   --extra-args<span class="o">=</span><span class="s1">'console=tty0 console=ttyS0,115200n8'</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>% vm-install.sh kvm1 1024 br1 wheezy
+<div class="highlight-python"><div class="highlight"><pre>% vm-install.sh kvm1 1024 br1 wheezy
 
 % ls -l /dev/zvol/zfspool/
 total 0
@@ -123,15 +247,17 @@ lrwxrwxrwx 1 root root 10 Feb  6 12:37 disk2 -&gt; ../../zd16
 lrwxrwxrwx 1 root root  9 Feb  6 12:12 kvm1 -&gt; ../../zd0
 lrwxrwxrwx 1 root root 11 Feb  6 12:12 kvm1-part1 -&gt; ../../zd0p1
 lrwxrwxrwx 1 root root 11 Feb  6 12:12 kvm1-part2 -&gt; ../../zd0p2
-lrwxrwxrwx 1 root root 11 Feb  6 12:12 kvm1-part5 -&gt; ../../zd0p5</pre>
+lrwxrwxrwx 1 root root 11 Feb  6 12:12 kvm1-part5 -&gt; ../../zd0p5
+</pre></div>
 </div>
 <p>ZFSでスナップショットをとったりロールバックできる環境が出来上がった。LVM2やqemu-img(1)とおさらばヒャッハー。GuestOSを停止しないでロールバックしようとすると「devide busy」と怒られる。</p>
-<div class="highlight-python"><pre>% zfs snapshot zfspool/kvm1@snap1
+<div class="highlight-python"><div class="highlight"><pre>% zfs snapshot zfspool/kvm1@snap1
 % zfs list -t snapshot
 NAME                 USED  AVAIL  REFER  MOUNTPOINT
 zfspool/kvm1@snap1   600K      -  1.57G  -
 
-% zfs rollback zfspool/kvm1@snap1</pre>
+% zfs rollback zfspool/kvm1@snap1
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols">https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/</a></li>
@@ -149,23 +275,26 @@ zfspool/kvm1@snap1   600K      -  1.57G  -
             <description><![CDATA[<div class="section" id="zfs-on-linux-debian-wheezy">
 <h1>ZFS on Linux (Debian wheezy)</h1>
 <p>LinuxでもZFSがいい感じで動くという話を聞いたので使ってみた。</p>
-<div class="highlight-python"><pre>% uname -a
-Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux</pre>
+<div class="highlight-python"><div class="highlight"><pre>% uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.3 (wheezy)
 Release:        7.3
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% wget http://archive.zfsonlinux.org/debian/pool/main/z/zfsonlinux/zfsonlinux_2%7Ewheezy_all.deb
+<div class="highlight-python"><div class="highlight"><pre>% wget http://archive.zfsonlinux.org/debian/pool/main/z/zfsonlinux/zfsonlinux_2%7Ewheezy_all.deb
 % dpkg -i zfsonlinux_2~wheezy_all.deb
 % apt-get update
-% apt-get install debian-zfs</pre>
+% apt-get install debian-zfs
+</pre></div>
 </div>
 <p>2TBのHDDをRAID1してみる。</p>
-<div class="highlight-python"><pre>% parted /dev/sda -s &quot;mklabel gpt&quot;
+<div class="highlight-python"><div class="highlight"><pre>% parted /dev/sda -s &quot;mklabel gpt&quot;
 % parted /dev/sdc -s &quot;mklabel gpt&quot;
 
 % zpool create zfspool mirror sda sdc
@@ -174,13 +303,15 @@ NAME   SIZE  ALLOC   FREE    CAP  DEDUP  HEALTH  ALTROOT
 zfspool  1.81T   556K  1.81T     0%  1.00x  ONLINE  -
   mirror  1.81T   556K  1.81T         -
     sda      -      -      -         -
-    sdc      -      -      -         -</pre>
+    sdc      -      -      -         -
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% zfs create zfspool/disk1
+<div class="highlight-python"><div class="highlight"><pre>% zfs create zfspool/disk1
 % zfs list
 NAME            USED  AVAIL  REFER  MOUNTPOINT
 zfspool         692K  1.78T   136K  /zfspool
-zfspool/disk1   136K  1.78T   136K  /zfspool/disk1</pre>
+zfspool/disk1   136K  1.78T   136K  /zfspool/disk1
+</pre></div>
 </div>
 <p>ブロックデバイスとして見えたらKVMのGuestOS用のディスクとして使えると思うので、その辺を調べてみる。</p>
 <ul class="simple">
@@ -205,18 +336,20 @@ zfspool/disk1   136K  1.78T   136K  /zfspool/disk1</pre>
 <p>前回はDockerの使い方を調べたので、今回はDocker上のコンテナで巷で噂の<a class="reference external" href="http://www.ansibleworks.com">Ansible</a>を動かしてみる。</p>
 <div class="section" id="id1">
 <h2>コンテナ起動</h2>
-<div class="highlight-python"><pre>% docker run -i -t -id --name test01 ubuntu:latest /bin/bash
-% docker attach test01</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker run -i -t -id --name test01 ubuntu:latest /bin/bash
+% docker attach test01
+</pre></div>
 </div>
 </div>
 <div class="section" id="id2">
 <h2>コンテナイメージ作成</h2>
-<div class="highlight-python"><pre>% lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
 Distributor ID: Ubuntu
 Description:    Ubuntu 12.04 LTS
 Release:        12.04
-Codename:       precise</pre>
+Codename:       precise
+</pre></div>
 </div>
 <ul class="simple">
 <li>Python,SSHインストール</li>
@@ -224,7 +357,7 @@ Codename:       precise</pre>
 <li>sudo設定</li>
 </ul>
 <p>起動したコンテナで上記の作業してコンテナイメージを作成する。</p>
-<div class="highlight-python"><pre>% apt-get install python2.7 python2.7-dev openssh-server vim sudo wget ca-certificates
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install python2.7 python2.7-dev openssh-server vim sudo wget ca-certificates
 
 % mkdir /var/run/sshd
 % cd /etc/ssh
@@ -257,11 +390,13 @@ Codename:       precise</pre>
 % su - zinrai
 $ ssh-keygen
 $ cd .ssh
-$ cp id_rsa.pub authorized_keys</pre>
+$ cp id_rsa.pub authorized_keys
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% docker commit test01 ansible/test01
+<div class="highlight-python"><div class="highlight"><pre>% docker commit test01 ansible/test01
 % docker run -i -t -d --name ansible01 ansible/test01 /bin/bash
-% docker run -i -t -d --name ansible02 ansible/test01 /bin/bash</pre>
+% docker run -i -t -d --name ansible02 ansible/test01 /bin/bash
+</pre></div>
 </div>
 </div>
 <div class="section" id="id3">
@@ -270,7 +405,7 @@ $ cp id_rsa.pub authorized_keys</pre>
 <li><a class="reference external" href="http://www.ansibleworks.com">Ansible</a>はvirtualenv上で動かす。</li>
 <li>–ask-sudo-passオプションが使えるようにsshpassをインストール</li>
 </ul>
-<div class="highlight-python"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
 $ tar zvxf virtualenv-1.10.1.tar.gz
 $ python virtualenv-1.10.1/virtualenv.py ansible
 $ source ansible/bin/activate
@@ -285,26 +420,30 @@ argparse==1.2.1
 ecdsa==0.10
 paramiko==1.12.0
 pycrypto==2.6.1
-wsgiref==0.1.2</pre>
+wsgiref==0.1.2
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/apt/source.list
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/apt/source.list
 deb http://archive.ubuntu.com/ubuntu precise main universe
 deb-src http://archive.ubuntu.com/ubuntu/ precise main universe
 deb http://archive.ubuntu.com/ubuntu/ precise-updates main universe
 deb-src http://archive.ubuntu.com/ubuntu/ precise-updates main universe
 
 % apt-get update
-% apt-get install sshpass</pre>
+% apt-get install sshpass
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ mkdir playbook
-$ cd playbook</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir playbook
+$ cd playbook
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi hosts
+<div class="highlight-python"><div class="highlight"><pre>$ vi hosts
 [test]
 172.17.0.10
-172.17.0.11</pre>
+172.17.0.11
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi setup.yml
+<div class="highlight-python"><div class="highlight"><pre>$ vi setup.yml
 ---
 - hosts: test
   remote_user: zinrai
@@ -315,9 +454,10 @@ $ cd playbook</pre>
     apt: pkg={{ item }} state=latest
     with_items:
     - less
-    - perl-modules</pre>
+    - perl-modules
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ ansible-playbook -i hosts setup.yml --ask-sudo-pass
+<div class="highlight-python"><div class="highlight"><pre>$ ansible-playbook -i hosts setup.yml --ask-sudo-pass
 sudo password:
 
 PLAY [test] *******************************************************************
@@ -332,7 +472,8 @@ changed: [172.17.0.11] =&gt; (item=less,perl-modules)
 
 PLAY RECAP ********************************************************************
 172.17.0.10                : ok=2    changed=1    unreachable=0    failed=0
-172.17.0.11                : ok=2    changed=1    unreachable=0    failed=0</pre>
+172.17.0.11                : ok=2    changed=1    unreachable=0    failed=0
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.ansibleworks.com/docs/playbooks.html">http://www.ansibleworks.com/docs/playbooks.html</a></li>
@@ -351,7 +492,7 @@ PLAY RECAP ********************************************************************
             <description><![CDATA[<div class="section" id="docker">
 <h1>Dockerを使ってみる</h1>
 <p><a class="reference external" href="https://www.dotcloud.com">dotcloud</a>がオープンソースで公開している<a class="reference external" href="http://docs.docker.io">Docker</a>というソフトウェアを知った。Linuxコンテナの実装の一つである<a class="reference external" href="http://linuxcontainers.org">LXC</a>を使いOSレベルの仮想化を行い、<a class="reference external" href="http://aufs.sourceforge.net">Aufs</a>で「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/10/debian_wheezy_chroot_aufs.html"><em>aufsを使ったchroot環境</em></a>」のようにベースファイルを書き換えずに、更新が発生した部分は別ディレクトリに書き込み、この差分をGitっぽく管理できるフロントエンドなのかなというのが触ってみた印象だった。</p>
-<div class="highlight-python"><pre>$ uname -a
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux asuna 3.8.0-33-generic #48~precise1-Ubuntu SMP Thu Oct 24 16:28:06 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
 
 $ lsb_release -a
@@ -359,20 +500,22 @@ No LSB modules are available.
 Distributor ID: Ubuntu
 Description:    Ubuntu 12.04.3 LTS
 Release:        12.04
-Codename:       precise</pre>
+Codename:       precise
+</pre></div>
 </div>
 <div class="section" id="id1">
 <h2>Docker インストール</h2>
-<div class="highlight-python"><pre>$ sudo apt-get update
+<div class="highlight-python"><div class="highlight"><pre>$ sudo apt-get update
 $ sudo apt-get install linux-image-generic-lts-raring linux-headers-generic-lts-raring
 $ sudo reboot
 
 $ sudo sh -c &quot;wget -qO- https://get.docker.io/gpg | apt-key add -&quot;
 $ sudo sh -c &quot;echo deb http://get.docker.io/ubuntu docker main &gt; /etc/apt/sources.list.d/docker.list&quot;
 $ sudo apt-get update
-$ sudo apt-get install lxc-docker</pre>
+$ sudo apt-get install lxc-docker
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ apt-cache search lxc-docker
+<div class="highlight-python"><div class="highlight"><pre>$ apt-cache search lxc-docker
 lxc-docker - Linux container runtime
 lxc-docker-0.5.3 - lxc-docker is a Linux container runtime
 lxc-docker-0.6.0 - lxc-docker is a Linux container runtime
@@ -383,9 +526,10 @@ lxc-docker-0.6.4 - lxc-docker is a Linux container runtime
 lxc-docker-0.6.5 - lxc-docker is a Linux container runtime
 lxc-docker-0.6.6 - lxc-docker is a Linux container runtime
 lxc-docker-0.6.7 - Linux container runtime
-lxc-docker-0.7.0 - Linux container runtime</pre>
+lxc-docker-0.7.0 - Linux container runtime
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ apt-cache show lxc-docker
+<div class="highlight-python"><div class="highlight"><pre>$ apt-cache show lxc-docker
 Package: lxc-docker
 Version: 0.7.0
 License: unknown
@@ -408,55 +552,61 @@ Description: Linux container runtime
  repeatability across servers.
  Docker is a great building block for automating distributed systems:
  large-scale web deployments, database clusters, continuous deployment systems,
- private PaaS, service-oriented architectures, etc.</pre>
+ private PaaS, service-oriented architectures, etc.
+</pre></div>
 </div>
 </div>
 <div class="section" id="id2">
 <h2>Docker 使い方</h2>
-<div class="highlight-python"><pre>% docker -v
-Docker version 0.7.0, build 0d078b6</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker -v
+Docker version 0.7.0, build 0d078b6
+</pre></div>
 </div>
 <div class="section" id="pull">
 <h3>pull</h3>
-<div class="highlight-python"><pre>% docker pull ubuntu
+<div class="highlight-python"><div class="highlight"><pre>% docker pull ubuntu
 Pulling repository ubuntu
 8dbd9e392a96: Download complete
 b750fe79269d: Download complete
-27cf78414709: Download complete</pre>
+27cf78414709: Download complete
+</pre></div>
 </div>
 <p><a class="reference external" href="https://index.docker.io">https://index.docker.io/</a>で公開されているコンテナイメージを取得しローカルに展開</p>
 </div>
 <div class="section" id="images">
 <h3>images</h3>
-<div class="highlight-python"><pre>% docker images
+<div class="highlight-python"><div class="highlight"><pre>% docker images
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 ubuntu              12.04               8dbd9e392a96        7 months ago        128 MB (virtual 128 MB)
 ubuntu              latest              8dbd9e392a96        7 months ago        128 MB (virtual 128 MB)
 ubuntu              precise             8dbd9e392a96        7 months ago        128 MB (virtual 128 MB)
 ubuntu              12.10               b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)
-ubuntu              quantal             b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)</pre>
+ubuntu              quantal             b750fe79269d        8 months ago        175.3 MB (virtual 350.6 MB)
+</pre></div>
 </div>
 <p>コンテナイメージを一覧する。コンテナを作成する際に使用するベースイメージ(<a class="reference external" href="http://aufs.sourceforge.net">Aufs</a>で重ね、書き変わらない部分)。</p>
 </div>
 <div class="section" id="run">
 <h3>run</h3>
-<div class="highlight-python"><pre>% docker run -i -t -d --name ubuntu01 ubuntu:12.04 /bin/bash
+<div class="highlight-python"><div class="highlight"><pre>% docker run -i -t -d --name ubuntu01 ubuntu:12.04 /bin/bash
 % docker run -i -t -d --name ubuntu02 ubuntu:12.04 /bin/bash
 % docker run -i -t -d --name ubuntu03 ubuntu:12.04 /bin/bash
 % docker run -i -t -d -p 80 --name ubuntu04 ubuntu:12.04 /bin/bash
-% docker run -i -t -d -p 80 -p 22 --name ubuntu05 ubuntu:12.04 /bin/bash</pre>
+% docker run -i -t -d -p 80 -p 22 --name ubuntu05 ubuntu:12.04 /bin/bash
+</pre></div>
 </div>
 <p>新規にコンテナを作成し起動する。start,stopというコマンドもあるが、これは作成したコンテナを起動・停止するために使用する。</p>
 </div>
 <div class="section" id="ps">
 <h3>ps</h3>
-<div class="highlight-python"><pre>% docker ps
+<div class="highlight-python"><div class="highlight"><pre>% docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                                          NAMES
 1734fac49073        ubuntu:12.04        /bin/bash           51 seconds ago      Up 51 seconds       0.0.0.0:49159-&gt;22/tcp, 0.0.0.0:49160-&gt;80/tcp   ubuntu05
 e54ec245fe2a        ubuntu:12.04        /bin/bash           2 minutes ago       Up 2 minutes        0.0.0.0:49158-&gt;80/tcp                          ubuntu04
 fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu03
 46d0ef544132        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu02
-8fcfa5265233        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu01</pre>
+8fcfa5265233        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu01
+</pre></div>
 </div>
 <ul class="simple">
 <li>「-a」オプションで停止中のコンテナの情報を表示できる。</li>
@@ -465,51 +615,59 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
 </div>
 <div class="section" id="attach">
 <h3>attach</h3>
-<div class="highlight-python"><pre>% docker attach ubuntu01</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker attach ubuntu01
+</pre></div>
 </div>
 <p>起動しているコンテナにアッタッチする。「Ctrl-p Ctrl-q」でデタッチ</p>
 </div>
 <div class="section" id="start">
 <h3>start</h3>
-<div class="highlight-python"><pre>% docker start ubuntu05</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker start ubuntu05
+</pre></div>
 </div>
 <p>停止しているコンテナを起動する。</p>
 </div>
 <div class="section" id="stop">
 <h3>stop</h3>
-<div class="highlight-python"><pre>% docker stop ubuntu05</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker stop ubuntu05
+</pre></div>
 </div>
 <p>起動しているコンテナを停止する。</p>
 </div>
 <div class="section" id="commit">
 <h3>commit</h3>
-<div class="highlight-python"><pre>% docker commit ubuntu02 python/ubuntu02
-% docker run -i -t -d --name ubuntu06 python/ubuntu02 /bin/bash</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker commit ubuntu02 python/ubuntu02
+% docker run -i -t -d --name ubuntu06 python/ubuntu02 /bin/bash
+</pre></div>
 </div>
 <p>変更を加えたコンテナからコンテナイメージを作成したい場合に使用する。例えば、コンテナにpythonをインストールし、commitすると、python入りのコンテナイメージが作られる。作ったコンテナイメージでrunすればpython入りコンテナが新たに起動する。</p>
 </div>
 <div class="section" id="rm">
 <h3>rm</h3>
-<div class="highlight-python"><pre>% docker rm ubuntu05</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker rm ubuntu05
+</pre></div>
 </div>
 <p>コンテナを削除する。</p>
 </div>
 <div class="section" id="rmi">
 <h3>rmi</h3>
-<div class="highlight-python"><pre>% docker rmi python/ubuntu02</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker rmi python/ubuntu02
+</pre></div>
 </div>
 <p>コンテナイメージを削除する。</p>
 </div>
 <div class="section" id="export">
 <h3>export</h3>
-<div class="highlight-python"><pre>% docker export ubuntu02 &gt; ubuntu02.tar</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker export ubuntu02 &gt; ubuntu02.tar
+</pre></div>
 </div>
 <p>コンテナはtarでアーカイブすることができる。</p>
 </div>
 <div class="section" id="import">
 <h3>import</h3>
-<div class="highlight-python"><pre>% docker import http://exsample.com/ubuntu02.tar ubuntu02
-% cat ubuntu02.tar | docker import - ubuntu02:new</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker import http://exsample.com/ubuntu02.tar ubuntu02
+% cat ubuntu02.tar | docker import - ubuntu02:new
+</pre></div>
 </div>
 <p>アーカイブは他の<a class="reference external" href="http://docs.docker.io">Docker</a>にimportすることができる。「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」を使って実機やKVMなどの仮想マシンにも展開できそう。</p>
 <p>環境を手軽に作れて差分で新たな環境を作ったりできてすごく便利。次は作成したコンテナでなにか動かしてみたいと思う。</p>
@@ -533,7 +691,8 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
             <description><![CDATA[<div class="section" id="fabric">
 <h1>Fabric テンプレート アップロード</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/11/22/fabric_decorators_task.html"><em>Fabric decorators task</em></a>」でディストリビューションやOSごとにファイルを分割してタスクを書けるようにした。今回はインストールスルクリプトをテンプレート化してアップロードするタスクを書いてみる。</p>
-<div class="highlight-python"><pre>$ vi __init__.py</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ vi __init__.py
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">fabric.api</span> <span class="kn">import</span> <span class="n">env</span>
 <span class="kn">from</span> <span class="nn">fabric.decorators</span> <span class="kn">import</span> <span class="n">task</span>
@@ -550,7 +709,8 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
   <span class="n">env</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="s">'root'</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi debian.py</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ vi debian.py
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">fabric.decorators</span> <span class="kn">import</span> <span class="n">task</span>
 <span class="kn">from</span> <span class="nn">fabric.contrib.files</span> <span class="kn">import</span> <span class="n">upload_template</span>
@@ -574,8 +734,9 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
     <span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$ mkdir templates
-$ vi templates/debian_template.conf</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir templates
+$ vi templates/debian_template.conf
+</pre></div>
 </div>
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash -x</span>
 
@@ -674,16 +835,18 @@ reboot
 </pre></div>
 </div>
 <p>Pythonのweb frameworkのひとつ<a class="reference external" href="http://flask.pocoo.org">Flask</a>に使用されているテンプレートエンジン<a class="reference external" href="http://jinja.pocoo.org">Jinja</a>が、Fabricでも使えるようなのでuse_jinja=Trueして使うことにする。{{ hoge }}で囲まれた部分が変数展開される。</p>
-<div class="highlight-python"><pre>$ fab -l
+<div class="highlight-python"><div class="highlight"><pre>$ fab -l
 Available commands:
 
     server
     centos.cmd
     debian.upload
     freebsd.cmd
-    gentoo.cmd</pre>
+    gentoo.cmd
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ fab server debian.upload:macaddress=&quot;01:23:45:67:89:ab&quot;,disk=&quot;vda&quot;,hostname=&quot;hoge.localnet&quot;,ipaddress=&quot;192.168.0.50&quot;,netmask=&quot;255.255.255.0&quot;,gateway=&quot;192.168.0.254&quot;,source_template=&quot;templates/debian_template.conf&quot;,dest_template=&quot;/var/diskless/scripts/debian_template.conf&quot;</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ fab server debian.upload:macaddress=&quot;01:23:45:67:89:ab&quot;,disk=&quot;vda&quot;,hostname=&quot;hoge.localnet&quot;,ipaddress=&quot;192.168.0.50&quot;,netmask=&quot;255.255.255.0&quot;,gateway=&quot;192.168.0.254&quot;,source_template=&quot;templates/debian_template.conf&quot;,dest_template=&quot;/var/diskless/scripts/debian_template.conf&quot;
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/contrib/files.html">http://docs.fabfile.org/en/1.8/api/contrib/files.html</a></li>
@@ -710,63 +873,71 @@ Available commands:
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html"><em>virtioを組み込んだmfsBSDイメージ作成</em></a></li>
 </ul>
 <p>シェルスクリプトでLinuxをインストールする環境はできたが、サーバに接続してシェルスクリプトをコピー・編集するという状態である。Fabricを使いこの作業をホストから行えるようにしてみる。fabfile.pyひとつにタスクを書いていくのではなくディストリビューションやOSごとにファイルを分割してタスクを書いていく。</p>
-<div class="highlight-python"><pre>$ python -V
+<div class="highlight-python"><div class="highlight"><pre>$ python -V
 Python 2.7.3
 
 $ fab --version
 Fabric 1.8.0
-Paramiko 1.12.0</pre>
+Paramiko 1.12.0
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ mkdir fabfile
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir fabfile
 $ cd fabfile
-$ touch __init__.py centos.py debian.py freebsd.py gentoo.py</pre>
+$ touch __init__.py centos.py debian.py freebsd.py gentoo.py
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi __init__.py
+<div class="highlight-python"><div class="highlight"><pre>$ vi __init__.py
 
 from . import debian
 from . import centos
 from . import gentoo
-from . import freebsd</pre>
+from . import freebsd
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi centos.py
+<div class="highlight-python"><div class="highlight"><pre>$ vi centos.py
 
 from fabric.decorators import task
 
 @task
 def cmd():
-    pass</pre>
+    pass
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi debian.py
+<div class="highlight-python"><div class="highlight"><pre>$ vi debian.py
 
 from fabric.decorators import task
 
 @task
 def cmd():
-    pass</pre>
+    pass
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi gentoo.py
+<div class="highlight-python"><div class="highlight"><pre>$ vi gentoo.py
 
 from fabric.decorators import task
 
 @task
 def cmd():
-    pass</pre>
+    pass
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi freebsd.py
+<div class="highlight-python"><div class="highlight"><pre>$ vi freebsd.py
 
 from fabric.decorators import task
 
 @task
 def cmd():
-    pass</pre>
+    pass
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ fab -l
+<div class="highlight-python"><div class="highlight"><pre>$ fab -l
 Available commands:
 
     centos.cmd
     debian.cmd
     freebsd.cmd
-    gentoo.cmd</pre>
+    gentoo.cmd
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://docs.fabfile.org/en/1.8">http://docs.fabfile.org/en/1.8/</a></li>
@@ -787,7 +958,7 @@ Available commands:
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」だとFreeBSD母艦が必要になるので、どうにかして<a class="reference external" href="http://www.syslinux.org/wiki/index.php/The_Syslinux_Project">Syslinux</a>にまとめられないか調べてみたところ<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>というものを見付けた。今回は「9.1-RELEASE」のmfsBSDを作成した。</p>
 <div class="section" id="mfsbsd">
 <h2>mfsBSDイメージ作成</h2>
-<div class="highlight-python"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
+<div class="highlight-python"><div class="highlight"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
 % tar zvxf mfsbsd-2.1.tar.gz
 % cd mfsbsd-2.1/conf
 % cp rc.conf.sample rc.conf
@@ -802,26 +973,29 @@ Available commands:
 % make RELEASE=9.1-RELEASE BASE=/path/freebsd91
 
 % ls *.img
-mfsbsd-9.1-RELEASE-amd64.img</pre>
+mfsbsd-9.1-RELEASE-amd64.img
+</pre></div>
 </div>
 <p><a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>のMakefileを眺めてみると「RELEASE」オプションを付けない場合、生成されるイメージファイル名にuname(1)が使われる。「RELEASE」オプションを付けてないとホストが「9.2-RELEASE」「10-CURRENT」のとき「9.1-RELEASE」のイメージファイルを作成するとホストのversionの付いたファイル名でイメージファイルが生成される。</p>
 <p>VirtIOを有効にしている仮想環境でも<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>を使えるようにしてみる。VirtIOのバイナリを作るのが面倒だったので配布されていないか調べてみたら見付けた。</p>
-<div class="highlight-python"><pre>% mkdir virtio
+<div class="highlight-python"><div class="highlight"><pre>% mkdir virtio
 % cd virtio
 % fetch http://people.freebsd.org/~kuriyama/virtio/9.1/virtio-kmod-9.1-0.250249.tbz
-% tar Jxf virtio-kmod-9.1-0.250249.tbz</pre>
+% tar Jxf virtio-kmod-9.1-0.250249.tbz
+</pre></div>
 </div>
 <p>「BOOTMODULES」変数にモジュールをスペース区切り書いておけばイメージファイル作成時にモジュールが組込まれる。VirtIOモジュールのほうはkernel.txzを展開し、boot/kernelにコピーして再度圧縮しておく。</p>
-<div class="highlight-python"><pre>% cd /path/freebsd91
+<div class="highlight-python"><div class="highlight"><pre>% cd /path/freebsd91
 % tar zxpf kernel.txz
 
 % cd /path/virtio/boot/modules
 % cp `ls` /path/freebsd91/boot/kernel
 
 % cd /path/freebsd91
-% tar Jcvf kernel.txz boot</pre>
+% tar Jcvf kernel.txz boot
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% diff -u Makefile Makefile.org
+<div class="highlight-python"><div class="highlight"><pre>% diff -u Makefile Makefile.org
 --- Makefile    2013-11-01 12:43:34.000000000 +0900
 +++ Makefile.org        2013-11-01 01:34:12.000000000 +0900
 @@ -73,7 +73,7 @@
@@ -831,7 +1005,8 @@ mfsbsd-9.1-RELEASE-amd64.img</pre>
 -BOOTMODULES=acpi ahci virtio virtio_pci virtio_blk virtio_balloon if_vtnet
 +BOOTMODULES=acpi ahci
  MFSMODULES=geom_mirror geom_nop opensolaris zfs ext2fs snp smbus ipmi ntfs nullfs tmpfs
- #</pre>
+ #
+</pre></div>
 </div>
 </div>
 <div class="section" id="syslinux">
@@ -841,15 +1016,16 @@ mfsbsd-9.1-RELEASE-amd64.img</pre>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
 </ul>
 <p>これでDebian,CentOS,FreeBSDのディスクレスブート環境が出来上がった。</p>
-<div class="highlight-python"><pre>% vi /path/pxelinux.cfg/default
+<div class="highlight-python"><div class="highlight"><pre>% vi /path/pxelinux.cfg/default
 
 default menu.c32
 label FreeBSD 9.1
 kernel memdisk
-append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
+append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk
+</pre></div>
 </div>
 <p>9.2-RELEASEからVirtIOは標準で入っている。VirtIOを使いたければ、設定をloader.confに書くだけ。シェルスクリプトには下記のような変更を加えておけばいい。</p>
-<div class="highlight-python"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
+<div class="highlight-python"><div class="highlight"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
 --- freebsd_install.conf        2013-11-01 18:05:26.993246593 +0900
 +++ freebsd_virtio.conf 2013-11-01 17:48:52.725299517 +0900
 @@ -1,8 +1,8 @@
@@ -880,7 +1056,8 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
 +hostname=&quot;freebsd-virtio.local&quot;
  keymap=&quot;us.iso.kbd&quot;
  ifconfig_${IFACE}=&quot; inet 192.168.2.200 netmask 255.255.255.0&quot;
- defaultrouter=&quot;192.168.2.254&quot;</pre>
+ defaultrouter=&quot;192.168.2.254&quot;
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://mfsbsd.vx.sk">http://mfsbsd.vx.sk/</a></li>
@@ -899,16 +1076,18 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
             <description><![CDATA[<div class="section" id="centos">
 <h1>CentOS ディスクレスブートサーバ構築</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a>」にCentOSのディスクレスブート環境を追加してみる。</p>
-<div class="highlight-python"><pre>% cat /etc/centos-release
+<div class="highlight-python"><div class="highlight"><pre>% cat /etc/centos-release
 CentOS release 6.4 (Final)
 
 % uname -a
-Linux localhost.localdomain 2.6.32-358.23.2.el6.x86_64 #1 SMP Wed Oct 16 18:37:12 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux</pre>
+Linux localhost.localdomain 2.6.32-358.23.2.el6.x86_64 #1 SMP Wed Oct 16 18:37:12 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% yum groupinstall --releasever=6 --installroot=/var/diskless/centos6  Base -y
-% yum upgrade --releasever=6 --installroot=/var/diskless/centos6 -y</pre>
+<div class="highlight-python"><div class="highlight"><pre>% yum groupinstall --releasever=6 --installroot=/var/diskless/centos6  Base -y
+% yum upgrade --releasever=6 --installroot=/var/diskless/centos6 -y
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% mount --rbind /dev /var/diskless/centos6/dev
+<div class="highlight-python"><div class="highlight"><pre>% mount --rbind /dev /var/diskless/centos6/dev
 % cd /var/diskless/centos6
 % cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
 % chroot /var/diskless/centos6 passwd
@@ -921,20 +1100,23 @@ sysfs   /sys        sysfs   defaults   0 0
 proc    /proc       proc    defaults   0 0
 
 % vi /var/diskless/centos6/etc/resolv.conf
-nameserver 8.8.8.8</pre>
+nameserver 8.8.8.8
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% yum -y install dracut-network
-% dracut initramfs-`uname -r`.img</pre>
+<div class="highlight-python"><div class="highlight"><pre>% yum -y install dracut-network
+% dracut initramfs-`uname -r`.img
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/exports
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
 /var/diskless/centos6 192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
 
 % service rpcbind start
 % service nfslock start
-% service nfs start</pre>
+% service nfs start
+</pre></div>
 </div>
 <p>あとはブートメニューにCentOSを追加するだけ。</p>
-<div class="highlight-python"><pre>% vi /var/diskless/pxelinux.cfg/default
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/diskless/pxelinux.cfg/default
 default menu.c32
 label Debian wheezy
 kernel vmlinuz-3.2.0-4-amd64
@@ -942,7 +1124,8 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
 
 label CentOS 6.4
 kernel vmlinuz-2.6.32-358.23.2.el6.x86_64
-append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw</pre>
+append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4">http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4</a></li>
@@ -961,10 +1144,11 @@ append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/v
 <p>Gentoo Linuxマシンを複数台動かしている場合、それぞれのGentooマシンからemerge –syncするとリモートのミラーサーバに負荷が掛かるのでローカルにミラーサーバを構築し参照するようにした。</p>
 <div class="section" id="id1">
 <h2>サーバ</h2>
-<div class="highlight-python"><pre>% vi /etc/crontab
-0 23 * * * root emerge-webrsync</pre>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/crontab
+0 23 * * * root emerge-webrsync
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/rsyncd.conf
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rsyncd.conf
 # /etc/rsyncd.conf
 
 # Minimal configuration file for rsync daemon
@@ -980,15 +1164,17 @@ hosts allow = 192.168.2.0/24
 [gentoo-portage]
         path = /usr/portage
         comment = Gentoo Portage tree
-        exclude = /distfiles /packages</pre>
+        exclude = /distfiles /packages
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% /etc/init.d/rsyncd start
-% rc-update add rsyncd default</pre>
+<div class="highlight-python"><div class="highlight"><pre>% /etc/init.d/rsyncd start
+% rc-update add rsyncd default
+</pre></div>
 </div>
 </div>
 <div class="section" id="id2">
 <h2>クライアント</h2>
-<div class="highlight-python"><pre>% rsync 192.168.2.1::
+<div class="highlight-python"><div class="highlight"><pre>% rsync 192.168.2.1::
 gentoo-portage  Gentoo Portage tree
 
 % rsync 192.168.2.1::gentoo-portage | head
@@ -1001,12 +1187,15 @@ drwxr-xr-x        4096 2013/10/17 09:31:02 app-accessibility
 drwxr-xr-x       12288 2013/10/17 09:31:02 app-admin
 drwxr-xr-x        4096 2013/10/17 09:31:02 app-antivirus
 drwxr-xr-x        4096 2013/10/25 06:01:12 app-arch
-drwxr-xr-x        4096 2013/10/25 06:01:13 app-backup</pre>
+drwxr-xr-x        4096 2013/10/25 06:01:13 app-backup
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/portage/make.conf
-SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;</pre>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/portage/make.conf
+SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% emerge --sync</pre>
+<div class="highlight-python"><div class="highlight"><pre>% emerge --sync
+</pre></div>
 </div>
 </div>
 </div>]]></description>
@@ -1022,60 +1211,72 @@ SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;</pre>
 <h1>Proxy DHCPを使ったディスクレスブート環境構築</h1>
 <p>Proxy DHCPを使ってDHCPサーバとネットワークブートサーバを切り離し、ディスクレスブート環境を構築してみる。</p>
 <p>DHCPサーバ,Proxy DHCPともにdnsmasq、OSはDebian wheezyを使用する。</p>
-<div class="highlight-python"><pre>% lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.2 (wheezy)
 Release:        7.2
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
 <div class="section" id="dhcp">
 <h2>DHCPサーバ</h2>
-<div class="highlight-python"><pre>% apt-get install dnsmasq</pre>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install dnsmasq
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/dnsmasq.d/dhcp.conf
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/dnsmasq.d/dhcp.conf
 dhcp-range=192.168.2.230,192.168.2.253,2h
-dhcp-option=3,192.168.2.254</pre>
+dhcp-option=3,192.168.2.254
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% service dnsmasq restart</pre>
+<div class="highlight-python"><div class="highlight"><pre>% service dnsmasq restart
+</pre></div>
 </div>
 </div>
 <div class="section" id="id1">
 <h2>Proxy DHCP</h2>
-<div class="highlight-python"><pre>% apt-get install dnsmasq</pre>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install dnsmasq
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/dnsmasq.d/pxe.conf
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/dnsmasq.d/pxe.conf
 dhcp-range=192.168.2.0,proxy
 pxe-service=x86PC, &quot;os install&quot;, pxelinux
 enable-tftp
-tftp-root=/var/diskless</pre>
+tftp-root=/var/diskless
+</pre></div>
 </div>
 </div>
 <div class="section" id="diskless-boot">
 <h2>Diskless Boot</h2>
-<div class="highlight-python"><pre>% apt-get install syslinux nfs-kernel-server debootstrap</pre>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install syslinux nfs-kernel-server debootstrap
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian
-% chroot /var/diskless/Wheezy passwd root</pre>
+<div class="highlight-python"><div class="highlight"><pre>% debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian
+% chroot /var/diskless/Wheezy passwd root
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/exports
-/var/diskless/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)</pre>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
+/var/diskless/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% mkdir /var/diskless
+<div class="highlight-python"><div class="highlight"><pre>% mkdir /var/diskless
 % cp /usr/lib/syslinux/menu.c32 /var/diskless
 % cp /usr/lib/syslinux/pxelinux.0 /var/diskless
 % cp /boot/initrd* /var/diskless
 % cp /boot/vmlinuz* /var/diskless
-% mkdir /var/diskless/pxelinux.cfg</pre>
+% mkdir /var/diskless/pxelinux.cfg
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /var/diskless/pxelinux.cfg/default
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/diskless/pxelinux.cfg/default
 default menu.c32
 label Debian Wheezy
 kernel vmlinuz-3.2.0-4-amd64
-append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw</pre>
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% service dnsmasq restart
-% service nfs-kernel-server restart</pre>
+<div class="highlight-python"><div class="highlight"><pre>% service dnsmasq restart
+% service nfs-kernel-server restart
+</pre></div>
 </div>
 </div>
 </div>]]></description>
@@ -1090,49 +1291,55 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
             <description><![CDATA[<div class="section" id="open-vswitch">
 <h1>Open vSwitchを使ってみる</h1>
 <p>bridgeをOpen vSwitchに変えてみた。</p>
-<div class="highlight-python"><pre>% lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.2 (wheezy)
 Release:        7.2
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
 <div class="section" id="bridge">
 <h2>bridge停止</h2>
-<div class="highlight-python"><pre>% service networking stop
+<div class="highlight-python"><div class="highlight"><pre>% service networking stop
 
 % brctl delif br0 eth0
 % brctl delif br1 eth1
 % brctl delbr br0
 % brctl delbr br1
 
-% modprobe -r bridge</pre>
+% modprobe -r bridge
+</pre></div>
 </div>
 </div>
 <div class="section" id="id1">
 <h2>Open vSwitch インストール</h2>
-<div class="highlight-python"><pre>% apt-get install -y openvswitch-switch openvswitch-datapath-source openvswitch-brcompat module-assistant
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install -y openvswitch-switch openvswitch-datapath-source openvswitch-brcompat module-assistant
 % module-assistant auto-install openvswitch-datapath-source
 % modprobe openvswitch_mod
 % modprobe brcompat_mod
-% service openvswitch-switch start</pre>
+% service openvswitch-switch start
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/default/openvswitch-switch
-BRCOMPAT=yes</pre>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/default/openvswitch-switch
+BRCOMPAT=yes
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/modules
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/modules
 openvswitch_mod
-brcompat_mod</pre>
+brcompat_mod
+</pre></div>
 </div>
 </div>
 <div class="section" id="open-vswitch-bridge">
 <h2>Open vSwitch bridge設定</h2>
-<div class="highlight-python"><pre>% ovs-vsctl add-br br0
+<div class="highlight-python"><div class="highlight"><pre>% ovs-vsctl add-br br0
 % ovs-vsctl add-br br1
 % ovs-vsctl add-port br0 eth0
-% ovs-vsctl add-port br1 eth1</pre>
+% ovs-vsctl add-port br1 eth1
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% ovs-vsctl show
+<div class="highlight-python"><div class="highlight"><pre>% ovs-vsctl show
 2a8eb1c3-4273-42b3-9f84-108918d53d15
     Bridge &quot;br0&quot;
         Port &quot;eth0&quot;
@@ -1146,9 +1353,10 @@ brcompat_mod</pre>
         Port &quot;br1&quot;
             Interface &quot;br1&quot;
                 type: internal
-    ovs_version: &quot;1.4.2&quot;</pre>
+    ovs_version: &quot;1.4.2&quot;
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/network/interfaces
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/network/interfaces
 auto eth0
 iface eth0 inet manual
   up /sbin/ifconfig eth0 up
@@ -1157,21 +1365,24 @@ iface eth0 inet manual
 auto eth1
 iface eth1 inet manual
   up /sbin/ifconfig eth1 up
-  down /sbin/ifconfig eth1 down</pre>
+  down /sbin/ifconfig eth1 down
+</pre></div>
 </div>
 </div>
 <div class="section" id="libvirt">
 <h2>libvirt</h2>
 <p>openvswitch-brcompat使わず仮想マシンをOpen vSwitchのbridgeに接続するには、&lt;virtualport type=’openvswitch’&gt;を追加する。</p>
-<div class="highlight-python"><pre>% libvirtd --version
-libvirtd (libvirt) 0.9.12</pre>
+<div class="highlight-python"><div class="highlight"><pre>% libvirtd --version
+libvirtd (libvirt) 0.9.12
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% virsh edit vm01
+<div class="highlight-python"><div class="highlight"><pre>% virsh edit vm01
 &lt;interface type='bridge'&gt;
       &lt;source bridge='br1'/&gt;
       &lt;virtualport type='openvswitch'&gt;
       &lt;model type='virtio'/&gt;
-&lt;/interface&gt;</pre>
+&lt;/interface&gt;
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://libvirt.org/formatnetwork.html">http://libvirt.org/formatnetwork.html</a></li>
@@ -1189,7 +1400,7 @@ libvirtd (libvirt) 0.9.12</pre>
             <description><![CDATA[<div class="section" id="supervisoruwsgi">
 <h1>Supervisorを使ってuWSGIを管理</h1>
 <p>uWSGIのプロセスをSupervisorを使って管理してみる。</p>
-<div class="highlight-python"><pre>% uname -a
+<div class="highlight-python"><div class="highlight"><pre>% uname -a
 FreeBSD uwsgi.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013
 
 % python -V
@@ -1199,11 +1410,12 @@ Python 2.7.5
 3.0b1
 
 % uwsgi --version
-1.9.18.1</pre>
+1.9.18.1
+</pre></div>
 </div>
 <div class="section" id="uwsgi">
 <h2>uWSGI</h2>
-<div class="highlight-python"><pre>% vi /path/app/dev.ini
+<div class="highlight-python"><div class="highlight"><pre>% vi /path/app/dev.ini
 
 [uwsgi]
 http = :9090
@@ -1216,15 +1428,17 @@ uid = www
 gid = www
 pidfile = /path/app/uwsgi.pid
 logto = /path/app/uwsgi.log
-log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;</pre>
+log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;
+</pre></div>
 </div>
 </div>
 <div class="section" id="supervisor">
 <h2>Supervisor</h2>
-<div class="highlight-python"><pre>% cd /usr/local/etc
-% grep -v &quot;^;&quot; supervisord.conf.sample &gt; supervisord.conf</pre>
+<div class="highlight-python"><div class="highlight"><pre>% cd /usr/local/etc
+% grep -v &quot;^;&quot; supervisord.conf.sample &gt; supervisord.conf
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /usr/local/etc/supervisord.conf
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/supervisord.conf
 
 [unix_http_server]
 file=/var/run/supervisor/supervisor.sock   ; (the path to the socket file)
@@ -1246,27 +1460,32 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 serverurl=unix:///var/run/supervisor/supervisor.sock ; use a unix:// URL  for a unix socket
 
 [include]
-files = /usr/local/etc/supervisord.d/*.ini</pre>
+files = /usr/local/etc/supervisord.d/*.ini
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /usr/local/etc/supervisord.d/uwsgi.ini
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/supervisord.d/uwsgi.ini
 
 [program:uwsgi]
 command = /path/bin/uwsgi /path/app/dev.ini
-stopasgroup = true</pre>
+stopasgroup = true
+</pre></div>
 </div>
 <p>子プロセスまでkillするにはstopasgroupオプションが必要</p>
 <p>stopasgroupオプションを有効にしなければ、Supervisor経由でuWSGIを止められない。(stopasgroupオプションなしでは、Supervisorのstopを実行したときにuWSGIの親プロセスしかkillされず、子プロセスが残ったままになってしまう。)</p>
-<div class="highlight-python"><pre>% vi /etc/rc.conf
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
 supervisord_enable=&quot;YES&quot;
-supervisord_flags=&quot;-c /usr/local/etc/supervisord.conf&quot;</pre>
+supervisord_flags=&quot;-c /usr/local/etc/supervisord.conf&quot;
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% service supervisord start</pre>
+<div class="highlight-python"><div class="highlight"><pre>% service supervisord start
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% supervisorctl status
+<div class="highlight-python"><div class="highlight"><pre>% supervisorctl status
 uwsgi                            RUNNING    pid 58014, uptime 0:15:23
 
 % supervisorctl stop uwsgi
-% supervisorctl start uwsgi</pre>
+% supervisorctl start uwsgi
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://supervisord.org/configuration.html">http://supervisord.org/configuration.html</a></li>
@@ -1285,21 +1504,23 @@ uwsgi                            RUNNING    pid 58014, uptime 0:15:23
             <description><![CDATA[<div class="section" id="xdm">
 <h1>XDM 設定</h1>
 <p>XDMのログイン画面はデフォルトだと寂しいので、ログイン毎に背景画像が代わるようにしている。</p>
-<div class="highlight-python"><pre>$ lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.1 (wheezy)
 Release:        7.1
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% cd /etc/X11/xdm
+<div class="highlight-python"><div class="highlight"><pre>% cd /etc/X11/xdm
 % cp xdm-config xdm-config.bak
 % cp Xsetup Xsetup_0
-% cp Xresources Xresources_0</pre>
+% cp Xresources Xresources_0
+</pre></div>
 </div>
 <div class="section" id="xdm-config">
 <h2>xdm-config</h2>
-<div class="highlight-python"><pre>% diff -u xdm-config xdm-config.bak
+<div class="highlight-python"><div class="highlight"><pre>% diff -u xdm-config xdm-config.bak
 --- xdm-config  2013-10-03 00:28:33.000000000 +0900
 +++ xdm-config.bak      2013-10-02 23:18:35.000000000 +0900
 @@ -15,7 +15,7 @@
@@ -1318,18 +1539,21 @@ Codename:       wheezy</pre>
 -DisplayManager*setup:          /etc/X11/xdm/Xsetup_0
 +DisplayManager*setup:          /etc/X11/xdm/Xsetup
  DisplayManager*reset:          /etc/X11/xdm/Xreset
- DisplayManager*authComplain:   true</pre>
+ DisplayManager*authComplain:   true
+</pre></div>
 </div>
 </div>
 <div class="section" id="xsetup-0">
 <h2>Xsetup_0</h2>
 <p>このファイルに指定したディレクトリにある画像をランダムに背景画像にするスクリプトを書く。</p>
 <p>指定した範囲の値から一つ取り出す処理にathena-jot(1)、背景画像の設定にはxsetbg(1x)を使った。</p>
-<div class="highlight-python"><pre>% apt-get install athena-jot xloadimage</pre>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install athena-jot xloadimage
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/X11/xdm/Xsetup_0</pre>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/X11/xdm/Xsetup_0
+</pre></div>
 </div>
-<div class="highlight-python"><pre>#!/bin/sh
+<div class="highlight-python"><div class="highlight"><pre>#!/bin/sh
 #
 # This script is run as root before showing login widget.
 
@@ -1344,14 +1568,16 @@ IMG=`ls $IMGDIR | awk 'NR == '$LINE_NUM' { print $1 }'`
 
 if [ -x /usr/bin/xsetbg ]; then
   /usr/bin/xsetbg -fullscreen $IMGDIR/$IMG
-fi</pre>
+fi
+</pre></div>
 </div>
 </div>
 <div class="section" id="xresources-0">
 <h2>Xresources_0</h2>
-<div class="highlight-python"><pre>% vi /etc/X11/xdm/Xresources_0</pre>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/X11/xdm/Xresources_0
+</pre></div>
 </div>
-<div class="highlight-python"><pre>--- Xresources        2011-10-23 01:48:34.000000000 +0900
+<div class="highlight-python"><div class="highlight"><pre>--- Xresources        2011-10-23 01:48:34.000000000 +0900
 +++ Xresources_0      2013-10-03 01:50:27.000000000 +0900
 @@ -15,34 +15,35 @@
   Ctrl&lt;Key&gt;Return: set-session-argument(failsafe) finish-field()\n\
@@ -1430,7 +1656,8 @@ fi</pre>
 +!xlogin*logoPadding: 10
 
 
- XConsole.text.geometry:      480x130</pre>
+ XConsole.text.geometry:      480x130
+</pre></div>
 </div>
 </div>
 </div>]]></description>
@@ -1446,12 +1673,13 @@ fi</pre>
 <h1>netcatを使わずに多段SSH</h1>
 <p>netcatを使い多段SSHをしている記事をよく見掛けるが、私はnetcatのプロセスが動くのが気持ち悪いのでこちらの方法で多段SSHをしている。いつからあるオプションなのかは知らないがCentOS 6.4のSSH(OpenSSH 5.3)ではすでに存在している。</p>
 <p>ssh(1)より。</p>
-<div class="highlight-python"><pre>-W host:port
+<div class="highlight-python"><div class="highlight"><pre>-W host:port
              Requests that standard input and output on the client be forwarded to host on
              port over the secure channel.  Implies -N, -T, ExitOnForwardFailure and
-             ClearAllForwardings and works with Protocol version 2 only.</pre>
+             ClearAllForwardings and works with Protocol version 2 only.
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi $HOME/.ssh/config
+<div class="highlight-python"><div class="highlight"><pre>$ vi $HOME/.ssh/config
 Host fumidai
   HostName 192.168.2.1
   User hoge
@@ -1462,9 +1690,11 @@ Host server1
   User fuga
   Port 22
   IdentityFile ~/.ssh/id_rsa
-  ProxyCommand ssh fumidai -W %h:%p</pre>
+  ProxyCommand ssh fumidai -W %h:%p
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ ssh server1</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ ssh server1
+</pre></div>
 </div>
 </div>]]></description>
             <category><![CDATA[ ssh ]]></category>
@@ -1478,16 +1708,18 @@ Host server1
             <description><![CDATA[<div class="section" id="schrootchroot">
 <h1>schrootを使って一般ユーザでchroot</h1>
 <p>schrootはroot権限を持たない一般ユーザでもchrootできるようにするwrapperである。オプションや設定ひとつでホストの環境,環境変数を引き継ぐことができとても便利なツールだ。</p>
-<div class="highlight-python"><pre>$ lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.1 (wheezy)
 Release:        7.1
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% apt-get install schroot</pre>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install schroot
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% schroot --version
+<div class="highlight-python"><div class="highlight"><pre>% schroot --version
 schroot (Debian sbuild) 1.6.4 (26 Oct 2012)
 Written by Roger Leigh
 
@@ -1509,12 +1741,14 @@ Available chroot types:
   FILE         Support for ‘file’ chroots
   LOOPBACK     Support for ‘loopback’ chroots
   LVMSNAP      Support for ‘lvm-snapshot’ chroots
-  PLAIN        Support for ‘plain’ chroots</pre>
+  PLAIN        Support for ‘plain’ chroots
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ mkdir -p /var/chroot/wheezy
-% debootstrap stable /var/chroot/wheezy http://ftp.jp.debian.org/debian</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir -p /var/chroot/wheezy
+% debootstrap stable /var/chroot/wheezy http://ftp.jp.debian.org/debian
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% find /etc/schroot
+<div class="highlight-python"><div class="highlight"><pre>% find /etc/schroot
 /etc/schroot
 /etc/schroot/buildd
 /etc/schroot/buildd/nssdatabases
@@ -1551,16 +1785,18 @@ Available chroot types:
 /etc/schroot/sbuild/copyfiles
 /etc/schroot/sbuild/fstab
 /etc/schroot/chroot.d
-/etc/schroot/schroot.conf</pre>
+/etc/schroot/schroot.conf
+</pre></div>
 </div>
 <p>ホストのfstabにschroot用の設定を書いていたり、ホストのfstabに設定を書くのがイケてないと言っている記事を見掛けるが、schroot(1),schroot.conf(5)を眺めたのだろうか。/etc/schroot以下の構成は上記のようになっている。ホストからchroot環境へコピーするファイル(passwd,resolv.confなど)やマウントするディレクトリの設定などは/etc/schroot以下にディレクトリを切り設定ファイルを書いていく(このディレクトリをプロファイルと呼ぶことにする)。下記はdefaultプロファイルの設定ファイルである。</p>
-<div class="highlight-python"><pre>$ cat /etc/schroot/default/copyfiles
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/schroot/default/copyfiles
 # Files to copy into the chroot from the host system.
 #
 # &lt;source and destination&gt;
-/etc/resolv.conf</pre>
+/etc/resolv.conf
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ cat /etc/schroot/default/nssdatabases
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/schroot/default/nssdatabases
 # System databases to copy into the chroot from the host system.
 #
 # &lt;database name&gt;
@@ -1571,9 +1807,10 @@ gshadow
 services
 protocols
 networks
-hosts</pre>
+hosts
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ cat /etc/schroot/default/fstab
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/schroot/default/fstab
 # fstab: static file system information for chroots.
 # Note that the mount point will be prefixed by the chroot path
 # (CHROOT_PATH)
@@ -1593,19 +1830,22 @@ hosts</pre>
 #/run           /run            none    rw,bind         0       0
 #/run/lock      /run/lock       none    rw,bind         0       0
 #/dev/shm       /dev/shm        none    rw,bind         0       0
-#/run/shm       /run/shm        none    rw,bind         0       0</pre>
+#/run/shm       /run/shm        none    rw,bind         0       0
+</pre></div>
 </div>
 <p>プロファイルはprofileオプションを使い呼び出す。デフォルトではdefaultプロファイルが呼び出される。</p>
-<div class="highlight-python"><pre>% vi /etc/schroot/chroot.d/wheezy.conf
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/schroot/chroot.d/wheezy.conf
 [wheezy]
 type=directory
 directory=/var/chroot/wheezy
 profile=desktop
 users=zinrai
-root-groups=root</pre>
+root-groups=root
+</pre></div>
 </div>
 <p>環境変数を引き継ぐ場合は「-p」オプションを付ける。</p>
-<div class="highlight-python"><pre>$ schroot -c wheezy -p bash</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ schroot -c wheezy -p bash
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="https://wiki.debian.org/Schroot">https://wiki.debian.org/Schroot</a></li>
@@ -1628,20 +1868,24 @@ root-groups=root</pre>
 <li>Texを使いたいがホスト環境には入れたくない</li>
 </ul>
 <p>などのシーンで私は使っている。</p>
-<div class="highlight-python"><pre>lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.1 (wheezy)
 Release:        7.1
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% apt-get install cowbuilder</pre>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install cowbuilder
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% cowbuilder --create --distribution wheezy --architecture amd64 --basepath  /var/cache/pbuilder/base_wheezy_amd64.cow</pre>
+<div class="highlight-python"><div class="highlight"><pre>% cowbuilder --create --distribution wheezy --architecture amd64 --basepath  /var/cache/pbuilder/base_wheezy_amd64.cow
+</pre></div>
 </div>
 <p>ベース環境を毎回取ってくるのはサーバに負荷がかかるので同じバージョンとアーキテクチャを使うときはコピーする。</p>
-<div class="highlight-python"><pre>% cd /var/cache/pbuilder
-% cp -R base_wheezy_amd64.cow rails3_wheezy_amd64.cow</pre>
+<div class="highlight-python"><div class="highlight"><pre>% cd /var/cache/pbuilder
+% cp -R base_wheezy_amd64.cow rails3_wheezy_amd64.cow
+</pre></div>
 </div>
 <table border="1" class="docutils">
 <colgroup>
@@ -1661,10 +1905,12 @@ Codename:       wheezy</pre>
 </tbody>
 </table>
 <p>「–save」オプションを付けると変更を保存できる。オプションなしの場合はログアウトすると変更は消える。</p>
-<div class="highlight-python"><pre>% cowbuilder --login --save --basepath /var/cache/pbuilder/base_wheezy_amd64.cow</pre>
+<div class="highlight-python"><div class="highlight"><pre>% cowbuilder --login --save --basepath /var/cache/pbuilder/base_wheezy_amd64.cow
+</pre></div>
 </div>
 <p>「–bindmount」オプションでホストのディレクトリをchroot環境にマウントできる。</p>
-<div class="highlight-python"><pre>% cowbuilder --login --save --bindmount /home/hoge/dir --basepath /var/cache/pbuilder/base_wheezy_amd64.cow</pre>
+<div class="highlight-python"><div class="highlight"><pre>% cowbuilder --login --save --bindmount /home/hoge/dir --basepath /var/cache/pbuilder/base_wheezy_amd64.cow
+</pre></div>
 </div>
 <p>ほかにもいろいろオプションがあるのでcowbuilder(8)を眺めてみるといい。</p>
 </div>]]></description>
@@ -1679,14 +1925,15 @@ Codename:       wheezy</pre>
             <description><![CDATA[<div class="section" id="aufschroot">
 <h1>aufsを使ったchroot環境</h1>
 <p>aufsとはLinuxにおけるunion mountの実装の1つである。union mountとは複数のファイルシステムを重ね合わせ一つのファイルシステムに見せる機能である。この機能はchroot環境と組み合わせると非常に勝手がいい。chroot環境をリードオンリーにし書き込み用のディレクトリと重ね合わせることでchroot環境を汚すことなく使うことができるようになる。</p>
-<div class="highlight-python"><pre>% lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.1 (wheezy)
 Release:        7.1
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% modinfo aufs
+<div class="highlight-python"><div class="highlight"><pre>% modinfo aufs
 filename:       /lib/modules/3.2.0-4-amd64/kernel/fs/aufs/aufs.ko
 staging:        Y
 version:        3.2-20130204
@@ -1697,22 +1944,27 @@ srcversion:     523C2808903A77806346A06
 depends:
 intree:         Y
 vermagic:       3.2.0-4-amd64 SMP mod_unload modversions
-parm:           brs:use &lt;sysfs&gt;/fs/aufs/si_*/brN (int)</pre>
+parm:           brs:use &lt;sysfs&gt;/fs/aufs/si_*/brN (int)
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% modprobe aufs</pre>
+<div class="highlight-python"><div class="highlight"><pre>% modprobe aufs
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% debootstrap stable /hoge/wheezy http://ftp.jp.debian.org/debian</pre>
+<div class="highlight-python"><div class="highlight"><pre>% debootstrap stable /hoge/wheezy http://ftp.jp.debian.org/debian
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% mount -t aufs -o br:/hoge/rails:/hoge/wheezy=ro none /hoge/rails
+<div class="highlight-python"><div class="highlight"><pre>% mount -t aufs -o br:/hoge/rails:/hoge/wheezy=ro none /hoge/rails
 % mount --rbind /dev /hoge/aufs_dir/dev
 % mount -t proc none /hoge/aufs_dir/proc
 % mount --rbind /sys /hoge/aufs_dir/sys
-% chroot /hoge/aufs_dir /bin/bash</pre>
+% chroot /hoge/aufs_dir /bin/bash
+</pre></div>
 </div>
 <p>重ねるディレクトリを変えることで簡単にchroot環境を切り替えられる。</p>
 <p>起動時にaufsを有効にしたければmodules(5)に書いておく。</p>
-<div class="highlight-python"><pre>% vi /etc/modules
-aufs</pre>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/modules
+aufs
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://aufs.sourceforge.net">http://aufs.sourceforge.net/</a></li>
@@ -1730,10 +1982,11 @@ aufs</pre>
 <h1>CentOSでchroot環境構築</h1>
 <p>yum(8)では役割単位(Web,Mailサーバなど)でパッケージがグループ化されており、グループ名を指定することでグループに属しているパッケージをまとめてインストールできるようになっている。</p>
 <p>グループ名はサブコマンドgrouplistで調べることができる。</p>
-<div class="highlight-python"><pre># cat /etc/centos-release
-CentOS release 6.4 (Final)</pre>
+<div class="highlight-python"><div class="highlight"><pre># cat /etc/centos-release
+CentOS release 6.4 (Final)
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% yum grouplist
+<div class="highlight-python"><div class="highlight"><pre>% yum grouplist
 Loaded plugins: fastestmirror
 Setting up Group Process
 Loading mirror speeds from cached hostfile
@@ -1750,10 +2003,11 @@ Available Groups:
    CIFS file server
    Client management tools
    Compatibility libraries
-   ~~~~~~~~~~以下略~~~~~~~~~~</pre>
+   ~~~~~~~~~~以下略~~~~~~~~~~
+</pre></div>
 </div>
 <p>サブコマンドgroupifnoでグループに属しているパッケージを調べられる。</p>
-<div class="highlight-python"><pre>% yum groupinfo &quot;E-mail Server&quot;
+<div class="highlight-python"><div class="highlight"><pre>% yum groupinfo &quot;E-mail Server&quot;
 Loaded plugins: fastestmirror
 Setting up Group Process
 Loading mirror speeds from cached hostfile
@@ -1774,12 +2028,13 @@ Group: E-mail server
    dovecot-pigeonhole
    mailman
    sendmail
-   sendmail-cf</pre>
+   sendmail-cf
+</pre></div>
 </div>
 <p>BaseはCentOSのベースシステムがグループ化されている。</p>
 <p>さらに「–installroot」オプションで指定したディレクトリにベースシステムを展開できる。</p>
 <p>これを使えばCentOSのchroot環境を簡単に構築できる。</p>
-<div class="highlight-python"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall &quot;Base&quot;
+<div class="highlight-python"><div class="highlight"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall &quot;Base&quot;
 % cd /root/centos6
 % cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
 % cp /etc/resolv.conf etc/
@@ -1790,10 +2045,12 @@ Group: E-mail server
 % mount -t proc none /root/centos6/proc
 % mount --rbind /sys /root/centos6/sys
 
-% chroot /root/centos6 /bin/bash</pre>
+% chroot /root/centos6 /bin/bash
+</pre></div>
 </div>
 <p>chroot環境のアップグレードは下記のようにすればいい。</p>
-<div class="highlight-python"><pre>% yum upgrade --releasever=6 --installroot=/root/centos6 -y</pre>
+<div class="highlight-python"><div class="highlight"><pre>% yum upgrade --releasever=6 --installroot=/root/centos6 -y
+</pre></div>
 </div>
 </div>]]></description>
             <category><![CDATA[ centos ]]></category>
@@ -1820,10 +2077,11 @@ Group: E-mail server
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」で構築した環境にスクリプトを配置する。</p>
 <p>その他に、<a class="reference external" href="http://www.gentoo.org/main/en/where.xml">stage3</a>,<a class="reference external" href="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots">portage</a>, カーネルのコンフィグファイルをスクリプトのあるディレクトリに用意しておく。</p>
 <p>実機,仮想環境(KVM)ともに動作することは確認した。Gentooを複数台セットアップする予定はいまのところない。</p>
-<div class="highlight-python"><pre>% cp /boot/config-* /var/scripts
+<div class="highlight-python"><div class="highlight"><pre>% cp /boot/config-* /var/scripts
 % cd /var/scripts
 % wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-20130830.tar.bz2
-% wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/current-stage3/stage3-amd64-20131010.tar.bz2</pre>
+% wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/current-stage3/stage3-amd64-20131010.tar.bz2
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/gentoo_install.conf</span>
 </pre></div>
@@ -1990,18 +2248,20 @@ reboot
 <div class="section" id="dnsmasq">
 <h3>dnsmasq</h3>
 <p>DNSサーバ以外にもDHCP,TFTPサーバとしても使える便利なdnsmasq</p>
-<div class="highlight-python"><pre># vi /etc/dnsmasq.d/pxe.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/dnsmasq.d/pxe.conf
 enable-tftp
 tftp-root=/var/lib/tftpboot
 dhcp-range=192.168.2.200,192.168.2.250,2h
 dhcp-option=3,192.168.2.254
-dhcp-boot=pxelinux.0</pre>
+dhcp-boot=pxelinux.0
+</pre></div>
 </div>
 </div>
 <div class="section" id="nfs">
 <h3>NFS</h3>
-<div class="highlight-python"><pre># vi /etc/exports
-/var/lib/tftpboot/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)</pre>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/exports
+/var/lib/tftpboot/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)
+</pre></div>
 </div>
 </div>
 <div class="section" id="debootstrap">
@@ -2015,7 +2275,7 @@ dhcp-boot=pxelinux.0</pre>
 </div>
 <div class="section" id="syslinux">
 <h3>syslinux</h3>
-<div class="highlight-python"><pre># cp /boot/initrd* /var/lib/tftpboot
+<div class="highlight-python"><div class="highlight"><pre># cp /boot/initrd* /var/lib/tftpboot
 # cp /boot/vmlinuz* /var/lib/tftpboot
 
 # cp /usr/lib/syslinux/pxelinux.0 /var/lib/tftpboot
@@ -2027,7 +2287,8 @@ prompt 1
 timeout 10
 label Debian
 kernel vmlinuz-3.2.0-4-amd64
-append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy rw</pre>
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy rw
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># service dnsmasq start</span>
 <span class="c"># service nfs-kernel-server start</span>
@@ -2041,7 +2302,8 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.2
 <p>debootstrapで取得した最小構成のWheezyをコピーするスクリプトを書いただけ。</p>
 <p>パッケージインストール時にダイアログが表示され入力待ちにならないよう環境変数「DEBIAN_FRONTEND=noninteractive」を設定しておくのがポイントである。</p>
 <p>この環境変数は解決方法はないかとdebconf(1)を眺めていたら</p>
-<div class="highlight-python"><pre>Debconf is a configuration system for Debian packages. For a debconf overview and documentation for sysadmins, see debconf(7) (in the debconf-doc package).</pre>
+<div class="highlight-python"><div class="highlight"><pre>Debconf is a configuration system for Debian packages. For a debconf overview and documentation for sysadmins, see debconf(7) (in the debconf-doc package).
+</pre></div>
 </div>
 <p>書かれており、説明に従いdebconf-docをインストールし、debconf(7)を眺めたところ見付けた。</p>
 <p>os_install.shはconfファイルが1つだとうまく動いてくれないのでダミーのconfファイルを1つ作っておく。</p>
@@ -2190,7 +2452,7 @@ reboot
 </pre></div>
 </div>
 <p>pxeboot時にインストールスクリプトが実行されるようrc.localに書いておく。</p>
-<div class="highlight-python"><pre># vi /var/lib/tftpboot/wheezy/etc/rc.local
+<div class="highlight-python"><div class="highlight"><pre># vi /var/lib/tftpboot/wheezy/etc/rc.local
 
 #!/bin/sh -e
 #
@@ -2207,7 +2469,8 @@ reboot
 
 /var/scripts/os_install.sh
 
-exit 0</pre>
+exit 0
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">http://fedoraproject.org/wiki/Anaconda/Kickstart</a></li>
@@ -2235,20 +2498,23 @@ exit 0</pre>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># usermod -a -G fuse hoge</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$ lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
 Description:    Debian GNU/Linux 7.1 (wheezy)
 Release:        7.1
-Codename:       wheezy</pre>
+Codename:       wheezy
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ sshfs --version
+<div class="highlight-python"><div class="highlight"><pre>$ sshfs --version
 SSHFS version 2.4
 FUSE library version: 2.9.0
-using FUSE kernel interface version 7.18</pre>
+using FUSE kernel interface version 7.18
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ sshfs -p 18465 hoge@192.168.2.1:/home/hoge remote_dir
-$ fusermount -u remote_dir</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ sshfs -p 18465 hoge@192.168.2.1:/home/hoge remote_dir
+$ fusermount -u remote_dir
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://fuse.sourceforge.net/sshfs.html">http://fuse.sourceforge.net/sshfs.html</a></li>
@@ -2286,7 +2552,7 @@ $ fusermount -u remote_dir</pre>
 </div>
 <p><a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>の設定をいろいろと書いているが大事なのはlog-x-forwarded-forとlog-formatの部分である。log-x-forwarded-forを有効にすればlog-formatの%(addr)にアクセス元のIPアドレスが記録される。</p>
 <p>ログフォーマットは「<a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html">Formatting uWSGI requests logs</a>」に詳しく書いてある。</p>
-<div class="highlight-python"><pre># vi development.ini
+<div class="highlight-python"><div class="highlight"><pre># vi development.ini
 [uwsgi]
 http = :9090
 workers = 3
@@ -2301,7 +2567,8 @@ gid = uwsgi
 log-x-forwarded-for = true
 daemonize = uwsgi.log
 touch-reload = reload.txt
-log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;</pre>
+log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;
+</pre></div>
 </div>
 <table border="1" class="docutils">
 <colgroup>
@@ -2347,10 +2614,11 @@ log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; 
 <ul class="simple">
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html"><em>Nginxでバーチャルホスト</em></a></li>
 </ul>
-<div class="highlight-python"><pre># nginx -v
-nginx version: nginx/1.4.2</pre>
+<div class="highlight-python"><div class="highlight"><pre># nginx -v
+nginx version: nginx/1.4.2
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /usr/local/etc/nginx/nginx.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /usr/local/etc/nginx/nginx.conf
 http {
 
     server {
@@ -2360,11 +2628,12 @@ http {
         location /jenkins {
             proxy_pass http://127.0.0.1:8180;
         }
-}</pre>
+}
+</pre></div>
 </div>
 <p>proxy_passを設定するだけでJenkinsに接続できるようになる。</p>
 <p>「Python+<a class="reference external" href="http://flask.pocoo.org">Flask</a>+<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>」で作ったAPサーバをバックエンドに置き、リバースプロキシにNginxを使った場合を考えると、上記の設定ではAPサーバのアクセスログにはリバースプロキシのIPアドレスが記録されてしまいアクセス元はどこなのかがわからない状態になってしまう。アクセス元のIPアドレスがAPサーバに記録されるようにするにはproxy_set_headerを設定する必要がある。</p>
-<div class="highlight-python"><pre># vi /usr/local/etc/nginx/nginx.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /usr/local/etc/nginx/nginx.conf
 http {
 
     server {
@@ -2380,7 +2649,8 @@ http {
         location /myapp {
             proxy_pass http://127.0.0.1:9090;
         }
-}</pre>
+}
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass</a></li>
@@ -2403,7 +2673,7 @@ http {
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
 </ul>
 <p>FreeBSDにJenkinsをインストールするとインストール後に下記のように表示される。</p>
-<div class="highlight-python"><pre>======================================================================
+<div class="highlight-python"><div class="highlight"><pre>======================================================================
 
 This OpenJDK implementation requires fdescfs(5) mounted on /dev/fd and
 procfs(5) mounted on /proc.
@@ -2418,10 +2688,11 @@ To make it permanent, you need the following lines in /etc/fstab:
         fdesc   /dev/fd         fdescfs         rw      0       0
         proc    /proc           procfs          rw      0       0
 
-======================================================================</pre>
+======================================================================
+</pre></div>
 </div>
 <p>jail環境ではマウントできないのでホストのjail.conf(5)にjail起動時にマウントするよう書いておく。</p>
-<div class="highlight-python"><pre># vi /etc/jail.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 jenkins {
         exec.prestart += &quot;mount -t fdescfs fdesc /jails/${name}/dev/fd&quot;;
         exec.prestart += &quot;mount -t procfs proc /jails/${name}/proc&quot;;
@@ -2429,7 +2700,8 @@ jenkins {
         exec.poststop += &quot;umount /jails/${name}/proc&quot;;
         $if = 9;
         $ipaddr = 192.168.0.9;
-}</pre>
+}
+</pre></div>
 </div>
 <div class="section" id="jenkins">
 <h2>jenkins</h2>
@@ -2465,7 +2737,7 @@ jenkins {
 <span class="c"># su - znc</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$ znc --help
+<div class="highlight-python"><div class="highlight"><pre>$ znc --help
 [ ** ] USAGE: znc [options]
 [ ** ] Options are:
 [ ** ]  -h, --help         List available command line options (this page)
@@ -2477,13 +2749,15 @@ jenkins {
 [ ** ]  -c, --makeconf     Interactively create a new config
 [ ** ]  -s, --makepass     Generates a password for use in config
 [ ** ]  -p, --makepem      Generates a pemfile for use with SSL
-[ ** ]  -d, --datadir      Set a different ZNC repository (default is ~/.znc)</pre>
+[ ** ]  -d, --datadir      Set a different ZNC repository (default is ~/.znc)
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ znc -v
+<div class="highlight-python"><div class="highlight"><pre>$ znc -v
 ZNC 1.0 - http://znc.in
-IPv6: yes, SSL: yes, DNS: threads</pre>
+IPv6: yes, SSL: yes, DNS: threads
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ znc -c
+<div class="highlight-python"><div class="highlight"><pre>$ znc -c
 [ ok ] Checking for list of available modules...
 [ ** ] Building new config
 [ ** ]
@@ -2601,9 +2875,10 @@ IPv6: yes, SSL: yes, DNS: threads</pre>
 [ ** ] Loading user [hoge]
 [ ** ] Loading network [hogeirc]
 [ ok ] Adding server [192.168.0.7 +6669 aiueo]...
-[ ok ] Forking into the background... [pid: 42611]</pre>
+[ ok ] Forking into the background... [pid: 42611]
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi .znc/configs/znc.conf
+<div class="highlight-python"><div class="highlight"><pre>$ vi .znc/configs/znc.conf
 // WARNING
 //
 // Do NOT edit this file while ZNC is running!
@@ -2640,7 +2915,8 @@ Version = 1.0
                 &lt;Chan #atchan&gt;
                 &lt;/Chan&gt;
         &lt;/Network&gt;
-&lt;/User&gt;</pre>
+&lt;/User&gt;
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
 <span class="n">znc_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
@@ -2653,9 +2929,10 @@ Version = 1.0
 <div class="section" id="weechat">
 <h2>WeeChat</h2>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/02/freebsd_irc_znc.html#weechat">WeeChat</a>」で「<a class="reference external" href="http://wiki.znc.in/ZNC">ZNC</a>」に接続するには</p>
-<div class="highlight-python"><pre>/server add hoge irc.hoge.localnet/6668 -ssl -username=hoge -password=hogepassword
+<div class="highlight-python"><div class="highlight"><pre>/server add hoge irc.hoge.localnet/6668 -ssl -username=hoge -password=hogepassword
 /connect hoge
-/disconnect hoge</pre>
+/disconnect hoge
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.weechat.org">http://www.weechat.org/</a></li>
@@ -2678,13 +2955,14 @@ Version = 1.0
 <p>このイライラをIRCは解決してくれる。IRCはチャットとして使うよりも、情報を集約させるのに非常に便利である。Nagiosのアラート,SSHのログイン情報などをIRCにポストするようにしている。IRCを積極的に使っている会社に勤めたことがないので個人でひっそりとやっているだけだが、IRCを眺めれば何が起っているかわかり、いい感じである。</p>
 <p>「つかれた」とポストしたら返事をしてくれる(妹)BOTを仕込んで荒んだ心を癒すことも出来る。</p>
 <p>今回はIRCサーバ(<a class="reference external" href="http://ngircd.barton.de">ngircd</a>)の構築を行う。</p>
-<div class="highlight-python"><pre># ngircd -V
+<div class="highlight-python"><div class="highlight"><pre># ngircd -V
 ngIRCd 20.2-IPv6+IRCPLUS+SSL+SYSLOG+TCPWRAP+ZLIB-amd64/portbld/freebsd9.1
 Copyright (c)2001-2013 Alexander Barton (&lt;alex@barton.de&gt;) and Contributors.
 Homepage: &lt;http://ngircd.barton.de/&gt;
 
 This is free software; see the source for copying conditions. There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</pre>
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/local/etc</span>
 <span class="c"># touch ngircd.conf</span>
@@ -2693,7 +2971,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</pre
 <span class="c"># cp ngircd.conf ngircd.conf.org</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># mkdir ngircd_ssl
+<div class="highlight-python"><div class="highlight"><pre># mkdir ngircd_ssl
 # cd ngircd_ssl
 
 # openssl dhparam -out dhparams.pem 2048.
@@ -2715,9 +2993,10 @@ Locality Name (eg, city) []:
 Organization Name (eg, company) [Internet Widgits Pty Ltd]:
 Organizational Unit Name (eg, section) []:
 Common Name (e.g. server FQDN or YOUR name) []:
-Email Address []:</pre>
+Email Address []:
+</pre></div>
 </div>
-<div class="highlight-python"><pre># diff -u ngircd.conf.org ngircd.conf
+<div class="highlight-python"><div class="highlight"><pre># diff -u ngircd.conf.org ngircd.conf
 --- ngircd.conf.org     2013-08-31 12:44:37.665880056 +0900
 +++ ngircd.conf 2013-08-31 12:45:03.457801026 +0900
 @@ -1,17 +1,17 @@
@@ -2769,10 +3048,11 @@ Email Address []:</pre>
 +  DHFile = /usr/local//etc/ngircd_ssl/dhparams.pem
 +  KeyFile = /usr/local/etc/ngircd_ssl/server-key.pem
 +  KeyFilePassword = kakikukeko
-+  Ports = 6669</pre>
++  Ports = 6669
+</pre></div>
 </div>
 <p>設定ファイルのチェックをするオプションがあるので、これを使い設定をチェックする。下記のように表示されれば設定は問題ない。</p>
-<div class="highlight-python"><pre># ngircd -t
+<div class="highlight-python"><div class="highlight"><pre># ngircd -t
 ngIRCd 20.2-IPv6+IRCPLUS+SSL+SYSLOG+TCPWRAP+ZLIB-amd64/portbld/freebsd9.1
 Copyright (c)2001-2013 Alexander Barton (&lt;alex@barton.de&gt;) and Contributors.
 Homepage: &lt;http://ngircd.barton.de/&gt;
@@ -2781,7 +3061,8 @@ This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 Reading configuration from &quot;/usr/local/etc/ngircd.conf&quot; ...
-OK, press enter to see a dump of your server configuration ...</pre>
+OK, press enter to see a dump of your server configuration ...
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
 <span class="n">ngircd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
@@ -2814,20 +3095,22 @@ OK, press enter to see a dump of your server configuration ...</pre>
 <div class="section" id="dnsmasq">
 <h2>dnsmasq</h2>
 <p><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html"><em>前回構築したDNSサーバ</em></a>に名前を登録する。</p>
-<div class="highlight-python"><pre># vi /etc/hosts
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/hosts
 192.168.0.5 srv.localnet
 192.168.0.5 packages.localnet
 
-# service dnsmasq restart</pre>
+# service dnsmasq restart
+</pre></div>
 </div>
 </div>
 <div class="section" id="id1">
 <h2>Nginx</h2>
 <p>nginxのほうも「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html"><em>dnsmasqを使ったDNSサーバ</em></a>」と同じようにDebian Aapache2風のディレクトリ構成をとる。最低限の設定しか載せていないので、他のパラメータはドキュメントを眺めながら各自で設定して欲しい。</p>
-<div class="highlight-python"><pre># nginx -v
-nginx version: nginx/1.4.2</pre>
+<div class="highlight-python"><div class="highlight"><pre># nginx -v
+nginx version: nginx/1.4.2
+</pre></div>
 </div>
-<div class="highlight-python"><pre># cd /usr/local/etc/nginx
+<div class="highlight-python"><div class="highlight"><pre># cd /usr/local/etc/nginx
 # mkdir sites-available sites-enabled
 
 # vi nginx.conf
@@ -2863,7 +3146,8 @@ server {
 # ln -s ../sites-available/packages.localnet
 # ln -s ../sites-available/srv.localnet
 
-# service nginx start</pre>
+# service nginx start
+</pre></div>
 </div>
 <p>packages.localnetにアクセスするとpackagesが見え、srv.localnetにアクセスするとnginxのインデックスページが見えれば名前ベースバーチャルホストの設定は完了である。</p>
 <ul class="simple">
@@ -2893,11 +3177,12 @@ server {
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/dns</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/jail.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 dns {
         $if = 6;
         $ipaddr = 192.168.0.6;
-}</pre>
+}
+</pre></div>
 </div>
 <div class="section" id="dns">
 <h2>dns</h2>
@@ -2908,14 +3193,15 @@ dns {
 </pre></div>
 </div>
 <p>dnsmasq.confはdnsmasq.dディレクトリ下のファイルを読み込む設定だけ有効にしておく。dnsmasq.confは600行くらいろいろ書いてあるので必要な設定項目だけをdnsmasq.dディレクトリ下に書いて管理したほうが設定を見通しやすい。Debian Apache風にavailableディレクトリに設定ファイルを置き、有効にしたい設定だけをenableディレクトリにシンボリックリンクを貼る。これで設定ファイルの切り替えが楽になる。</p>
-<div class="highlight-python"><pre># cd /usr/local/etc
+<div class="highlight-python"><div class="highlight"><pre># cd /usr/local/etc
 # mkdir -p dnsmasq.d/dnsmasq-available
 # mkdir -p dnsmasq.d/dnsmasq-enabled
 
 # vi dnsmasq.conf
-conf-dir=/usr/local/etc/dnsmasq.d/dnsmasq-enabled</pre>
+conf-dir=/usr/local/etc/dnsmasq.d/dnsmasq-enabled
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi dnsmasq.d/dnsmasq-avalilable/dns.conf
+<div class="highlight-python"><div class="highlight"><pre># vi dnsmasq.d/dnsmasq-avalilable/dns.conf
 
 # Never forward plain names (without a dot or domain part)
 domain-needed
@@ -2938,14 +3224,16 @@ expand-hosts
 # 2) Sets the &quot;domain&quot; DHCP option thereby potentially setting the
 #    domain of all systems configured by DHCP
 # 3) Provides the domain part for &quot;expand-hosts&quot;
-domain=localnet</pre>
+domain=localnet
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># cd dnsmasq.d/dnsmasq-enabled</span>
 <span class="c"># ln -s ../dnsmasq-available/dns.conf</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/hosts
-192.168.0.5 pkgsrv.localnet</pre>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/hosts
+192.168.0.5 pkgsrv.localnet
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
 <span class="n">dnsmasq_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
@@ -2981,7 +3269,7 @@ domain=localnet</pre>
 <span class="c"># mkdir /jails/pkgsrv/var/packages</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/jail.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 test02 {
         $if = 2;
         $ipaddr = 192.168.0.2;
@@ -2992,7 +3280,8 @@ pkgsrv {
         exec.poststop += &quot;umount /jails/${name}/var/packages&quot;;
         $if = 5;
         $ipaddr = 192.168.0.5;
-}</pre>
+}
+</pre></div>
 </div>
 <div class="section" id="pkgsrv">
 <h2>pkgsrv</h2>
@@ -3008,7 +3297,7 @@ pkgsrv {
 </pre></div>
 </div>
 <p>serverブロックに以下のように書いていればとりあえず目的は達成できる。</p>
-<div class="highlight-python"><pre># vi /usr/local/nginx/nginx.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /usr/local/nginx/nginx.conf
 server {
         autoindex on;
 
@@ -3018,24 +3307,27 @@ server {
             allow 192.168.0.0/24;
             deny all;
         }
-}</pre>
+}
+</pre></div>
 </div>
-<div class="highlight-python"><pre># nginx -t
+<div class="highlight-python"><div class="highlight"><pre># nginx -t
 nginx: the configuration file /usr/local/etc/nginx/nginx.conf syntax is ok
 nginx: configuration file /usr/local/etc/nginx/nginx.conf test is successful
 
-# service nginx onestart</pre>
+# service nginx onestart
+</pre></div>
 </div>
 </div>
 <div class="section" id="test02">
 <h2>test02</h2>
 <p>pkg_add(1)は環境変数を設定することで取得するpackagesのサーバを指定できる。環境変数の設定方法は調べればいくらでも引っ掛かるのでcshでの設定のみ書いておく。</p>
-<div class="highlight-python"><pre># vi .cshrc
+<div class="highlight-python"><div class="highlight"><pre># vi .cshrc
 setenv PACKAGEROOT http://192.168.0.5/
 setenv PACKAGESITE http://192.168.0.5/Latest/
 
 # source .cshrc
-# pkg_add -r wget</pre>
+# pkg_add -r wget
+</pre></div>
 </div>
 <p>packages配布サーバの構築は無事に完了した。ただ、IP直打ちだと配布サーバのIPを変更したとき環境変数を書き換えなければならず面倒だし、nginxを配布サーバ以外のことにも使いたい。</p>
 <p>というわけで</p>
@@ -3087,22 +3379,25 @@ setenv PACKAGESITE http://192.168.0.5/Latest/
 <span class="c"># mkdir distfiles packages coptions</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /jails/buildbox//etc/resolv.conf
-nameserver 8.8.8.8</pre>
+<div class="highlight-python"><div class="highlight"><pre># vi /jails/buildbox//etc/resolv.conf
+nameserver 8.8.8.8
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /jails/buildbox/etc/make.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /jails/buildbox/etc/make.conf
 WRKDIRPREFIX = /var/ports/
 DISTDIR = /var/ports/distfiles/
 PACKAGES = /var/ports/packages/
-PORT_DBDIR = /var/ports/coptions/</pre>
+PORT_DBDIR = /var/ports/coptions/
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/jail.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 buildbox {
         exec.prestart += &quot;mount -t nullfs /jails/pkg /jails/${name}/var/ports&quot;;
         exec.poststop += &quot;umount /jails/${name}/var/ports&quot;;
         $if = 4;
         $ipaddr = 192.168.0.4;
-}</pre>
+}
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs snapshot jails/pkg@base</span>
 <span class="c"># zfs snapshot jails/buildbox@base</span>
@@ -3137,7 +3432,7 @@ buildbox {
 <h1>nullfsを使いjailのportsを共有する</h1>
 <p>jailを複数動かしているとports(Ports Collection)をどのように取り扱うかという壁にブチ当たると思う。jailごとにportsnap fetchしているとportsnapサーバに負荷がかかるし、管理が面倒くさい。ということでjailのportsは共有し、ホストからしかfetch,updateなどが出来ないようにしてみた。</p>
 <p><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>前回</em></a>からの続きということで。</p>
-<div class="highlight-python"><pre># cd 9.1.0/sys/amd64/conf
+<div class="highlight-python"><div class="highlight"><pre># cd 9.1.0/sys/amd64/conf
 # cp VIMAGE NULLFS
 
 # vi VIMAGE
@@ -3146,7 +3441,8 @@ options         NULLFS
 # cd /usr/src/9.1.0
 # make buildkernel KERNCONF=NULLFS
 # make installkernel KERNCONF=NULLFS
-# reboot</pre>
+# reboot
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/ports</span>
 <span class="c"># portsnap -p /jails/ports fetch</span>
@@ -3155,7 +3451,7 @@ options         NULLFS
 </pre></div>
 </div>
 <p>設定があちこちに散らばると管理が面倒なのでnullfsのマウントはホストのfstabではなくjail.conf(5)に書く。</p>
-<div class="highlight-python"><pre># vi /etc/jail.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 
 exec.prestart  = &quot;ifconfig epair${if} create up &gt; /dev/null&quot;;
 exec.prestart += &quot;ifconfig vswitch0 addm epair${if}a&quot;;
@@ -3183,17 +3479,19 @@ test01 {
 test02 {
         $if = 2;
         $ipaddr = 192.168.0.2;
-}</pre>
+}
+</pre></div>
 </div>
 <p>portsをリードオンリーでマウントしているのでビルド時の作業用ディレクトリが作成できない。そのためjail環境のmake.conf(5)に作業ディレクトリの指定、ディレクトリを作成する必要がある。設定した環境変数の説明はports(5)に書いてある。</p>
-<div class="highlight-python"><pre># vi /jails/test01/etc/make.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /jails/test01/etc/make.conf
 
 WRKDIRPREFIX = /var/ports/
 DISTDIR = /var/ports/distfiles/
 PACKAGES = /var/ports/packages/
 
 # mkdir -p /jails/test01/var/ports/distfiles
-# mkdir -p /jails/test01/var/ports/packages</pre>
+# mkdir -p /jails/test01/var/ports/packages
+</pre></div>
 </div>
 </div>]]></description>
             <category><![CDATA[ freebsd ]]></category>
@@ -3217,7 +3515,7 @@ PACKAGES = /var/ports/packages/
 </pre></div>
 </div>
 <p>VIMAGEが使えるようにカーネルを再構築する。</p>
-<div class="highlight-python"><pre># cd /usr/src
+<div class="highlight-python"><div class="highlight"><pre># cd /usr/src
 # svn checkout svn://svn.freebsd.org/base/release/9.1.0
 # cd 9.1.0/sys/amd64/conf
 # cp GENERIC VIMAGE
@@ -3228,7 +3526,8 @@ options         VIMAGE
 # cd /usr/src/9.1.0
 # make buildkernel KERNCONF=VIMAGE
 # make installkernel KERNCONF=VIMAGE
-# reboot</pre>
+# reboot
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/src/9.1.0</span>
 <span class="c"># make buildworld</span>
@@ -3236,13 +3535,14 @@ options         VIMAGE
 <span class="c"># make distribution DESTDIR=/jails/test01</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># zpool list
+<div class="highlight-python"><div class="highlight"><pre># zpool list
 NAME    SIZE  ALLOC   FREE    CAP  DEDUP  HEALTH  ALTROOT
 jails   356G   900M   355G     0%  1.00x  ONLINE  -
 
 # zfs create jails/test01
 # zfs snapshot jails/test01@base
-# zfs clone jails/test01@base jails/test02</pre>
+# zfs clone jails/test01@base jails/test02
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
 
@@ -3255,7 +3555,7 @@ jails   356G   900M   355G     0%  1.00x  ONLINE  -
 </pre></div>
 </div>
 <p>netstatしたときなどに/dev/kmem,/dev/memがないよと言われるので、/etc/default/devfs.rulesを参考に、devfs.rules(5)のルールを追加しておく。</p>
-<div class="highlight-python"><pre># vi /etc/devfs.rules
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/devfs.rules
 
 [devfsrules_jail=5]
 add include $devfsrules_hide_all
@@ -3263,10 +3563,11 @@ add include $devfsrules_unhide_basic
 add include $devfsrules_unhide_login
 add path zfs unhide
 add path mem unhide
-add path kmem unhide</pre>
+add path kmem unhide
+</pre></div>
 </div>
 <p>jailの設定はrc.conf(5)ではなくjail.conf(5)に書く。jail(8)を眺めながら設定ファイルを書いてみた。変数が使えていい感じ。ネームサーバーを設定するパラメータが見当らないので、ネームサーバーの設定はjail内のresolv.confに書くことにする。</p>
-<div class="highlight-python"><pre># vi /etc/jail.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 
 exec.prestart  = &quot;ifconfig epair${if} create up &gt; /dev/null&quot;;
 exec.prestart += &quot;ifconfig vswitch0 addm epair${if}a&quot;;
@@ -3292,15 +3593,17 @@ test01 {
 test02 {
         $if = 2;
         $ipaddr = 192.168.0.2;
-}</pre>
+}
+</pre></div>
 </div>
-<div class="highlight-python"><pre># jail -c test01
+<div class="highlight-python"><div class="highlight"><pre># jail -c test01
 # jls
    JID  IP Address      Hostname                      Path
     11  -               test01.localnet               /jails/test01
 
 # jexec 11 tcsh
-# jail -r test01</pre>
+# jail -r test01
+</pre></div>
 </div>
 <p>FreeBSD起動時にjailを起動させたければrc.conf(5)下記のように書いておく。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
@@ -3349,12 +3652,13 @@ test02 {
 <span class="c"># /dev/iso9660/FREEBSD_INSTALL / cd9660 ro 0 0 &lt;- コメントアウト</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/inetd.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/inetd.conf
 tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var/pxeboot/boot
 
-# /etc/rc.d/inetd onestart</pre>
+# /etc/rc.d/inetd onestart
+</pre></div>
 </div>
-<div class="highlight-python"><pre># cd /usr/ports/net/isc-dhcp42-server
+<div class="highlight-python"><div class="highlight"><pre># cd /usr/ports/net/isc-dhcp42-server
 # make install
 
 # vi /usr/local/etc/dhcpd.conf
@@ -3370,12 +3674,14 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
     filename &quot;pxeboot&quot;;              # filename of NBP (network bootstrap program)
 }
 
-# /usr/local/etc/rc.d/isc-dhcpd onestart</pre>
+# /usr/local/etc/rc.d/isc-dhcpd onestart
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/exports
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/exports
 /var/pxeboot -alldirs -maproot=root
 
-# /etc/rc.d/nfsd onestart</pre>
+# /etc/rc.d/nfsd onestart
+</pre></div>
 </div>
 <p>再起動後もデーモンを起動させておきたければrc.confに書いておく。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
@@ -3517,12 +3823,13 @@ reboot
 </pre></div>
 </div>
 <p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
-<div class="highlight-python"><pre># vi /var/pxeboot/etc/rc.local
+<div class="highlight-python"><div class="highlight"><pre># vi /var/pxeboot/etc/rc.local
 
 #!/bin/sh
 # $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $
 
-/var/script/os_install.sh</pre>
+/var/script/os_install.sh
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
@@ -3545,12 +3852,13 @@ reboot
 <div class="section" id="dnsmasq">
 <h2>dnsmasq</h2>
 <p>DHCP,DNSサーバにdnsmasqを使用する。ISC DHCPよりもdnsmasqを使ったほうがPuppetと連携させやすいことに気が付いた。</p>
-<div class="highlight-python"><pre># vi /etc/cobbler/settings
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/settings
 
 manage_dns: 1
 manage_dhcp: 1
 server: 192.168.0.1
-next_server: 192.168.0.254 &lt;- Gateway</pre>
+next_server: 192.168.0.254 &lt;- Gateway
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/cobbler/modules.conf</span>
 
@@ -3564,7 +3872,7 @@ next_server: 192.168.0.254 &lt;- Gateway</pre>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># yum install dnsmasq</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/cobbler/dnsmasq.template
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/dnsmasq.template
 
 # Cobbler generated configuration file for dnsmasq
 # $date
@@ -3584,10 +3892,12 @@ dhcp-boot=pxelinux.0
 dhcp-boot=net:normalarch,pxelinux.0
 dhcp-boot=net:ia64,$elilo
 
-$insert_cobbler_system_definitions</pre>
+$insert_cobbler_system_definitions
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/hosts
-192.168.0.1 cobbler.localnet</pre>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/hosts
+192.168.0.1 cobbler.localnet
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># chkconfig dnsmasq on</span>
 <span class="c"># service dnsmasq start</span>
@@ -3598,7 +3908,7 @@ $insert_cobbler_system_definitions</pre>
 </div>
 <div class="section" id="cobbler">
 <h2>Cobbler</h2>
-<div class="highlight-python"><pre># cobbler profile report
+<div class="highlight-python"><div class="highlight"><pre># cobbler profile report
 Name                           : CentOS6.4-x86_64
 TFTP Boot Files                : {}
 Comment                        :
@@ -3630,7 +3940,8 @@ Virt Disk Driver Type          : raw
 Virt File Size(GB)             : 5
 Virt Path                      :
 Virt RAM (MB)                  : 512
-Virt Type                      : qemu</pre>
+Virt Type                      : qemu
+</pre></div>
 </div>
 <p>登録しているprofileからPuppet Server,Puppet Clientのprofileを作成する。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile copy --name=CentOS6.4-x86_64 --newname=CentOS6.4-puppet_server</span>
@@ -3638,7 +3949,7 @@ Virt Type                      : qemu</pre>
 </pre></div>
 </div>
 <p>EPELにあるPuppetを使用する。</p>
-<div class="highlight-python"><pre># yum -y install wget
+<div class="highlight-python"><div class="highlight"><pre># yum -y install wget
 
 # cobbler repo add --name=CentOS6.4-epel --mirror=http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64 --mirror-locally=no
 # cobbler reposync
@@ -3658,7 +3969,8 @@ Mirror locally                 : False
 Owners                         : ['admin']
 Priority                       : 99
 RPM List                       : []
-Yum Options                    : {}</pre>
+Yum Options                    : {}
+</pre></div>
 </div>
 <p>profileにリポジトリの情報を追加</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --repos=&quot;CentOS6.4-epel&quot;</span>
@@ -3675,12 +3987,13 @@ Yum Options                    : {}</pre>
 </pre></div>
 </div>
 <p>固定IPを割り振るためにsystemに登録する。</p>
-<div class="highlight-python"><pre># vi /etc/cobbler/settings
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/settings
 pxe_just_once: 1
 
-# service cobblerd restart</pre>
+# service cobblerd restart
+</pre></div>
 </div>
-<div class="highlight-python"><pre># cobbler system add  \
+<div class="highlight-python"><div class="highlight"><pre># cobbler system add  \
 --name=puppet-server-2 \
 --hostname=puppetserver.localnet \
 --dns-name=puppetserver.localnet \
@@ -3704,7 +4017,8 @@ pxe_just_once: 1
 --ip-address=192.168.0.3 \
 --subnet=255.255.255.0 \
 --gateway=192.168.0.254 \
---name-servers=192.168.0.1</pre>
+--name-servers=192.168.0.1
+</pre></div>
 </div>
 <p>pxe_just_onceを有効にすると登録したsystemは1度しかpxe bootしないので、OSインストール後に、もう1度pxe bootさせたくなったら下記を実行する。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler system edit --name=puppet-client-003 --netboot-enabled=1</span>
@@ -3733,10 +4047,11 @@ pxe_just_once: 1
 <h3>Puppet server</h3>
 <p>Puppet clientを自動構築するためにPuppet serverを作り込む。</p>
 <p>Puppet serverのほうはOSインストール後にPuppet serverをインストールするなり、Cobblerサーバのkickstartファイルのpackageセクションに記述するなり好きにすればいいと思う。</p>
-<div class="highlight-python"><pre># puppet --version
-2.6.18</pre>
+<div class="highlight-python"><div class="highlight"><pre># puppet --version
+2.6.18
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/sysconfig/puppet
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/sysconfig/puppet
 
 # The puppetmaster server
 #PUPPET_SERVER=puppet
@@ -3748,19 +4063,22 @@ PUPPET_PORT=8139
 PUPPET_LOG=/var/log/puppet/puppet.log
 
 # You may specify other parameters to the puppet client here
-#PUPPET_EXTRA_OPTS=--waitforcert=500</pre>
+#PUPPET_EXTRA_OPTS=--waitforcert=500
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/puppet/autosign.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/autosign.conf
 
-*.localnet</pre>
+*.localnet
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/puppet/fileserver.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/fileserver.conf
 
 [files]
  path /etc/puppet/manifests/files
- allow *</pre>
+ allow *
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/puppet/manifests/site.pp
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/manifests/site.pp
 
 package { 'zsh' :
         ensure =&gt; present;
@@ -3778,9 +4096,10 @@ file { '/etc/puppet/auth.conf' :
         group =&gt; 'root',
         mode =&gt; 644,
         source =&gt; 'puppet://puppetserver.localnet/files/auth.conf',
-}</pre>
+}
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/puppet/manifests/files/puppet
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/manifests/files/puppet
 
 # The puppetmaster server
 PUPPET_SERVER=puppetsrv.localnet
@@ -3793,16 +4112,18 @@ PUPPET_LOG=/var/log/puppet/puppet.log
 
 # You may specify other parameters to the puppet client here
 #PUPPET_EXTRA_OPTS=--waitforcert=500
-PUPPET_EXTRA_OPTS=&quot;--listen --no-client&quot;</pre>
+PUPPET_EXTRA_OPTS=&quot;--listen --no-client&quot;
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/puppet/manifests/files/auth.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/manifests/files/auth.conf
 
 path /run
 method save
 allow *
 
 path /
-auth any</pre>
+auth any
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># service puppetmaster start</span>
 </pre></div>
@@ -3817,11 +4138,12 @@ auth any</pre>
 <h2>Kickstart</h2>
 <p>Puppet client用のkickstartファイルは下記のようになっている。</p>
 <p>postセクションに</p>
-<div class="highlight-python"><pre>/sbin/chkconfig puppet on
-puppet agent --server=puppetserver.localnet --no-daemonize --onetime</pre>
+<div class="highlight-python"><div class="highlight"><pre>/sbin/chkconfig puppet on
+puppet agent --server=puppetserver.localnet --no-daemonize --onetime
+</pre></div>
 </div>
 <p>を記述することで、Puppetの自動起動、Puppet serverからマニュフェストを取得する処理が1度だけ実行される。これでPuppet clientはOSインストールからPuppetインストール,セットアップまで自動化することが出来た。しかし、今回の設定では各clientの細かい制御(client1にはapache,client2にはmysqlなど)が出来ていないのでそれについては、またの機会に書きたいと思う。</p>
-<div class="highlight-python"><pre># vi /var/lib/cobbler/kickstarts/puppet_client.ks
+<div class="highlight-python"><div class="highlight"><pre># vi /var/lib/cobbler/kickstarts/puppet_client.ks
 
 #platform=x86, AMD64, or Intel EM64T
 # System authorization information
@@ -3899,7 +4221,8 @@ puppet agent --server=puppetserver.localnet --no-daemonize --onetime
 $SNIPPET('post_anamon')
 # Start final steps
 $SNIPPET('kickstart_done')
-# End final steps</pre>
+# End final steps
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html">Managing DNS</a></li>
@@ -3921,11 +4244,12 @@ $SNIPPET('kickstart_done')
             <description><![CDATA[<div class="section" id="centos6-4cobbler">
 <h1>CentOS6.4にCobblerサーバ構築</h1>
 <p>サーバ100台くらいにOSインストールする作業が発生するかもしれないので怠けるための作業をメモしておく。まずはCobblerサーバを構築してOSインストールが出来るまで。</p>
-<div class="highlight-python"><pre># uname -a
+<div class="highlight-python"><div class="highlight"><pre># uname -a
 Linux localhost.localdomain 2.6.32-358.11.1.el6.x86_64 #1 SMP Wed Jun 12 03:34:52 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
 
 # cat /etc/centos-release
-CentOS release 6.4 (Final)</pre>
+CentOS release 6.4 (Final)
+</pre></div>
 </div>
 <p>SELinuxを無効にしないとCobblerが動作しない。</p>
 <p>下記のファイルを編集して再起動</p>
@@ -3939,7 +4263,7 @@ CentOS release 6.4 (Final)</pre>
 <span class="c"># reboot</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># rpm -i http://mirror.symnds.com/distributions/fedora-epel/6/x86_64/epel-release-6-8.noarch.rpm
+<div class="highlight-python"><div class="highlight"><pre># rpm -i http://mirror.symnds.com/distributions/fedora-epel/6/x86_64/epel-release-6-8.noarch.rpm
 # yum -y install cobbler pykickstart dhcp
 
 # cobbler --version
@@ -3994,26 +4318,30 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 # cobbler sync
 
 # cobbler import --path=rsync://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/ --name=CentOS6.4_x86_64
-# cobbler sync</pre>
+# cobbler sync
+</pre></div>
 </div>
 <p>Cobblerを使いインストールするとデフォルトのパスワードはcobblerとなっている。</p>
 <p>変更する場合は</p>
-<div class="highlight-python"><pre># cobbler check
+<div class="highlight-python"><div class="highlight"><pre># cobbler check
 The following are potential configuration items that you may want to fix:
 
 1 : debmirror package is not installed, it will be required to manage debian deployments and repositories
 2 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: &quot;openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'&quot; to generate new one
 3 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them
 
-Restart cobblerd and then run 'cobbler sync' to apply changes.</pre>
+Restart cobblerd and then run 'cobbler sync' to apply changes.
+</pre></div>
 </div>
 <p>に書いてあるように</p>
-<div class="highlight-python"><pre># openssl passwd -1 -salt &quot;cobbler&quot; &quot;password&quot;
-$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1</pre>
+<div class="highlight-python"><div class="highlight"><pre># openssl passwd -1 -salt &quot;cobbler&quot; &quot;password&quot;
+$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1
+</pre></div>
 </div>
 <p>を実行して</p>
-<div class="highlight-python"><pre># vi /etc/cobbler/settings
-default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/settings
+default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;
+</pre></div>
 </div>
 <p>設定ファイルを書き換えてCobblerを再起動</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># /etc/init.d/cobblerd restart</span>
@@ -4035,7 +4363,7 @@ default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;</pre>
             <title><![CDATA[Rails3でMongoDBを使ってみる]]></title>
             <description><![CDATA[<div class="section" id="rails3mongodb">
 <h1>Rails3でMongoDBを使ってみる</h1>
-<div class="highlight-python"><pre>$ lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
 Distributor ID: Ubuntu
 Description:    Ubuntu 12.04.2 LTS
@@ -4078,7 +4406,8 @@ mongodb_app_development 0.203125GB
 posts
 &gt; db.posts.find()
 { &quot;_id&quot; : ObjectId(&quot;51b1ea5da64aef614e000001&quot;), &quot;title&quot; : &quot;sample&quot;, &quot;subscription&quot; : &quot;text&quot; }
-{ &quot;_id&quot; : ObjectId(&quot;51b2afb0a64aef0c3f000001&quot;), &quot;title&quot; : &quot;hogehoge&quot;, &quot;subscription&quot; : &quot;fugafuga&quot; }</pre>
+{ &quot;_id&quot; : ObjectId(&quot;51b2afb0a64aef0c3f000001&quot;), &quot;title&quot; : &quot;hogehoge&quot;, &quot;subscription&quot; : &quot;fugafuga&quot; }
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://mongoid.org/en/mongoid">http://mongoid.org/en/mongoid/</a></li>
@@ -4106,7 +4435,7 @@ posts
 <div class="section" id="nested-kvm">
 <h2>Nested KVM</h2>
 <p>Nested KVMを有効にするための設定を行う。</p>
-<div class="highlight-python"><pre># modinfo kvm_intel
+<div class="highlight-python"><div class="highlight"><pre># modinfo kvm_intel
 filename:       /lib/modules/3.2.0-4-amd64/kernel/arch/x86/kvm/kvm-intel.ko
 license:        GPL
 author:         Qumranet
@@ -4135,7 +4464,8 @@ options kvm_intel nested=1
 # modprobe kvm_intel
 
 # cat /sys/module/kvm_intel/parameters/nested
-Y</pre>
+Y
+</pre></div>
 </div>
 </div>
 <div class="section" id="id1">
@@ -4222,13 +4552,14 @@ virt-install --hvm --accelerate --nographics <span class="se">\</span>
   --extra-args<span class="o">=</span><span class="s1">'console=tty0 console=ttyS0,115200n8'</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># virsh net-list --all
+<div class="highlight-python"><div class="highlight"><pre># virsh net-list --all
 Name                 State      Autostart
 -----------------------------------------
 default              inactive   no
 
 # virsh net-start default
-# vm-install.sh debian7_nested 500 50 virbr0 wheezy</pre>
+# vm-install.sh debian7_nested 500 50 virbr0 wheezy
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.debian.org/releases/wheezy">http://www.debian.org/releases/wheezy/</a></li>
@@ -4253,10 +4584,11 @@ default              inactive   no
 <p>本家のドキュメントにaptでインストール出来ると書いているのでそれに従ってみた。</p>
 <div class="section" id="mongodb">
 <h2>MongoDB インストール</h2>
-<div class="highlight-python"><pre>$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
+<div class="highlight-python"><div class="highlight"><pre>$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
 $ echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/10gen.list
 $ sudo apt-get update
-$ sudo apt-get install mongodb-10gen</pre>
+$ sudo apt-get install mongodb-10gen
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install mongodb-10gen=2.2.3</span>
 </pre></div>
@@ -4269,7 +4601,7 @@ $ sudo apt-get install mongodb-10gen</pre>
 </div>
 <div class="section" id="id1">
 <h2>MongoDB 操作</h2>
-<div class="highlight-python"><pre>$ mongo
+<div class="highlight-python"><div class="highlight"><pre>$ mongo
 MongoDB shell version: 2.4.3
 connecting to: test
 Welcome to the MongoDB shell.
@@ -4301,7 +4633,8 @@ db.users.find({username: &quot;hoge&quot;})
 
 db.users.update({username: &quot;hoge&quot;}, {$unset: {country: 1}})
 db.users.find({username: &quot;hoge&quot;})
-{ &quot;_id&quot; : ObjectId(&quot;51adf33a197bc318df1ad8ad&quot;), &quot;username&quot; : &quot;hoge&quot; }</pre>
+{ &quot;_id&quot; : ObjectId(&quot;51adf33a197bc318df1ad8ad&quot;), &quot;username&quot; : &quot;hoge&quot; }
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a></li>
@@ -4347,7 +4680,7 @@ db.users.find({username: &quot;hoge&quot;})
 <span class="c"># vi nsd.conf</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>server:
+<div class="highlight-python"><div class="highlight"><pre>server:
   ip-address: 192.168.0.1
   hide-version: yes
   ipv4-only: yes
@@ -4361,12 +4694,13 @@ db.users.find({username: &quot;hoge&quot;})
 
 zone:
   name: chef.local
-  zonefile: chef.local.zone</pre>
+  zonefile: chef.local.zone
+</pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi chef.local.zone</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$TTL 3600
+<div class="highlight-python"><div class="highlight"><pre>$TTL 3600
 @ IN SOA ns1.chef.local. postmaster.chef.local. (
   2013052001  ;Serial
   3600        ;Refresh
@@ -4382,7 +4716,8 @@ ns2   IN  A 192.168.0.2
 www   IN  A 192.168.0.3
 hoge  IN  A 192.168.0.4
 fuga  IN  A 192.168.0.5
-moge  IN  A 192.168.0.6</pre>
+moge  IN  A 192.168.0.6
+</pre></div>
 </div>
 </div>
 <div class="section" id="unbound">
@@ -4393,7 +4728,7 @@ moge  IN  A 192.168.0.6</pre>
 <span class="c"># vi unbound.conf</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>server:
+<div class="highlight-python"><div class="highlight"><pre>server:
   verbosity: 1
   interface 192.168.0.2
   do-ip6: no
@@ -4407,7 +4742,8 @@ moge  IN  A 192.168.0.6</pre>
 
 stub-zone:
   name: &quot;chef.local&quot;
-  stub-addr: 192.168.0.1</pre>
+  stub-addr: 192.168.0.1
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://unbound.jp">http://unbound.jp/</a></li>
@@ -4429,17 +4765,20 @@ stub-zone:
 <h1>Tinkerer + Github</h1>
 <p>jekyll + Githubを使ってブログを書いていたのだけれどローカルで確認するのにWEBRick動かすということに面倒くささを感じ流らく放置してしまっていた。</p>
 <p>もっと手軽な(Sphinxみたいにhtmlが掃き出される)ものはないかと探してみたところTinkererというものを見付けた。</p>
-<div class="highlight-python"><pre>$ pip install tinkerer</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install tinkerer
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ tinker -s</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ tinker -s
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ wget http://dl.dropbox.com/u/218108/files/japanesesupport.py
+<div class="highlight-python"><div class="highlight"><pre>$ wget http://dl.dropbox.com/u/218108/files/japanesesupport.py
 $ mkdir _exts
 $ mv japanesesupport.py _exts
 $ hg clone https://bitbucket.org/vladris/tinkerer-contrib
 $ cp `find tinkerer-contrib -name withgithub.py` _exts
 $ rm -rf tinkerer-contrib
-$ touch .nojekyll</pre>
+$ touch .nojekyll
+</pre></div>
 </div>
 <div class="section" id="conf-py">
 <h2>conf.py 修正</h2>
@@ -4451,13 +4790,14 @@ $ touch .nojekyll</pre>
 <span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre>$ tinker -p 'first post'
+<div class="highlight-python"><div class="highlight"><pre>$ tinker -p 'first post'
 $ tinker -b
 $ git init
 $ git add .
 $ git commit -m 'first post'
 $ git remote add origin git@github.com:zinrai/zinrai.github.com.git
-$ git push -u origin master</pre>
+$ git push -u origin master
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.tinkerer.me/exts/withgithub.html">http://www.tinkerer.me/exts/withgithub.html</a></li>

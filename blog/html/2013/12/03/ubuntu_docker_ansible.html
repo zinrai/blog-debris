@@ -31,7 +31,7 @@
         <link rel="next" title="Dockerを使ってみる" href="../../11/28/ubuntu_docker.html" /><link rel="prev" title="ZFS on Linux (Debian wheezy)" href="../../../2014/02/05/debian_wheezy_zfs.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -96,18 +96,20 @@
 <p>前回はDockerの使い方を調べたので、今回はDocker上のコンテナで巷で噂の<a class="reference external" href="http://www.ansibleworks.com/">Ansible</a>を動かしてみる。</p>
 <div class="section" id="id1">
 <h2>コンテナ起動</h2>
-<div class="highlight-python"><pre>% docker run -i -t -id --name test01 ubuntu:latest /bin/bash
-% docker attach test01</pre>
+<div class="highlight-python"><div class="highlight"><pre>% docker run -i -t -id --name test01 ubuntu:latest /bin/bash
+% docker attach test01
+</pre></div>
 </div>
 </div>
 <div class="section" id="id2">
 <h2>コンテナイメージ作成</h2>
-<div class="highlight-python"><pre>% lsb_release -a
+<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
 Distributor ID: Ubuntu
 Description:    Ubuntu 12.04 LTS
 Release:        12.04
-Codename:       precise</pre>
+Codename:       precise
+</pre></div>
 </div>
 <ul class="simple">
 <li>Python,SSHインストール</li>
@@ -115,7 +117,7 @@ Codename:       precise</pre>
 <li>sudo設定</li>
 </ul>
 <p>起動したコンテナで上記の作業してコンテナイメージを作成する。</p>
-<div class="highlight-python"><pre>% apt-get install python2.7 python2.7-dev openssh-server vim sudo wget ca-certificates
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install python2.7 python2.7-dev openssh-server vim sudo wget ca-certificates
 
 % mkdir /var/run/sshd
 % cd /etc/ssh
@@ -130,12 +132,12 @@ Codename:       precise</pre>
 -#AuthorizedKeysFile    %h/.ssh/authorized_keys
 +AuthorizedKeysFile     %h/.ssh/authorized_keys
 
- # Don't read the user's ~/.rhosts and ~/.shosts files
+ # Don&#39;t read the user&#39;s ~/.rhosts and ~/.shosts files
  IgnoreRhosts yes
 @@ -84,4 +84,4 @@
  # If you just want the PAM account and session checks to run without
  # PAM authentication, then enable this but set PasswordAuthentication
- # and ChallengeResponseAuthentication to 'no'.
+ # and ChallengeResponseAuthentication to &#39;no&#39;.
 -UsePAM yes
 +UsePAM no
 
@@ -148,11 +150,13 @@ Codename:       precise</pre>
 % su - zinrai
 $ ssh-keygen
 $ cd .ssh
-$ cp id_rsa.pub authorized_keys</pre>
+$ cp id_rsa.pub authorized_keys
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% docker commit test01 ansible/test01
+<div class="highlight-python"><div class="highlight"><pre>% docker commit test01 ansible/test01
 % docker run -i -t -d --name ansible01 ansible/test01 /bin/bash
-% docker run -i -t -d --name ansible02 ansible/test01 /bin/bash</pre>
+% docker run -i -t -d --name ansible02 ansible/test01 /bin/bash
+</pre></div>
 </div>
 </div>
 <div class="section" id="id3">
@@ -161,7 +165,7 @@ $ cp id_rsa.pub authorized_keys</pre>
 <li><a class="reference external" href="http://www.ansibleworks.com/">Ansible</a>はvirtualenv上で動かす。</li>
 <li>&#8211;ask-sudo-passオプションが使えるようにsshpassをインストール</li>
 </ul>
-<div class="highlight-python"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
 $ tar zvxf virtualenv-1.10.1.tar.gz
 $ python virtualenv-1.10.1/virtualenv.py ansible
 $ source ansible/bin/activate
@@ -176,26 +180,30 @@ argparse==1.2.1
 ecdsa==0.10
 paramiko==1.12.0
 pycrypto==2.6.1
-wsgiref==0.1.2</pre>
+wsgiref==0.1.2
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/apt/source.list
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/apt/source.list
 deb http://archive.ubuntu.com/ubuntu precise main universe
 deb-src http://archive.ubuntu.com/ubuntu/ precise main universe
 deb http://archive.ubuntu.com/ubuntu/ precise-updates main universe
 deb-src http://archive.ubuntu.com/ubuntu/ precise-updates main universe
 
 % apt-get update
-% apt-get install sshpass</pre>
+% apt-get install sshpass
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ mkdir playbook
-$ cd playbook</pre>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir playbook
+$ cd playbook
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi hosts
+<div class="highlight-python"><div class="highlight"><pre>$ vi hosts
 [test]
 172.17.0.10
-172.17.0.11</pre>
+172.17.0.11
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ vi setup.yml
+<div class="highlight-python"><div class="highlight"><pre>$ vi setup.yml
 ---
 - hosts: test
   remote_user: zinrai
@@ -206,9 +214,10 @@ $ cd playbook</pre>
     apt: pkg={{ item }} state=latest
     with_items:
     - less
-    - perl-modules</pre>
+    - perl-modules
+</pre></div>
 </div>
-<div class="highlight-python"><pre>$ ansible-playbook -i hosts setup.yml --ask-sudo-pass
+<div class="highlight-python"><div class="highlight"><pre>$ ansible-playbook -i hosts setup.yml --ask-sudo-pass
 sudo password:
 
 PLAY [test] *******************************************************************
@@ -223,7 +232,8 @@ changed: [172.17.0.11] =&gt; (item=less,perl-modules)
 
 PLAY RECAP ********************************************************************
 172.17.0.10                : ok=2    changed=1    unreachable=0    failed=0
-172.17.0.11                : ok=2    changed=1    unreachable=0    failed=0</pre>
+172.17.0.11                : ok=2    changed=1    unreachable=0    failed=0
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.ansibleworks.com/docs/playbooks.html">http://www.ansibleworks.com/docs/playbooks.html</a></li>
@@ -253,6 +263,8 @@ PLAY RECAP ********************************************************************
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="../../../2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
+        </li><li>
             <a href="../../../2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
         </li><li>
             <a href="../../../2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a>
@@ -270,15 +282,13 @@ PLAY RECAP ********************************************************************
             <a href="../../10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
         </li><li>
             <a href="../../10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
-        </li><li>
-            <a href="../../10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvpn.html">openvpn</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (11), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (7), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (12), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvpn.html">openvpn</a> (1), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (8), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="../../../search.html" method="get">
         <input type="text" name="q" />

@@ -31,7 +31,7 @@
         <link rel="next" title="Cobbler + Puppet" href="../../06/22/centos_cobbler_puppet_install.html" /><link rel="prev" title="FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築" href="../../08/22/freebsd_jail_vimage_zfs.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -106,33 +106,36 @@
 <span class="c"># /dev/iso9660/FREEBSD_INSTALL / cd9660 ro 0 0 &lt;- コメントアウト</span>
 </pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/inetd.conf
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/inetd.conf
 tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var/pxeboot/boot
 
-# /etc/rc.d/inetd onestart</pre>
+# /etc/rc.d/inetd onestart
+</pre></div>
 </div>
-<div class="highlight-python"><pre># cd /usr/ports/net/isc-dhcp42-server
+<div class="highlight-python"><div class="highlight"><pre># cd /usr/ports/net/isc-dhcp42-server
 # make install
 
 # vi /usr/local/etc/dhcpd.conf
 ddns-update-style none;
-server-name "pxeboot";            # name of the tftp-server
+server-name &quot;pxeboot&quot;;            # name of the tftp-server
 server-identifier 192.168.0.253;  # address of the tftp-server
 next-server 192.168.0.253;        # address of the NFS-server
 
 subnet 192.168.0.0 netmask 255.255.255.0 {
     range 192.168.0.220 192.168.0.250;
     option routers 192.168.0.254;
-    option root-path "/var/pxeboot"; # root-path for NFS
-    filename "pxeboot";              # filename of NBP (network bootstrap program)
+    option root-path &quot;/var/pxeboot&quot;; # root-path for NFS
+    filename &quot;pxeboot&quot;;              # filename of NBP (network bootstrap program)
 }
 
-# /usr/local/etc/rc.d/isc-dhcpd onestart</pre>
+# /usr/local/etc/rc.d/isc-dhcpd onestart
+</pre></div>
 </div>
-<div class="highlight-python"><pre># vi /etc/exports
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/exports
 /var/pxeboot -alldirs -maproot=root
 
-# /etc/rc.d/nfsd onestart</pre>
+# /etc/rc.d/nfsd onestart
+</pre></div>
 </div>
 <p>再起動後もデーモンを起動させておきたければrc.confに書いておく。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
@@ -274,12 +277,13 @@ reboot
 </pre></div>
 </div>
 <p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
-<div class="highlight-python"><pre># vi /var/pxeboot/etc/rc.local
+<div class="highlight-python"><div class="highlight"><pre># vi /var/pxeboot/etc/rc.local
 
 #!/bin/sh
 # $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $
 
-/var/script/os_install.sh</pre>
+/var/script/os_install.sh
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
@@ -309,6 +313,8 @@ reboot
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="../../../2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
+        </li><li>
             <a href="../../../2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
         </li><li>
             <a href="../../../2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a>
@@ -326,15 +332,13 @@ reboot
             <a href="../../10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
         </li><li>
             <a href="../../10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
-        </li><li>
-            <a href="../../10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvpn.html">openvpn</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (11), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (7), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (12), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvpn.html">openvpn</a> (1), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (8), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="../../../search.html" method="get">
         <input type="text" name="q" />

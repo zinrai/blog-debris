@@ -31,7 +31,7 @@
         <link rel="next" title="Gentoo Linux インストールスクリプト" href="../08/gentoo_install_script.html" /><link rel="prev" title="aufsを使ったchroot環境" href="../10/debian_wheezy_chroot_aufs.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -92,10 +92,11 @@
 <h1>CentOSでchroot環境構築</h1>
 <p>yum(8)では役割単位(Web,Mailサーバなど)でパッケージがグループ化されており、グループ名を指定することでグループに属しているパッケージをまとめてインストールできるようになっている。</p>
 <p>グループ名はサブコマンドgrouplistで調べることができる。</p>
-<div class="highlight-python"><pre># cat /etc/centos-release
-CentOS release 6.4 (Final)</pre>
+<div class="highlight-python"><div class="highlight"><pre># cat /etc/centos-release
+CentOS release 6.4 (Final)
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% yum grouplist
+<div class="highlight-python"><div class="highlight"><pre>% yum grouplist
 Loaded plugins: fastestmirror
 Setting up Group Process
 Loading mirror speeds from cached hostfile
@@ -112,10 +113,11 @@ Available Groups:
    CIFS file server
    Client management tools
    Compatibility libraries
-   ~~~~~~~~~~以下略~~~~~~~~~~</pre>
+   ~~~~~~~~~~以下略~~~~~~~~~~
+</pre></div>
 </div>
 <p>サブコマンドgroupifnoでグループに属しているパッケージを調べられる。</p>
-<div class="highlight-python"><pre>% yum groupinfo "E-mail Server"
+<div class="highlight-python"><div class="highlight"><pre>% yum groupinfo &quot;E-mail Server&quot;
 Loaded plugins: fastestmirror
 Setting up Group Process
 Loading mirror speeds from cached hostfile
@@ -136,12 +138,13 @@ Group: E-mail server
    dovecot-pigeonhole
    mailman
    sendmail
-   sendmail-cf</pre>
+   sendmail-cf
+</pre></div>
 </div>
 <p>BaseはCentOSのベースシステムがグループ化されている。</p>
 <p>さらに「&#8211;installroot」オプションで指定したディレクトリにベースシステムを展開できる。</p>
 <p>これを使えばCentOSのchroot環境を簡単に構築できる。</p>
-<div class="highlight-python"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall "Base"
+<div class="highlight-python"><div class="highlight"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall &quot;Base&quot;
 % cd /root/centos6
 % cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
 % cp /etc/resolv.conf etc/
@@ -152,10 +155,12 @@ Group: E-mail server
 % mount -t proc none /root/centos6/proc
 % mount --rbind /sys /root/centos6/sys
 
-% chroot /root/centos6 /bin/bash</pre>
+% chroot /root/centos6 /bin/bash
+</pre></div>
 </div>
 <p>chroot環境のアップグレードは下記のようにすればいい。</p>
-<div class="highlight-python"><pre>% yum upgrade --releasever=6 --installroot=/root/centos6 -y</pre>
+<div class="highlight-python"><div class="highlight"><pre>% yum upgrade --releasever=6 --installroot=/root/centos6 -y
+</pre></div>
 </div>
 </div>
 
@@ -180,6 +185,8 @@ Group: E-mail server
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="../../../2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
+        </li><li>
             <a href="../../../2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
         </li><li>
             <a href="../../../2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a>
@@ -197,15 +204,13 @@ Group: E-mail server
             <a href="../../10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
         </li><li>
             <a href="../../10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
-        </li><li>
-            <a href="../../10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvpn.html">openvpn</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (11), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (7), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (12), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvpn.html">openvpn</a> (1), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (8), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="../../../search.html" method="get">
         <input type="text" name="q" />

@@ -31,7 +31,7 @@
         <link rel="next" title="CentOS ディスクレスブートサーバ構築" href="../../10/26/centos_diskless.html" /><link rel="prev" title="Fabric decorators task" href="../22/fabric_decorators_task.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.2.1',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -93,7 +93,7 @@
 <p>「<a class="reference internal" href="../../07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」だとFreeBSD母艦が必要になるので、どうにかして<a class="reference external" href="http://www.syslinux.org/wiki/index.php/The_Syslinux_Project">Syslinux</a>にまとめられないか調べてみたところ<a class="reference external" href="http://mfsbsd.vx.sk/">mfsBSD</a>というものを見付けた。今回は「9.1-RELEASE」のmfsBSDを作成した。</p>
 <div class="section" id="mfsbsd">
 <h2>mfsBSDイメージ作成</h2>
-<div class="highlight-python"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
+<div class="highlight-python"><div class="highlight"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
 % tar zvxf mfsbsd-2.1.tar.gz
 % cd mfsbsd-2.1/conf
 % cp rc.conf.sample rc.conf
@@ -108,26 +108,29 @@
 % make RELEASE=9.1-RELEASE BASE=/path/freebsd91
 
 % ls *.img
-mfsbsd-9.1-RELEASE-amd64.img</pre>
+mfsbsd-9.1-RELEASE-amd64.img
+</pre></div>
 </div>
 <p><a class="reference external" href="http://mfsbsd.vx.sk/">mfsBSD</a>のMakefileを眺めてみると「RELEASE」オプションを付けない場合、生成されるイメージファイル名にuname(1)が使われる。「RELEASE」オプションを付けてないとホストが「9.2-RELEASE」「10-CURRENT」のとき「9.1-RELEASE」のイメージファイルを作成するとホストのversionの付いたファイル名でイメージファイルが生成される。</p>
 <p>VirtIOを有効にしている仮想環境でも<a class="reference external" href="http://mfsbsd.vx.sk/">mfsBSD</a>を使えるようにしてみる。VirtIOのバイナリを作るのが面倒だったので配布されていないか調べてみたら見付けた。</p>
-<div class="highlight-python"><pre>% mkdir virtio
+<div class="highlight-python"><div class="highlight"><pre>% mkdir virtio
 % cd virtio
 % fetch http://people.freebsd.org/~kuriyama/virtio/9.1/virtio-kmod-9.1-0.250249.tbz
-% tar Jxf virtio-kmod-9.1-0.250249.tbz</pre>
+% tar Jxf virtio-kmod-9.1-0.250249.tbz
+</pre></div>
 </div>
 <p>「BOOTMODULES」変数にモジュールをスペース区切り書いておけばイメージファイル作成時にモジュールが組込まれる。VirtIOモジュールのほうはkernel.txzを展開し、boot/kernelにコピーして再度圧縮しておく。</p>
-<div class="highlight-python"><pre>% cd /path/freebsd91
+<div class="highlight-python"><div class="highlight"><pre>% cd /path/freebsd91
 % tar zxpf kernel.txz
 
 % cd /path/virtio/boot/modules
 % cp `ls` /path/freebsd91/boot/kernel
 
 % cd /path/freebsd91
-% tar Jcvf kernel.txz boot</pre>
+% tar Jcvf kernel.txz boot
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% diff -u Makefile Makefile.org
+<div class="highlight-python"><div class="highlight"><pre>% diff -u Makefile Makefile.org
 --- Makefile    2013-11-01 12:43:34.000000000 +0900
 +++ Makefile.org        2013-11-01 01:34:12.000000000 +0900
 @@ -73,7 +73,7 @@
@@ -137,7 +140,8 @@ mfsbsd-9.1-RELEASE-amd64.img</pre>
 -BOOTMODULES=acpi ahci virtio virtio_pci virtio_blk virtio_balloon if_vtnet
 +BOOTMODULES=acpi ahci
  MFSMODULES=geom_mirror geom_nop opensolaris zfs ext2fs snp smbus ipmi ntfs nullfs tmpfs
- #</pre>
+ #
+</pre></div>
 </div>
 </div>
 <div class="section" id="syslinux">
@@ -147,15 +151,16 @@ mfsbsd-9.1-RELEASE-amd64.img</pre>
 <li><a class="reference internal" href="../../10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
 </ul>
 <p>これでDebian,CentOS,FreeBSDのディスクレスブート環境が出来上がった。</p>
-<div class="highlight-python"><pre>% vi /path/pxelinux.cfg/default
+<div class="highlight-python"><div class="highlight"><pre>% vi /path/pxelinux.cfg/default
 
 default menu.c32
 label FreeBSD 9.1
 kernel memdisk
-append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
+append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk
+</pre></div>
 </div>
 <p>9.2-RELEASEからVirtIOは標準で入っている。VirtIOを使いたければ、設定をloader.confに書くだけ。シェルスクリプトには下記のような変更を加えておけばいい。</p>
-<div class="highlight-python"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
+<div class="highlight-python"><div class="highlight"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
 --- freebsd_install.conf        2013-11-01 18:05:26.993246593 +0900
 +++ freebsd_virtio.conf 2013-11-01 17:48:52.725299517 +0900
 @@ -1,8 +1,8 @@
@@ -168,25 +173,26 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
 +DISK=vtbd0
  IFACE=$1
  CWD=$2
- CHROOT_FREEBSD="/mnt/$3"
+ CHROOT_FREEBSD=&quot;/mnt/$3&quot;
 @@ -27,8 +27,16 @@
    tar xfzp $FILE
  done
 
 +cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/boot/loader.conf
-+virtio_load="YES"
-+virtio_pci_load="YES"
-+virtio_blk_load="YES"
-+if_vtnet_load="YES"
-+virtio_balloon_load="YES"
++virtio_load=&quot;YES&quot;
++virtio_pci_load=&quot;YES&quot;
++virtio_blk_load=&quot;YES&quot;
++if_vtnet_load=&quot;YES&quot;
++virtio_balloon_load=&quot;YES&quot;
 +EOF
 +
  cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/rc.conf
--hostname="freebsd-install.local"
-+hostname="freebsd-virtio.local"
- keymap="us.iso.kbd"
- ifconfig_${IFACE}=" inet 192.168.2.200 netmask 255.255.255.0"
- defaultrouter="192.168.2.254"</pre>
+-hostname=&quot;freebsd-install.local&quot;
++hostname=&quot;freebsd-virtio.local&quot;
+ keymap=&quot;us.iso.kbd&quot;
+ ifconfig_${IFACE}=&quot; inet 192.168.2.200 netmask 255.255.255.0&quot;
+ defaultrouter=&quot;192.168.2.254&quot;
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://mfsbsd.vx.sk/">http://mfsbsd.vx.sk/</a></li>
@@ -216,6 +222,8 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="../../../2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
+        </li><li>
             <a href="../../../2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
         </li><li>
             <a href="../../../2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a>
@@ -233,15 +241,13 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
             <a href="../../10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
         </li><li>
             <a href="../../10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
-        </li><li>
-            <a href="../../10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvpn.html">openvpn</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (11), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (7), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (1), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (12), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (1), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvpn.html">openvpn</a> (1), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/schroot.html">schroot</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (8), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="../../../search.html" method="get">
         <input type="text" name="q" />

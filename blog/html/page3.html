@@ -30,8 +30,8 @@
         <script src="_static/main.js"></script>
         <link rel="next" title="Older" href="page4.html" /><link rel="prev" title="Newer" href="page2.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
-        VERSION:     '1.2.1',
+        URL_ROOT:    './',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -86,6 +86,106 @@
             <li class="left"> &laquo; <a href="page2.html">Newer</a></li>
             <li class="right"><a href="page4.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>November 22, 2013</span>
+        </div>
+        <div class="section" id="fabric-decorators-task">
+<h1><a href="2013/11/22/fabric_decorators_task.html">Fabric decorators task</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a></li>
+<li><a class="reference internal" href="2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a></li>
+<li><a class="reference internal" href="2013/09/08/gentoo_install_script.html"><em>Gentoo Linux インストールスクリプト</em></a></li>
+<li><a class="reference internal" href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
+<li><a class="reference internal" href="2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
+<li><a class="reference internal" href="2013/11/01/freebsd_mfsbsd.html"><em>virtioを組み込んだmfsBSDイメージ作成</em></a></li>
+</ul>
+<p>シェルスクリプトでLinuxをインストールする環境はできたが、サーバに接続してシェルスクリプトをコピー・編集するという状態である。Fabricを使いこの作業をホストから行えるようにしてみる。fabfile.pyひとつにタスクを書いていくのではなくディストリビューションやOSごとにファイルを分割してタスクを書いていく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python -V
+Python 2.7.3
+
+$ fab --version
+Fabric 1.8.0
+Paramiko 1.12.0
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir fabfile
+$ cd fabfile
+$ touch __init__.py centos.py debian.py freebsd.py gentoo.py
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi __init__.py
+
+from . import debian
+from . import centos
+from . import gentoo
+from . import freebsd
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi centos.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi debian.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi gentoo.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi freebsd.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ fab -l
+Available commands:
+
+    centos.cmd
+    debian.cmd
+    freebsd.cmd
+    gentoo.cmd
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://docs.fabfile.org/en/1.8">http://docs.fabfile.org/en/1.8/</a></li>
+<li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/core/decorators.html">http://docs.fabfile.org/en/1.8/api/core/decorators.html</a></li>
+<li><a class="reference external" href="https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes">https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes</a></li>
+</ul>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/fabric.html">fabric</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/python.html">python</a>, <a href="tags/fabric.html">fabric</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>November 01, 2013</span>
         </div>
         <div class="section" id="virtiomfsbsd">
@@ -93,7 +193,7 @@
 <p>「<a class="reference internal" href="2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」だとFreeBSD母艦が必要になるので、どうにかして<a class="reference external" href="http://www.syslinux.org/wiki/index.php/The_Syslinux_Project">Syslinux</a>にまとめられないか調べてみたところ<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>というものを見付けた。今回は「9.1-RELEASE」のmfsBSDを作成した。</p>
 <div class="section" id="mfsbsd">
 <h2>mfsBSDイメージ作成</h2>
-<div class="highlight-python"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
+<div class="highlight-python"><div class="highlight"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
 % tar zvxf mfsbsd-2.1.tar.gz
 % cd mfsbsd-2.1/conf
 % cp rc.conf.sample rc.conf
@@ -108,26 +208,29 @@
 % make RELEASE=9.1-RELEASE BASE=/path/freebsd91
 
 % ls *.img
-mfsbsd-9.1-RELEASE-amd64.img</pre>
+mfsbsd-9.1-RELEASE-amd64.img
+</pre></div>
 </div>
 <p><a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>のMakefileを眺めてみると「RELEASE」オプションを付けない場合、生成されるイメージファイル名にuname(1)が使われる。「RELEASE」オプションを付けてないとホストが「9.2-RELEASE」「10-CURRENT」のとき「9.1-RELEASE」のイメージファイルを作成するとホストのversionの付いたファイル名でイメージファイルが生成される。</p>
 <p>VirtIOを有効にしている仮想環境でも<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>を使えるようにしてみる。VirtIOのバイナリを作るのが面倒だったので配布されていないか調べてみたら見付けた。</p>
-<div class="highlight-python"><pre>% mkdir virtio
+<div class="highlight-python"><div class="highlight"><pre>% mkdir virtio
 % cd virtio
 % fetch http://people.freebsd.org/~kuriyama/virtio/9.1/virtio-kmod-9.1-0.250249.tbz
-% tar Jxf virtio-kmod-9.1-0.250249.tbz</pre>
+% tar Jxf virtio-kmod-9.1-0.250249.tbz
+</pre></div>
 </div>
 <p>「BOOTMODULES」変数にモジュールをスペース区切り書いておけばイメージファイル作成時にモジュールが組込まれる。VirtIOモジュールのほうはkernel.txzを展開し、boot/kernelにコピーして再度圧縮しておく。</p>
-<div class="highlight-python"><pre>% cd /path/freebsd91
+<div class="highlight-python"><div class="highlight"><pre>% cd /path/freebsd91
 % tar zxpf kernel.txz
 
 % cd /path/virtio/boot/modules
 % cp `ls` /path/freebsd91/boot/kernel
 
 % cd /path/freebsd91
-% tar Jcvf kernel.txz boot</pre>
+% tar Jcvf kernel.txz boot
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% diff -u Makefile Makefile.org
+<div class="highlight-python"><div class="highlight"><pre>% diff -u Makefile Makefile.org
 --- Makefile    2013-11-01 12:43:34.000000000 +0900
 +++ Makefile.org        2013-11-01 01:34:12.000000000 +0900
 @@ -73,7 +73,7 @@
@@ -137,7 +240,8 @@ mfsbsd-9.1-RELEASE-amd64.img</pre>
 -BOOTMODULES=acpi ahci virtio virtio_pci virtio_blk virtio_balloon if_vtnet
 +BOOTMODULES=acpi ahci
  MFSMODULES=geom_mirror geom_nop opensolaris zfs ext2fs snp smbus ipmi ntfs nullfs tmpfs
- #</pre>
+ #
+</pre></div>
 </div>
 </div>
 <div class="section" id="syslinux">
@@ -147,15 +251,16 @@ mfsbsd-9.1-RELEASE-amd64.img</pre>
 <li><a class="reference internal" href="2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
 </ul>
 <p>これでDebian,CentOS,FreeBSDのディスクレスブート環境が出来上がった。</p>
-<div class="highlight-python"><pre>% vi /path/pxelinux.cfg/default
+<div class="highlight-python"><div class="highlight"><pre>% vi /path/pxelinux.cfg/default
 
 default menu.c32
 label FreeBSD 9.1
 kernel memdisk
-append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
+append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk
+</pre></div>
 </div>
 <p>9.2-RELEASEからVirtIOは標準で入っている。VirtIOを使いたければ、設定をloader.confに書くだけ。シェルスクリプトには下記のような変更を加えておけばいい。</p>
-<div class="highlight-python"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
+<div class="highlight-python"><div class="highlight"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
 --- freebsd_install.conf        2013-11-01 18:05:26.993246593 +0900
 +++ freebsd_virtio.conf 2013-11-01 17:48:52.725299517 +0900
 @@ -1,8 +1,8 @@
@@ -186,7 +291,8 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
 +hostname=&quot;freebsd-virtio.local&quot;
  keymap=&quot;us.iso.kbd&quot;
  ifconfig_${IFACE}=&quot; inet 192.168.2.200 netmask 255.255.255.0&quot;
- defaultrouter=&quot;192.168.2.254&quot;</pre>
+ defaultrouter=&quot;192.168.2.254&quot;
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://mfsbsd.vx.sk">http://mfsbsd.vx.sk/</a></li>
@@ -214,16 +320,18 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk</pre>
         <div class="section" id="centos">
 <h1><a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a></h1>
 <p>「<a class="reference internal" href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a>」にCentOSのディスクレスブート環境を追加してみる。</p>
-<div class="highlight-python"><pre>% cat /etc/centos-release
+<div class="highlight-python"><div class="highlight"><pre>% cat /etc/centos-release
 CentOS release 6.4 (Final)
 
 % uname -a
-Linux localhost.localdomain 2.6.32-358.23.2.el6.x86_64 #1 SMP Wed Oct 16 18:37:12 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux</pre>
+Linux localhost.localdomain 2.6.32-358.23.2.el6.x86_64 #1 SMP Wed Oct 16 18:37:12 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% yum groupinstall --releasever=6 --installroot=/var/diskless/centos6  Base -y
-% yum upgrade --releasever=6 --installroot=/var/diskless/centos6 -y</pre>
+<div class="highlight-python"><div class="highlight"><pre>% yum groupinstall --releasever=6 --installroot=/var/diskless/centos6  Base -y
+% yum upgrade --releasever=6 --installroot=/var/diskless/centos6 -y
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% mount --rbind /dev /var/diskless/centos6/dev
+<div class="highlight-python"><div class="highlight"><pre>% mount --rbind /dev /var/diskless/centos6/dev
 % cd /var/diskless/centos6
 % cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
 % chroot /var/diskless/centos6 passwd
@@ -236,20 +344,23 @@ sysfs   /sys        sysfs   defaults   0 0
 proc    /proc       proc    defaults   0 0
 
 % vi /var/diskless/centos6/etc/resolv.conf
-nameserver 8.8.8.8</pre>
+nameserver 8.8.8.8
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% yum -y install dracut-network
-% dracut initramfs-`uname -r`.img</pre>
+<div class="highlight-python"><div class="highlight"><pre>% yum -y install dracut-network
+% dracut initramfs-`uname -r`.img
+</pre></div>
 </div>
-<div class="highlight-python"><pre>% vi /etc/exports
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
 /var/diskless/centos6 192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
 
 % service rpcbind start
 % service nfslock start
-% service nfs start</pre>
+% service nfs start
+</pre></div>
 </div>
 <p>あとはブートメニューにCentOSを追加するだけ。</p>
-<div class="highlight-python"><pre>% vi /var/diskless/pxelinux.cfg/default
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/diskless/pxelinux.cfg/default
 default menu.c32
 label Debian wheezy
 kernel vmlinuz-3.2.0-4-amd64
@@ -257,7 +368,8 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
 
 label CentOS 6.4
 kernel vmlinuz-2.6.32-358.23.2.el6.x86_64
-append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw</pre>
+append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw
+</pre></div>
 </div>
 <ul class="simple">
 <li><a class="reference external" href="http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4">http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4</a></li>
@@ -277,77 +389,6 @@ append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/v
                 Tags:
                 <a href="tags/centos.html">centos</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>October 25, 2013</span>
-        </div>
-        <div class="section" id="gentoo-linux-rsync">
-<h1><a href="2013/10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a></h1>
-<p>Gentoo Linuxマシンを複数台動かしている場合、それぞれのGentooマシンからemerge –syncするとリモートのミラーサーバに負荷が掛かるのでローカルにミラーサーバを構築し参照するようにした。</p>
-<div class="section" id="id1">
-<h2>サーバ</h2>
-<div class="highlight-python"><pre>% vi /etc/crontab
-0 23 * * * root emerge-webrsync</pre>
-</div>
-<div class="highlight-python"><pre>% vi /etc/rsyncd.conf
-# /etc/rsyncd.conf
-
-# Minimal configuration file for rsync daemon
-# See rsync(1) and rsyncd.conf(5) man pages for help
-
-# This line is required by the /etc/init.d/rsyncd script
-pid file = /var/run/rsyncd.pid
-use chroot = yes
-read only = yes
-hosts allow = 192.168.2.0/24
-
-# Simple example for enabling your own local rsync server
-[gentoo-portage]
-        path = /usr/portage
-        comment = Gentoo Portage tree
-        exclude = /distfiles /packages</pre>
-</div>
-<div class="highlight-python"><pre>% /etc/init.d/rsyncd start
-% rc-update add rsyncd default</pre>
-</div>
-</div>
-<div class="section" id="id2">
-<h2>クライアント</h2>
-<div class="highlight-python"><pre>% rsync 192.168.2.1::
-gentoo-portage  Gentoo Portage tree
-
-% rsync 192.168.2.1::gentoo-portage | head
-drwxr-xr-x        4096 2013/10/25 10:30:12 .
--rw-r--r--         121 2013/01/01 09:31:01 header.txt
--rw-r--r--        3658 2013/01/01 09:31:01 skel.ChangeLog
--rw-r--r--        8147 2013/01/01 09:31:01 skel.ebuild
--rw-r--r--        1232 2013/03/06 06:31:01 skel.metadata.xml
-drwxr-xr-x        4096 2013/10/17 09:31:02 app-accessibility
-drwxr-xr-x       12288 2013/10/17 09:31:02 app-admin
-drwxr-xr-x        4096 2013/10/17 09:31:02 app-antivirus
-drwxr-xr-x        4096 2013/10/25 06:01:12 app-arch
-drwxr-xr-x        4096 2013/10/25 06:01:13 app-backup</pre>
-</div>
-<div class="highlight-python"><pre>% vi /etc/portage/make.conf
-SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;</pre>
-</div>
-<div class="highlight-python"><pre>% emerge --sync</pre>
-</div>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/gentoo.html">gentoo</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/gentoo.html">gentoo</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -356,6 +397,8 @@ SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;</pre>
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
+        </li><li>
             <a href="2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
         </li><li>
             <a href="2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a>
@@ -373,15 +416,13 @@ SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;</pre>
             <a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
         </li><li>
             <a href="2013/10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
-        </li><li>
-            <a href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (11), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (7), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (12), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (8), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
