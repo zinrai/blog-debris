@@ -86,6 +86,73 @@
             <li class="left"> &laquo; <a href="page8.html">Newer</a></li>
             <li class="right"><a href="page10.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>September 04, 2013</span>
+        </div>
+        <div class="section" id="nginx">
+<h1><a href="2013/09/04/freebsd_nginx_reverse_proxy.html">Nginxでリバースプロキシ</a></h1>
+<p>「<a class="reference internal" href="2013/09/03/freebsd_jail_jenkins.html"><em>jail環境でJenkinsを動かす</em></a>」からの続きでlocalhostでListenしているJenkinsをNginxのリバースプロキシを使いlocalhost以外からもアクセスできるようにする。</p>
+<p>Nginxのディレクトリ構成は下記を参考に</p>
+<ul class="simple">
+<li><a class="reference internal" href="2013/08/31/freebsd_nginx_virtualhost.html"><em>Nginxでバーチャルホスト</em></a></li>
+</ul>
+<div class="highlight-python"><div class="highlight"><pre># nginx -v
+nginx version: nginx/1.4.2
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /usr/local/etc/nginx/nginx.conf
+http {
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        location /jenkins {
+            proxy_pass http://127.0.0.1:8180;
+        }
+}
+</pre></div>
+</div>
+<p>proxy_passを設定するだけでJenkinsに接続できるようになる。</p>
+<p>「Python+<a class="reference external" href="http://flask.pocoo.org">Flask</a>+<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>」で作ったAPサーバをバックエンドに置き、リバースプロキシにNginxを使った場合を考えると、上記の設定ではAPサーバのアクセスログにはリバースプロキシのIPアドレスが記録されてしまいアクセス元はどこなのかがわからない状態になってしまう。アクセス元のIPアドレスがAPサーバに記録されるようにするにはproxy_set_headerを設定する必要がある。</p>
+<div class="highlight-python"><div class="highlight"><pre># vi /usr/local/etc/nginx/nginx.conf
+http {
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        location /myapp {
+            proxy_pass http://127.0.0.1:9090;
+        }
+}
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass</a></li>
+<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header</a></li>
+</ul>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/nginx.html">nginx</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/nginx.html">nginx</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>September 03, 2013</span>
         </div>
         <div class="section" id="jailjenkins">
@@ -387,148 +454,6 @@ Version = 1.0
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/irc.html">irc</a>, <a href="tags/znc.html">znc</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>September 01, 2013</span>
-        </div>
-        <div class="section" id="ngircdirc">
-<h1><a href="2013/09/01/freebsd_irc_ngircd.html">ngircdでIRCサーバ</a></h1>
-<p>IT系のアルバイトをしていたときにNagios,Zabbixなどから定期的にメールがバンバン飛んできて、未読が4万通くらいになってメーラーを立ち上げるのを諦めたことがある。なんでもかんでもメールで飛ばすのは嫌いだ。メール振り分けなどの作業を各々がやらなければいけないなんて時間のムダだし、集約できる情報を各々にわざわざ管理させ余計な負担を強いているのがイケてないと私はいつも思っている。</p>
-<p>このイライラをIRCは解決してくれる。IRCはチャットとして使うよりも、情報を集約させるのに非常に便利である。Nagiosのアラート,SSHのログイン情報などをIRCにポストするようにしている。IRCを積極的に使っている会社に勤めたことがないので個人でひっそりとやっているだけだが、IRCを眺めれば何が起っているかわかり、いい感じである。</p>
-<p>「つかれた」とポストしたら返事をしてくれる(妹)BOTを仕込んで荒んだ心を癒すことも出来る。</p>
-<p>今回はIRCサーバ(<a class="reference external" href="http://ngircd.barton.de">ngircd</a>)の構築を行う。</p>
-<div class="highlight-python"><div class="highlight"><pre># ngircd -V
-ngIRCd 20.2-IPv6+IRCPLUS+SSL+SYSLOG+TCPWRAP+ZLIB-amd64/portbld/freebsd9.1
-Copyright (c)2001-2013 Alexander Barton (&lt;alex@barton.de&gt;) and Contributors.
-Homepage: &lt;http://ngircd.barton.de/&gt;
-
-This is free software; see the source for copying conditions. There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/local/etc</span>
-<span class="c"># touch ngircd.conf</span>
-<span class="c"># yes | ngircd -t | tee ngircd.conf</span>
-<span class="c"># echo &quot;SUPER SONIKO&quot; | tee ngircd.motd</span>
-<span class="c"># cp ngircd.conf ngircd.conf.org</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre># mkdir ngircd_ssl
-# cd ngircd_ssl
-
-# openssl dhparam -out dhparams.pem 2048.
-# openssl req -newkey rsa:2048 -x509 -keyout server-key.pem -out server-cert.pem -days 3650
-writing new private key to 'server-key.pem'
-Enter PEM pass phrase:
-Verifying - Enter PEM pass phrase:
------
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Country Name (2 letter code) [AU]:
-State or Province Name (full name) [Some-State]:
-Locality Name (eg, city) []:
-Organization Name (eg, company) [Internet Widgits Pty Ltd]:
-Organizational Unit Name (eg, section) []:
-Common Name (e.g. server FQDN or YOUR name) []:
-Email Address []:
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre># diff -u ngircd.conf.org ngircd.conf
---- ngircd.conf.org     2013-08-31 12:44:37.665880056 +0900
-+++ ngircd.conf 2013-08-31 12:45:03.457801026 +0900
-@@ -1,17 +1,17 @@
- [GLOBAL]
--  Name =
-+  Name = irc.hoge.localnet
-   AdminInfo1 =
-   AdminInfo2 =
--  AdminEMail =
-+  AdminEMail = hoge@mail.localnet
-   Info = ngIRCd 20.2
-   Listen = ::,0.0.0.0
-   MotdFile = /usr/local/etc/ngircd.motd
-   MotdPhrase =
--  Password =
-+  Password = aiueo
-   PidFile =
-   Ports = 6667
--  ServerGID = wheel
--  ServerUID = root
-+  ServerGID = nobody
-+  ServerUID = nobody
-
- [LIMITS]
-   ConnectRetry = 60
-@@ -28,10 +28,10 @@
-   ChrootDir =
-   CloakHost =
-   CloakHostModeX =
--  CloakHostSalt = salt_mogemoge
-+  CloakHostSalt = salt_fugafuga
-   CloakUserToNick = no
-   ConnectIPv4 = yes
--  ConnectIPv6 = yes
-+  ConnectIPv6 = no
-   DNS = yes
-   MorePrivacy = no
-   NoticeAuth = no
-@@ -45,9 +45,9 @@
-   WebircPassword =
-
- [SSL]
--  CertFile =
--  DHFile =
--  KeyFile =
--  KeyFilePassword =
--  Ports =
-+  CertFile = /usr/local/etc/ngircd_ssl/server-cert.pem
-+  DHFile = /usr/local//etc/ngircd_ssl/dhparams.pem
-+  KeyFile = /usr/local/etc/ngircd_ssl/server-key.pem
-+  KeyFilePassword = kakikukeko
-+  Ports = 6669
-</pre></div>
-</div>
-<p>設定ファイルのチェックをするオプションがあるので、これを使い設定をチェックする。下記のように表示されれば設定は問題ない。</p>
-<div class="highlight-python"><div class="highlight"><pre># ngircd -t
-ngIRCd 20.2-IPv6+IRCPLUS+SSL+SYSLOG+TCPWRAP+ZLIB-amd64/portbld/freebsd9.1
-Copyright (c)2001-2013 Alexander Barton (&lt;alex@barton.de&gt;) and Contributors.
-Homepage: &lt;http://ngircd.barton.de/&gt;
-
-This is free software; see the source for copying conditions. There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-Reading configuration from &quot;/usr/local/etc/ngircd.conf&quot; ...
-OK, press enter to see a dump of your server configuration ...
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">ngircd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-
-<span class="c"># service ngircd start</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><a class="reference external" href="http://ngircd.barton.de/documentation.php.en">http://ngircd.barton.de/documentation.php.en</a></li>
-</ul>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/ngircd.html">ngircd</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/irc.html">irc</a>, <a href="tags/ngircd.html">ngircd</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -537,6 +462,8 @@ OK, press enter to see a dump of your server configuration ...
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/02/25/debian_wheezy_synergy.html">Synergyでマウスとキーボードを共有</a>
+        </li><li>
             <a href="2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
         </li><li>
             <a href="2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
@@ -554,15 +481,13 @@ OK, press enter to see a dump of your server configuration ...
             <a href="2013/11/01/freebsd_mfsbsd.html">virtioを組み込んだmfsBSDイメージ作成</a>
         </li><li>
             <a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a>
-        </li><li>
-            <a href="2013/10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (12), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (8), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (1), <a href="tags/centos.html">centos</a> (4), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (13), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (1), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/wheezy.html">wheezy</a> (9), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

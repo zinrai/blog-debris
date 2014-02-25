@@ -1,7 +1,7 @@
 About
 ===============
 
-.. image:: zinrai_img.png
+.. image:: ../_static/zinrai.png
 
 zinrai(じんらい)
 ------------------------------

@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/02/25/debian_wheezy_synergy
    2014/02/07/debian_wheezy_openvpn
    2014/02/06/debian_wheezy_kvm_zfs
    2014/02/05/debian_wheezy_zfs
