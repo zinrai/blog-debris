@@ -5,8 +5,40 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 25 Feb 2014 00:00:00 +0900</pubDate>
+        <pubDate>Wed, 26 Feb 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/02/26/debian_wheezy_schroot_aufs.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/02/26/debian_wheezy_schroot_aufs.html</guid>
+            <title><![CDATA[schrootでaufsを使う]]></title>
+            <description><![CDATA[<div class="section" id="schrootaufs">
+<h1>schrootでaufsを使う</h1>
+<p>schroot(1)でaufsを使いたいなと思いschroot.conf(5)を眺めてみたところunion-type,union-mount-optionsというオプションを見付けた。union-typeにaufsを指定し、union-mount-optionsにunion mountするときのオプションを書けばオプションをパースしてくれる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/schroot/chroot.d/fuga.conf
+
+[fuga]
+type=directory
+directory=/var/chroot/fuga
+union-type=aufs
+union-mount-options=br:/var/chroot/fuga:/var/chroot/wheezy=ro none /var/chroot/fuga
+profile=fuga
+users=hoge
+root-groups=root
+</pre></div>
+</div>
+</div>]]></description>
+            <category><![CDATA[ schroot ]]></category>
+             <pubDate>Wed, 26 Feb 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/02/25/debian_wheezy_synergy.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/25/debian_wheezy_synergy.html</guid>
