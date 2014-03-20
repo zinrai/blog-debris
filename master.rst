@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/03/20/debian_wheezy_virtualbox_vagrant
    2014/02/26/debian_wheezy_schroot_aufs
    2014/02/25/debian_wheezy_synergy
    2014/02/07/debian_wheezy_openvpn

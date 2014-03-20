@@ -5,8 +5,157 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 26 Feb 2014 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 20 Mar 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/03/20/debian_wheezy_virtualbox_vagrant.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/03/20/debian_wheezy_virtualbox_vagrant.html</guid>
+            <title><![CDATA[Debian wheezyでVagrantを使てみた]]></title>
+            <description><![CDATA[<div class="section" id="debian-wheezyvagrant">
+<h1>Debian wheezyでVagrantを使てみた</h1>
+<p>巷で人気のVagrantで</p>
+<ul class="simple">
+<li>BOXの追加</li>
+<li>仮想マシンの起動</li>
+<li>プラグインのインストール</li>
+<li>インストールしたプラグインの使用</li>
+</ul>
+<p>までやってみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="section" id="virtualbox">
+<h2>Virtualbox</h2>
+<div class="section" id="id1">
+<h3>インストール</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ wget http://download.virtualbox.org/virtualbox/4.3.8/virtualbox-4.3_4.3.8-92456~Debian~wheezy_amd64.deb
+% dpkg -i virtualbox*.deb
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="vagrant">
+<h2>Vagrant</h2>
+<div class="section" id="id2">
+<h3>インストール</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.5.1_x86_64.deb
+% dpkg -i vagrant*.deb
+</pre></div>
+</div>
+</div>
+<div class="section" id="box">
+<h3>BOXの追加</h3>
+<p>今回はopscodeが公開しているBOXを使う。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ wget http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.4_chef-provisionerless.box
+
+$ vagrant box add opscode_centos-6.4 opscode_centos-6.4_chef-provisionerless.box
+$ vagrant box list
+opscode_centos-6.4 (virtualbox)
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>仮想マシンの起動</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ vi Vagrantfile
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(&quot;2&quot;) do |config|
+  config.vm.hostname = &quot;test&quot;
+  config.vm.box = &quot;opscode_centos-6.4&quot;
+
+  config.vm.network :private_network, ip: &quot;192.168.11.11&quot;
+  config.vm.provider :virtualbox do |vb|
+    vb.customize [&quot;modifyvm&quot;, :id, &quot;--memory&quot;, &quot;1024&quot;]
+  end
+end
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant up
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="sahara">
+<h2>sahara</h2>
+<p>Vagrantで管理されている仮想マシンのある時点の状態を保存しておきロールバックしたりすることができるプラグイン</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant plugin install sahara
+$ vagrant plugin list
+sahara (0.0.16)
+</pre></div>
+</div>
+<p>インストールするとVagrantにサブコマンドsandboxが追加される。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant sandbox -h
+Usage: vagrant plugin &lt;command&gt; [&lt;args&gt;]
+
+Available subcommands:
+     commit
+     off
+     on
+     rollback
+     status
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%"/>
+<col width="88%"/>
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>commit</td>
+<td>保存されて状態以降の変更を保存する。</td>
+</tr>
+<tr class="row-even"><td>off</td>
+<td>sandboxをoffにする。保存されちている状態以降の変更は保存される。</td>
+</tr>
+<tr class="row-odd"><td>on</td>
+<td>onにした時点の仮想マシンの状態が保存される。</td>
+</tr>
+<tr class="row-even"><td>rollback</td>
+<td>最後に保存した時点までロールバックする。</td>
+</tr>
+<tr class="row-odd"><td>status</td>
+<td>sandbox状態かの確認</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant status
+Current machine states:
+
+default                   running (virtualbox)
+
+$ vagrant sandbox status
+[default] Sandbox mode is off
+
+$ vagrant sandbox commit
+$ vagrant sandbox off
+$ vagrant sandbox on
+$ vagrant sandbox rollback
+</pre></div>
+</div>
+<p>sandboxをonにしてVagrantで管理している仮想マシンにアクセスして変更を加えたあとrollbackすると仮想マシンがon時の状態に戻る。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.vagrantup.com">http://www.vagrantup.com/</a></li>
+<li><a class="reference external" href="http://opscode.github.io/bento">http://opscode.github.io/bento/</a></li>
+<li><a class="reference external" href="https://github.com/jedi4ever/sahara">https://github.com/jedi4ever/sahara</a></li>
+<li><a class="reference external" href="https://www.virtualbox.org/wiki/Linux_Downloads">https://www.virtualbox.org/wiki/Linux_Downloads</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ vagrant ]]></category>
+             <pubDate>Thu, 20 Mar 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/02/26/debian_wheezy_schroot_aufs.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/26/debian_wheezy_schroot_aufs.html</guid>
