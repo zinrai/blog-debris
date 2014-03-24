@@ -314,6 +314,7 @@ end
 </pre></div>
 </div>
 <p>vagrant-omnibusプラグイン使えば、Vagrantの管理下にある仮想マシンに指定したversionのChef Soloをインストールすることができるが、ここではvagrant-omnibusは使わず別の方法でChef Soloを仮想マシンにインストールする。</p>
+<p>下記のコマンドを実行するとssh jenkinsでVagrant管理下のマシンに接続できるようになる設定を掃き出してくれるので.ssh/configにリダイレクトしておく。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ vagrant ssh-config --host jenkins &gt;&gt; ~/.ssh/config
 </pre></div>
 </div>
