@@ -5,8 +5,126 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sat, 22 Mar 2014 00:00:00 +0900</pubDate>
+        <pubDate>Tue, 25 Mar 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/03/25/debian_wheezy_vsftpd_serverspec.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/03/25/debian_wheezy_vsftpd_serverspec.html</guid>
+            <title><![CDATA[serverspecを使ってみる]]></title>
+            <description><![CDATA[<div class="section" id="serverspec">
+<h1>serverspecを使ってみる</h1>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html"><em>Chef Soloでvsftpdのインストールと設定</em></a></li>
+</ul>
+<p>で構築した環境をserverspecを使ってテストしてみる。</p>
+<div class="section" id="vsftpd">
+<h2>vsftpdのテスト項目</h2>
+<ul class="simple">
+<li>インストールされているか</li>
+<li>自動起動は設定されているか</li>
+<li>起動しているか</li>
+<li>ポート21番でListenしているか</li>
+<li>vsftpd.confファイルは存在するか</li>
+<li>vsftpd.confファイルはChefに書いてあるpermissionになっているか(600)</li>
+<li>vsftpd.confファイルはChefに書いてあるownerになっているか(root)</li>
+<li>vsftpd.confファイルはChefに書いてあるgroupになっているか(root)</li>
+<li>vsftpd.confにanon_root=/var/vsftpdは設定されているか</li>
+<li>anon_rootで指定しているディレクトリは存在するか(/var/vsftpd)</li>
+<li>anon_rootで指定しているディレクトリはChefに書いてあるpermissionになっているか(755)</li>
+<li>anon_rootで指定しているディレクトリはChefに書いてあるownerになっているか(root)</li>
+<li>anon_rootで指定しているディレクトリはChefに書いてあるgroupになっているか(root)</li>
+</ul>
+<p>の13項目をテストする。</p>
+</div>
+<div class="section" id="id1">
+<h2>serverspec</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi Gemfile
+source 'https://rubygems.org'
+
+gem 'serverspec'
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ bundle install --path vendor/bundle
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cat Gemfile.lock
+GEM
+  remote: https://rubygems.org/
+  specs:
+    serverspec (0.16.0)
+      highline
+      net-ssh
+      rspec (~&gt; 2.13)
+      specinfra (&gt;= 0.7.1)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ bundle exec serverspec-init
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi spec/vsftpd/vsftpd_spec.rb
+require 'spec_helper'
+
+describe package('vsftpd') do
+  it { should be_installed }
+end
+
+describe service('vsftpd') do
+  it { should be_enabled }
+  it { should be_running }
+end
+
+describe port(21) do
+  it { should be_listening }
+end
+
+describe file('/etc/vsftpd/vsftpd.conf') do
+  it { should be_file }
+  it { should be_mode 600 }
+  it { should be_owned_by 'root' }
+  it { should be_grouped_into 'root' }
+  its(:content) { should match /anon_root=\/var\/vsftpd/ }
+end
+
+describe file('/var/vsftpd') do
+  it { should be_directory }
+  it { should be_mode 755 }
+  it { should be_owned_by 'root' }
+  it { should be_grouped_into 'root' }
+end
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ bundle exec rake spec
+/home/hoge/.rbenv/versions/2.0.0-p353/bin/ruby -S rspec spec/vsftpd/vsftpd_spec.rb
+.............
+
+Finished in 1.17 seconds
+13 examples, 0 failures
+</pre></div>
+</div>
+<p>日本語で長々と書いていたものが、Resourceを指定してResourceが持っているマッチャーを使いshould be_hogehoge argと書けば表現できていい感じ。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://serverspec.org">http://serverspec.org/</a></li>
+<li><a class="reference external" href="http://serverspec.org/tutorial.html">http://serverspec.org/tutorial.html</a></li>
+<li><a class="reference external" href="http://serverspec.org/resource_types.html">http://serverspec.org/resource_types.html</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ serverspec ]]></category>
+             <pubDate>Tue, 25 Mar 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html</guid>
