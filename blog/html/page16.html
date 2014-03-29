@@ -86,6 +86,88 @@
             <li class="left"> &laquo; <a href="page15.html">Newer</a></li>
             <li class="right"></li>
         </ul><div class="timestamp postmeta">
+            <span>May 26, 2013</span>
+        </div>
+        <div class="section" id="ubuntu12-04mongodb">
+<h1><a href="2013/05/26/ubuntu_mongodb_install.html">Ubuntu12.04にMongoDBをインストール</a></h1>
+<p>積読になっていた「MongoDB イン・アクション」をようやく読み始めた。</p>
+<p>「Ubuntu 12.04 amd64」にMongoDBをインストールして手を動かしてみたのでメモしておく。</p>
+<p>Railsで使いたいなと思っているところ。</p>
+<p>本家のドキュメントにaptでインストール出来ると書いているのでそれに従ってみた。</p>
+<div class="section" id="mongodb">
+<h2>MongoDB インストール</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
+$ echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/10gen.list
+$ sudo apt-get update
+$ sudo apt-get install mongodb-10gen
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install mongodb-10gen=2.2.3</span>
+</pre></div>
+</div>
+<p>で指定のVersionをインストールすることが出来る。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># echo &quot;mongodb-10gen hold&quot; | dpkg --set-selections</span>
+</pre></div>
+</div>
+<p>でインストールしたVersionからアップグレードしないように出来る。</p>
+</div>
+<div class="section" id="id1">
+<h2>MongoDB 操作</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ mongo
+MongoDB shell version: 2.4.3
+connecting to: test
+Welcome to the MongoDB shell.
+For interactive help, type &quot;help&quot;.
+For more comprehensive documentation, see
+        http://docs.mongodb.org/
+Questions? Try the support group
+        http://groups.google.com/group/mongodb-user
+
+use tutorial
+
+db.users.insert({username: &quot;hoge&quot;})
+
+db.users.find()
+{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
+
+db.users.save({username: &quot;moge&quot;})
+
+db.users.find()
+{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
+{ &quot;_id&quot; : ObjectId(&quot;51a1f8d336f07a662784e8af&quot;), &quot;username&quot; : &quot;moge&quot; }
+
+db.users.count()
+2
+
+db.users.update({username: &quot;hoge&quot;}, {$set: {country: &quot;canada&quot;}})
+db.users.find({username: &quot;hoge&quot;})
+{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;country&quot; : &quot;canada&quot;, &quot;username&quot; : &quot;hoge&quot; }
+
+db.users.update({username: &quot;hoge&quot;}, {$unset: {country: 1}})
+db.users.find({username: &quot;hoge&quot;})
+{ &quot;_id&quot; : ObjectId(&quot;51adf33a197bc318df1ad8ad&quot;), &quot;username&quot; : &quot;hoge&quot; }
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a></li>
+</ul>
+</div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/mongodb.html">mongodb</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/ubuntu.html">ubuntu</a>, <a href="tags/mongodb.html">mongodb</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>May 20, 2013</span>
         </div>
         <div class="section" id="unbound-nsd">
@@ -274,6 +356,8 @@ $ git push -u origin master
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/03/28/debian_wheezy_packer_vagrant_box_build.html">Packerを使ってVagrantのBOX作成</a>
+        </li><li>
             <a href="2014/03/25/debian_wheezy_vsftpd_serverspec.html">serverspecを使ってみる</a>
         </li><li>
             <a href="2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html">Chef Soloでvsftpdのインストールと設定</a>
@@ -291,15 +375,13 @@ $ git push -u origin master
             <a href="2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
         </li><li>
             <a href="2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a>
-        </li><li>
-            <a href="2013/12/03/ubuntu_docker_ansible.html">Ansibleを使ってみる</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (5)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (4), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (17), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (1), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/virtualbox.html">virtualbox</a> (1), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (14), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (4), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (18), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (14), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (2), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (1), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (15), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
