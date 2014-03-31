@@ -1,0 +1,257 @@
+<!DOCTYPE html><!--[if lt IE 7]>      <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="This is an awesome blog">
+        <meta name="viewport" content="width=device-width">
+        <title>rbenv + ruby-build &mdash; command not found:</title>
+            <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/sphinx.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+            <link rel="stylesheet" href="../../../_static/webfont.css" type="text/css">
+        <link rel="shortcut icon" href="../../../_static/tinkerer.ico" /><!-- Load modernizr and JQuery -->
+        <script src="../../../_static/vendor/modernizr-2.6.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
+        <script src="../../../_static/plugins.js"></script>
+        <script src="../../../_static/main.js"></script>
+        <link rel="next" title="Packerを使ってVagrantのBOX作成" href="../28/debian_wheezy_packer_vagrant_box_build.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script><script type="text/javascript" src="../../../_static/underscore.js"></script><script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Adjusts document height if sidebar is taller
+            var documentwrapper = document.getElementsByTagName('article')[0];
+            var sidebar = document.getElementsByTagName('aside')[0];
+
+            if (sidebar.offsetHeight > documentwrapper.offsetHeight)
+            {
+                documentwrapper.style.minHeight = sidebar.offsetHeight + "px";
+            }
+
+            // Scroll to content if on small screen
+            if (screen.width < 480)
+            {
+                $(document).scrollTop(documentwrapper.offsetTop - 44);
+            }
+        });
+    </script></head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+        <![endif]-->
+
+      <div id="container"><div class="header-container">
+    <header class="wrapper clearfix">
+        <div class="title">
+          <h1><a href="../../../index.html">command not found:</a></h1>
+          <h4>Hello World</h4>
+        </div>
+        <nav>
+          <ul>
+            <li class="main-nav">
+              <a href="../../../index.html">Home</a>
+            </li>
+            <li class="main-nav">
+              <a href="../../../pages/about.html">About</a>
+            </li>
+            <li class="quicklink"><div class="rss">
+        <a href="../../../rss.html" title="Subscribe via RSS"><span class="webfont">B</span></a>
+    </div></li></ul>
+        </nav>
+    </header>
+</div>
+
+<div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../28/debian_wheezy_packer_vagrant_box_build.html">Packerを使ってVagrantのBOX作成</a> &raquo; </li>
+        </ul><div class="timestamp postmeta">
+            <span>March 29, 2014</span>
+        </div>
+    <div class="section" id="rbenv-ruby-build">
+<h1>rbenv + ruby-build</h1>
+<p>最近使い始めてglobal,local,shellの理解がぼんやりしていたのでメモ</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install libreadline6-dev zlib1g-dev libssl-dev build-essential
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone https://github.com/sstephenson/rbenv.git $HOME/.rbenv
+$ git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+
+$ vi $HOME/.bashrc
+export PATH=&quot;$HOME/.rbenv/bin:$PATH&quot;
+eval &quot;$(rbenv init -)&quot;
+
+$ . .bashrc
+</pre></div>
+</div>
+<div class="section" id="rbenv">
+<h2>rbenv</h2>
+<p>サブコマンドがいろいろあるけれど、自分はこれだけ覚えていればいいかなと思っている。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv
+rbenv 0.4.0-89-g14bc162
+</pre></div>
+</div>
+<div class="section" id="install">
+<h3>install</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv install 1.9.3-p392
+$ rbenv install 2.0.0-p353
+</pre></div>
+</div>
+</div>
+<div class="section" id="uninstall">
+<h3>uninstall</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv uninstall 1.9.3-p392
+$ rbenv uninstall 2.0.0-p353
+</pre></div>
+</div>
+</div>
+<div class="section" id="rehash">
+<h3>rehash</h3>
+<p>rbenvを使うとPATHに~/.rbenv/shimsが追加される。gemでインストールした実行ファイルは~/.rbenv/versions/x.y.x/binに格納される。rehashを実行するとgemでインストールした実行ファイルを呼び出すための実行ファイルが~/.rbenv/shimsに生成される。自分はbundlerを使っているので、bundler自体をインストールしたときにしか使っていない。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ gem install bundler
+$ rbenv rehash
+</pre></div>
+</div>
+<p>rubyのversionの切り替えには以下の3つが使われている。ここがrbenvの肝だと思う。</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="75%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>~/.rbenv/version</td>
+<td>デフォルトで使用するversionが書かれている。</td>
+</tr>
+<tr class="row-even"><td>.ruby-version</td>
+<td>カレントディレクトリにこのファイルがある場合はここに書かれているversionが優先される。</td>
+</tr>
+<tr class="row-odd"><td>RBENV_VERSION</td>
+<td>この環境変数がセットされている場合はここに書かれているversionが優先される。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>RBENV_VERSION &gt; .ruby-version &gt; ~/.rbenv/version</strong>となっている。</p>
+</div>
+<div class="section" id="global">
+<h3>global</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv global 1.9.3-p392
+</pre></div>
+</div>
+</div>
+<div class="section" id="local">
+<h3>local</h3>
+<p>カレントディレクトリに.ruby-versionが生成される。&#8211;unsetオプションでカレントディレクトリの.ruby-versionは削除される。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv local 1.9.3-p392
+$ rbenv local --unset
+</pre></div>
+</div>
+</div>
+<div class="section" id="shell">
+<h3>shell</h3>
+<p>RBENV_VERSIONがセットされる。&#8211;unsetオプションでRBENV_VERSIONはunsetされる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv shell 1.9.3-p392
+$ rbenv shell --unset
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/sstephenson/rbenv">https://github.com/sstephenson/rbenv</a></li>
+<li><a class="reference external" href="https://github.com/sstephenson/ruby-build">https://github.com/sstephenson/ruby-build</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+    <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="../../../categories/rbenv.html">rbenv</a>, <a href="../../../categories/ruby_build.html">ruby-build</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="../../../tags/debian.html">debian</a>, <a href="../../../tags/wheezy.html">wheezy</a>, <a href="../../../tags/rbenv.html">rbenv</a>, <a href="../../../tags/ruby_build.html">ruby-build</a></span>
+        </div>
+        </div>
+    <ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../28/debian_wheezy_packer_vagrant_box_build.html">Packerを使ってVagrantのBOX作成</a> &raquo; </li>
+        </ul></article><aside class="sidebar"><section><div class="widget">
+    <h1>Recent Posts</h1>
+    <ul><li>
+            <a href="#">rbenv + ruby-build</a>
+        </li><li>
+            <a href="../28/debian_wheezy_packer_vagrant_box_build.html">Packerを使ってVagrantのBOX作成</a>
+        </li><li>
+            <a href="../25/debian_wheezy_vsftpd_serverspec.html">serverspecを使ってみる</a>
+        </li><li>
+            <a href="../22/debian_wheezy_chef_solo_vsftpd_install.html">Chef Soloでvsftpdのインストールと設定</a>
+        </li><li>
+            <a href="../21/debian_wheezy_chef_solo_jenkins_install.html">Chef SoloでJenkinsをインストール</a>
+        </li><li>
+            <a href="../20/debian_wheezy_virtualbox_vagrant.html">Debian wheezyでVagrantを使てみた</a>
+        </li><li>
+            <a href="../../02/26/debian_wheezy_schroot_aufs.html">schrootでaufsを使う</a>
+        </li><li>
+            <a href="../../02/25/debian_wheezy_synergy.html">Synergyでマウスとキーボードを共有</a>
+        </li><li>
+            <a href="../../02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a>
+        </li><li>
+            <a href="../../02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a>
+        </li></ul>
+</div>
+</section><section><div class="widget">
+    <h1>Categories</h1>
+    <ul><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/chef.html">chef</a> (2)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (4)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (5)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (1)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (3)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/openvpn.html">openvpn</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/packer.html">packer</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/rbenv.html">rbenv</a> (1)</li><li><a href="../../../categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (2)</li><li><a href="../../../categories/serverspec.html">serverspec</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/synergy.html">synergy</a> (1)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/vagrant.html">vagrant</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+</div></section><section><div class="widget">
+    <h1>Tags</h1><a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/aufs.html">aufs</a> (2), <a href="../../../tags/centos.html">centos</a> (4), <a href="../../../tags/chef.html">chef</a> (3), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/debian.html">debian</a> (19), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/deiban.html">deiban</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (14), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (2), <a href="../../../tags/jenkins.html">jenkins</a> (2), <a href="../../../tags/kvm.html">kvm</a> (2), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/nginx.html">nginx</a> (3), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvpn.html">openvpn</a> (1), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (2), <a href="../../../tags/packer.html">packer</a> (1), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (2), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/rbenv.html">rbenv</a> (1), <a href="../../../tags/ruby_build.html">ruby-build</a> (1), <a href="../../../tags/schroot.html">schroot</a> (2), <a href="../../../tags/serverspec.html">serverspec</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/synergy.html">synergy</a> (1), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vagrant.html">vagrant</a> (2), <a href="../../../tags/vimage.html">vimage</a> (1), <a href="../../../tags/virtualbox.html">virtualbox</a> (2), <a href="../../../tags/vsftpd.html">vsftpd</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (16), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Search</h1>
+    <form action="../../../search.html" method="get">
+        <input type="text" name="q" />
+        <button type="submit"><span class="webfont">L</span></button>
+    </form>
+</div></section></aside></div> <!-- #main --></div> <!-- #main-container -->
+
+        <div class="footer-container"><footer class="wrapper">&copy; Copyright 2012, zinrai. Powered by <a href="http://www.tinkerer.me/">Tinkerer</a> and <a href="http://sphinx.pocoo.org/">Sphinx</a>.</footer></div> <!-- footer-container -->
+
+      </div> <!--! end of #container --><!--[if lt IE 7 ]>
+          <script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.3/CFInstall.min.js"></script>
+          <script>window.attachEvent('onload',function(){CFInstall.check({mode:'overlay'})})</script>
+        <![endif]-->
+    </body>
+</html>

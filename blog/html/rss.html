@@ -5,8 +5,121 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Fri, 28 Mar 2014 00:00:00 +0900</pubDate>
+        <pubDate>Sat, 29 Mar 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/03/29/debian_wheezy_ruby_build_rbenv.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/03/29/debian_wheezy_ruby_build_rbenv.html</guid>
+            <title><![CDATA[rbenv + ruby-build]]></title>
+            <description><![CDATA[<div class="section" id="rbenv-ruby-build">
+<h1>rbenv + ruby-build</h1>
+<p>最近使い始めてglobal,local,shellの理解がぼんやりしていたのでメモ</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install libreadline6-dev zlib1g-dev libssl-dev build-essential
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone https://github.com/sstephenson/rbenv.git $HOME/.rbenv
+$ git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+
+$ vi $HOME/.bashrc
+export PATH=&quot;$HOME/.rbenv/bin:$PATH&quot;
+eval &quot;$(rbenv init -)&quot;
+
+$ . .bashrc
+</pre></div>
+</div>
+<div class="section" id="rbenv">
+<h2>rbenv</h2>
+<p>サブコマンドがいろいろあるけれど、自分はこれだけ覚えていればいいかなと思っている。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv
+rbenv 0.4.0-89-g14bc162
+</pre></div>
+</div>
+<div class="section" id="install">
+<h3>install</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv install 1.9.3-p392
+$ rbenv install 2.0.0-p353
+</pre></div>
+</div>
+</div>
+<div class="section" id="uninstall">
+<h3>uninstall</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv uninstall 1.9.3-p392
+$ rbenv uninstall 2.0.0-p353
+</pre></div>
+</div>
+</div>
+<div class="section" id="rehash">
+<h3>rehash</h3>
+<p>rbenvを使うとPATHに~/.rbenv/shimsが追加される。gemでインストールした実行ファイルは~/.rbenv/versions/x.y.x/binに格納される。rehashを実行するとgemでインストールした実行ファイルを呼び出すための実行ファイルが~/.rbenv/shimsに生成される。自分はbundlerを使っているので、bundler自体をインストールしたときにしか使っていない。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ gem install bundler
+$ rbenv rehash
+</pre></div>
+</div>
+<p>rubyのversionの切り替えには以下の3つが使われている。ここがrbenvの肝だと思う。</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%"/>
+<col width="75%"/>
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>~/.rbenv/version</td>
+<td>デフォルトで使用するversionが書かれている。</td>
+</tr>
+<tr class="row-even"><td>.ruby-version</td>
+<td>カレントディレクトリにこのファイルがある場合はここに書かれているversionが優先される。</td>
+</tr>
+<tr class="row-odd"><td>RBENV_VERSION</td>
+<td>この環境変数がセットされている場合はここに書かれているversionが優先される。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>RBENV_VERSION &gt; .ruby-version &gt; ~/.rbenv/version</strong>となっている。</p>
+</div>
+<div class="section" id="global">
+<h3>global</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv global 1.9.3-p392
+</pre></div>
+</div>
+</div>
+<div class="section" id="local">
+<h3>local</h3>
+<p>カレントディレクトリに.ruby-versionが生成される。–unsetオプションでカレントディレクトリの.ruby-versionは削除される。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv local 1.9.3-p392
+$ rbenv local --unset
+</pre></div>
+</div>
+</div>
+<div class="section" id="shell">
+<h3>shell</h3>
+<p>RBENV_VERSIONがセットされる。–unsetオプションでRBENV_VERSIONはunsetされる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rbenv shell 1.9.3-p392
+$ rbenv shell --unset
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/sstephenson/rbenv">https://github.com/sstephenson/rbenv</a></li>
+<li><a class="reference external" href="https://github.com/sstephenson/ruby-build">https://github.com/sstephenson/ruby-build</a></li>
+</ul>
+</div>
+</div>
+</div>]]></description>
+            <category><![CDATA[ rbenv ]]></category>
+            <category><![CDATA[ ruby-build ]]></category>
+             <pubDate>Sat, 29 Mar 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/03/28/debian_wheezy_packer_vagrant_box_build.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/28/debian_wheezy_packer_vagrant_box_build.html</guid>

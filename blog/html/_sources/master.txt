@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/03/29/debian_wheezy_ruby_build_rbenv
    2014/03/28/debian_wheezy_packer_vagrant_box_build
    2014/03/25/debian_wheezy_vsftpd_serverspec
    2014/03/22/debian_wheezy_chef_solo_vsftpd_install
