@@ -5,8 +5,153 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sat, 29 Mar 2014 00:00:00 +0900</pubDate>
+        <pubDate>Tue, 22 Apr 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/04/22/freebsd_92_jail_rc_conf.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/04/22/freebsd_92_jail_rc_conf.html</guid>
+            <title><![CDATA[FreeBSD 9.2 jail構築]]></title>
+            <description><![CDATA[<div class="section" id="freebsd-9-2-jail">
+<h1>FreeBSD 9.2 jail構築</h1>
+<p>ezjail,qjailなどjailを管理するツールはあるけれどrc.conf(5)にjailの設定を書いて管理する方法を考えてみた。</p>
+<p>rc.conf(5)はsh(1)によって読み込まれているので、指定したディレクトリに個々のjailの設定を置いてrc.conf(5)にsourceすればいい感じではないかと思ったのでやってみた。jail.conf(5)あるけどついカッとなってやってみた。後悔はしていない。</p>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
+</ul>
+<p>が出来上がっている前提で話を進めていく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+FreeBSD hoge.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013     root@hoge.localnet:/usr/obj/usr/src/9.2.0/sys/VIMAGE  amd64
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% mkdir /usr/local/etc/rc.jail
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
+jail_enable=&quot;YES&quot;
+
+for JAIL in /usr/local/etc/rc.jail/*.conf; do
+  . $JAIL
+done
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/rc.jail/testjail.conf
+. /usr/local/etc/rc.jail/jail_install.sh
+
+NAME=&quot;testjail&quot;
+IFACE=&quot;6&quot;
+IPADDR=&quot;192.168.0.6&quot;
+NETMASK=&quot;255.255.255.0&quot;
+GATEWAY=&quot;192.168.0.254&quot;
+
+JAILROOT=&quot;/jails/${NAME}&quot;
+
+if [ ! -d ${JAILROOT} ]; then
+  zfs create jails/${NAME}
+  jail_install ${JAILROOT}
+fi
+
+export jail_${NAME}_devfs_enable=&quot;YES&quot;
+export jail_${NAME}_devfs_ruleset=&quot;devfsrules_jail2&quot;
+export jail_${NAME}_nama=&quot;${NAME}&quot;
+export jail_${NAME}_hostname=&quot;${NAME}.localnet&quot;
+export jail_${NAME}_rootdir=&quot;${JAILROOT}&quot;
+export jail_${NAME}_parameters=&quot;vnet&quot;
+
+export jail_${NAME}_exec_prestart0=&quot;ifconfig epair${IFACE} create up&quot;
+export jail_${NAME}_exec_prestart1=&quot;ifconfig vswitch0 addm epair${IFACE}a&quot;
+export jail_${NAME}_exec_prestart2=&quot;mount -t nullfs -o ro /jails/ports /jails/${NAME}/usr/ports&quot;
+
+export jail_${NAME}_exec_poststart0=&quot;ifconfig epair${IFACE}b vnet ${NAME}&quot;
+export jail_${NAME}_exec_poststart1=&quot;jexec ${NAME} ifconfig lo0 127.0.0.1 up&quot;
+export jail_${NAME}_exec_poststart2=&quot;jexec ${NAME} ifconfig epair${IFACE}b ${IPADDR} netmask ${NETMASK} up&quot;
+export jail_${NAME}_exec_poststart3=&quot;jexec ${NAME} route add default ${GATEWAY}&quot;
+export jail_${NAME}_exec_afterstart3=&quot;sh /etc/rc&quot;
+
+export jail_${NAME}_exec_stop0=&quot;sh /etc/rc.shutdown&quot;
+
+export jail_${NAME}_exec_poststop0=&quot;ifconfig vswitch0 deletem epair${IFACE}a&quot;
+export jail_${NAME}_exec_poststop1=&quot;ifconfig epair${IFACE}a destroy&quot;
+export jail_${NAME}_exec_poststop2=&quot;umount /jails/${NAME}/usr/ports&quot;
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/devfs.rules
+[devfsrules_jail2=5]
+add include $devfsrules_jail
+
+add path mem unhide
+add path kmem unhide
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/rc.jail/jail_install.sh
+jail_install() {
+  local JAILROOT=$1
+
+  for FILE in *.txz; do
+    tar xfzp $FILE -C $JAILROOT
+  done
+
+  cp /etc/resolv.conf $JAILROOT/etc
+  cp /etc/localtime $JAILROOT/etc
+  mkdir $JAILROOT/usr/ports
+}
+</pre></div>
+</div>
+<p>bsdinstall(8)にjailというサブコマンドが用意されていてkernelを含まない環境を指定したディレクトリに展開してくれるけど、毎回ファイルをネットから取りに行くのと、インタラクティブなのがつらかったので、ファイルを取得するところだけ眺めてみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cat `which bsdinstall`
+exec &quot;/usr/libexec/bsdinstall/$VERB&quot; &quot;$@&quot; 2&gt;&gt; &quot;$BSDINSTALL_LOG&quot;
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cd /usr/libexec/bsdinstall
+$ file `ls` | grep -v &quot;ELF&quot;
+adduser:        POSIX shell script, ASCII text executable
+auto:           POSIX shell script, ASCII text executable
+checksum:       POSIX shell script, ASCII text executable
+config:         POSIX shell script, ASCII text executable
+docsinstall:    POSIX shell script, ASCII text executable
+hostname:       POSIX shell script, ASCII text executable
+jail:           POSIX shell script, ASCII text executable
+keymap:         POSIX shell script, ASCII text executable
+mirrorselect:   POSIX shell script, ASCII text executable, with very long lines
+mount:          POSIX shell script, ASCII text executable
+netconfig:      POSIX shell script, ASCII text executable
+netconfig_ipv4: POSIX shell script, ASCII text executable
+netconfig_ipv6: POSIX shell script, ASCII text executable
+rootpass:       POSIX shell script, ASCII text executable
+script:         POSIX shell script, ASCII text executable
+services:       POSIX shell script, ASCII text executable
+time:           POSIX shell script, ASCII text executable
+umount:         POSIX shell script, ASCII text executable
+wlanconfig:     POSIX shell script, ASCII text executable
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cat mirrorselect
+_UNAME_R=`uname -r`
+
+case ${_UNAME_R} in
+        *-CURRENT|*-STABLE|*-PRERELEASE)
+                RELDIR=&quot;snapshots&quot;
+                ;;
+        *)
+                RELDIR=&quot;releases&quot;
+                ;;
+esac
+
+BSDINSTALL_DISTSITE=&quot;$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${_UNAME_R}&quot;
+</pre></div>
+</div>
+<p>mirrorselectで展開される<a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">アドレス</a>アクセスしてbase.txzと必要なファイルをダウンロードする。</p>
+<ul class="simple">
+<li><a class="reference external" href="http://qjail.sourceforge.net">http://qjail.sourceforge.net/</a></li>
+<li><a class="reference external" href="http://erdgeist.org/arts/software/ezjail">http://erdgeist.org/arts/software/ezjail/</a></li>
+<li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html">http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html</a></li>
+<li><a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE/</a></li>
+</ul>
+</div>]]></description>
+            <category><![CDATA[ freebsd ]]></category>
+             <pubDate>Tue, 22 Apr 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/03/29/debian_wheezy_ruby_build_rbenv.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/29/debian_wheezy_ruby_build_rbenv.html</guid>
