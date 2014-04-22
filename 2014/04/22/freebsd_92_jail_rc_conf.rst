@@ -70,7 +70,8 @@ jail.conf(5)あるけどついカッとなってやってみた。後悔はし�
   export jail_${NAME}_exec_poststart1="jexec ${NAME} ifconfig lo0 127.0.0.1 up"
   export jail_${NAME}_exec_poststart2="jexec ${NAME} ifconfig epair${IFACE}b ${IPADDR} netmask ${NETMASK} up"
   export jail_${NAME}_exec_poststart3="jexec ${NAME} route add default ${GATEWAY}"
-  export jail_${NAME}_exec_afterstart3="sh /etc/rc"
+
+  export jail_${NAME}_exec_start0="sh /etc/rc"
 
   export jail_${NAME}_exec_stop0="sh /etc/rc.shutdown"
 

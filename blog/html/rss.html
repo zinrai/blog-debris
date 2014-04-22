@@ -66,7 +66,8 @@ export jail_${NAME}_exec_poststart0=&quot;ifconfig epair${IFACE}b vnet ${NAME}&q
 export jail_${NAME}_exec_poststart1=&quot;jexec ${NAME} ifconfig lo0 127.0.0.1 up&quot;
 export jail_${NAME}_exec_poststart2=&quot;jexec ${NAME} ifconfig epair${IFACE}b ${IPADDR} netmask ${NETMASK} up&quot;
 export jail_${NAME}_exec_poststart3=&quot;jexec ${NAME} route add default ${GATEWAY}&quot;
-export jail_${NAME}_exec_afterstart3=&quot;sh /etc/rc&quot;
+
+export jail_${NAME}_exec_start0=&quot;sh /etc/rc&quot;
 
 export jail_${NAME}_exec_stop0=&quot;sh /etc/rc.shutdown&quot;
 
