@@ -94,7 +94,7 @@ jail.conf(5)あるけどついカッとなってやってみた。後悔はし�
   jail_install() {
     local JAILROOT=$1
 
-    for FILE in *.txz; do
+    for FILE in /usr/local/etc/rc.jail/*.txz; do
       tar xfzp $FILE -C $JAILROOT
     done
 
