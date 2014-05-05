@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/05/04/centos_snort_install
    2014/05/03/debian_wheezy_ntp_server
    2014/04/22/freebsd_92_jail_rc_conf
    2014/03/29/debian_wheezy_ruby_build_rbenv
