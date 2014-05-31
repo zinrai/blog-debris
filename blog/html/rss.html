@@ -5,8 +5,192 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sun, 04 May 2014 00:00:00 +0900</pubDate>
+        <pubDate>Mon, 05 May 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/05/05/centos_snort_pulledpork.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/05/05/centos_snort_pulledpork.html</guid>
+            <title><![CDATA[snort ルールセット自動更新]]></title>
+            <description><![CDATA[<div class="section" id="snort">
+<h1>snort ルールセット自動更新</h1>
+<ul class="simple">
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/05/04/centos_snort_install.html"><em>CentOS 6.5 snort インストール</em></a></li>
+</ul>
+<p>前回は自分でルールを書いていたが、既知の不正侵入や攻撃を検知するためのルールがまとまったもの(ルールセット)がsnort.orgから配布されている。ルールセットは大きく分けて2つある。</p>
+<ul>
+<li><div class="first line-block">
+<div class="line"><strong>Sourcefire VRT Certified Rules</strong></div>
+<div class="line">SroucefireのVulnerability Research Team(VRT)がメンテナンスをしているオフィシャルなルールセット。</div>
+<div class="line">頻繁に更新が行われている。</div>
+</div>
+<ul>
+<li><div class="first line-block">
+<div class="line"><strong>Subscriber Release</strong></div>
+<div class="line">最新のルールセット(有償)</div>
+</div>
+</li>
+<li><div class="first line-block">
+<div class="line">Registered User Release</div>
+<div class="line">「Subscriber Release」より30日遅れのルールセット。snort.orgに登録すればダウンロードできる。</div>
+</div>
+</li>
+</ul>
+</li>
+<li><div class="first line-block">
+<div class="line"><strong>Community Rules</strong></div>
+<div class="line">オープンソースコミュニティが作成したルールセットで、VRTが動作確認を行っている。</div>
+</div>
+</li>
+</ul>
+<p>pulledporkを使うとルールセットのダウンロード、展開、指定のディレクトリに配置を自動でやってくれる。今回は「Sourcefire VRT Certified Rules」の「Registered User Release」を使用する。</p>
+<div class="section" id="rpm">
+<h2>RPM作成</h2>
+<p><a class="reference external" href="http://rpm.pbone.net/index.php3/stat/4/idpl/24017916/dir/opensuse/com/pulledpork-0.6.1-6.6.noarch.rpm.html">OpenSUSE用のSRPM</a>を見付けたのでダウンロードしてSPECファイルを参考にした。rpm作成に使用したSPECファイルは<a class="reference external" href="https://gist.github.com/zinrai/c5c29760b91aa438220c">Gist</a>に置いた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rpmbuild -ba rpmbuild/SPECS/pulledpork.spec
+</pre></div>
+</div>
+</div>
+<div class="section" id="pulledpork">
+<h2>pulledpork</h2>
+<div class="highlight-python"><div class="highlight"><pre>% diff -u pulledpork.conf.org pulledpork.conf
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>--- pulledpork.conf.org	2014-05-06 20:09:14.774046736 +0900
++++ pulledpork.conf	2014-05-06 23:26:04.791047913 +0900
+@@ -16,14 +16,15 @@
+ # i.e. rule_url=http://x.y.z/|a.tar.gz|123,http://z.y.z/|b.tar.gz|456
+ # note that the url, rule file, and oinkcode itself are separated by a pipe |
+ # i.e. url|tarball|123456789, 
+-rule_url=https://www.snort.org/reg-rules/|snortrules-snapshot.tar.gz|&lt;oinkcode&gt;
++#rule_url=https://www.snort.org/reg-rules/|snortrules-snapshot.tar.gz|&lt;oinkcode&gt;
++rule_url=https://www.snort.org/reg-rules/|snortrules-snapshot.tar.gz|123456789
+ # NEW Community ruleset:
+-rule_url=https://s3.amazonaws.com/snort-org/www/rules/community/|community-rules.tar.gz|Community
++#rule_url=https://s3.amazonaws.com/snort-org/www/rules/community/|community-rules.tar.gz|Community
+ # NEW For IP Blacklisting! Note the format is urltofile|IPBLACKLIST|&lt;oinkcode&gt;
+ # This format MUST be followed to let pulledpork know that this is a blacklist
+-rule_url=http://labs.snort.org/feeds/ip-filter.blf|IPBLACKLIST|open
++#rule_url=http://labs.snort.org/feeds/ip-filter.blf|IPBLACKLIST|open
+ # URL for rule documentation! (slow to process)
+-rule_url=https://www.snort.org/reg-rules/|opensource.gz|&lt;oinkcode&gt;
++#rule_url=https://www.snort.org/reg-rules/|opensource.gz|&lt;oinkcode&gt;
+ #rule_url=https://rules.emergingthreatspro.com/|emerging.rules.tar.gz|open
+ # THE FOLLOWING URL is for etpro downloads, note the tarball name change!
+ # and the et oinkcode requirement!
+@@ -69,14 +70,14 @@
+ # rules? (this value has changed as of 0.4.0, previously we copied 
+ # all of the rules, now we are creating a single large rules file
+ # but still keeping a separate file for your so_rules!
+-rule_path=/usr/local/etc/snort/rules/snort.rules
++rule_path=/etc/snort/rules/snort.rules
+ 
+ # What path you want the .rules files to be written to, this is UNIQUE
+ # from the rule_path and cannot be used in conjunction, this is to be used with the
+ # -k runtime flag, this can be set at runtime using the -K flag or specified
+ # here.  If specified here, the -k option must also be passed at runtime, however
+ # specifying -K &lt;path&gt; at runtime forces the -k option to also be set
+-# out_path=/usr/local/etc/snort/rules/
++out_path=/etc/snort/rules/
+ 
+ # If you are running any rules in your local.rules file, we need to
+ # know about them to properly build a sid-msg.map that will contain your
+@@ -84,10 +85,10 @@
+ # files that are local to your system here by adding a comma and more paths...
+ # remember that the FULL path must be specified for EACH value.
+ # local_rules=/path/to/these.rules,/path/to/those.rules
+-local_rules=/usr/local/etc/snort/rules/local.rules
++local_rules=/etc/snort/rules/local.rules
+ 
+ # Where should I put the sid-msg.map file?
+-sid_msg=/usr/local/etc/snort/sid-msg.map
++sid_msg=/etc/snort/sid-msg.map
+ 
+ # New for by2 and more advanced msg mapping.  Valid options are 1 or 2
+ # specify version 2 if you are running barnyard2.2+.  Otherwise use 1
+@@ -110,11 +111,11 @@
+ sorule_path=/usr/local/lib/snort_dynamicrules/
+ 
+ # Path to the snort binary, we need this to generate the stub files
+-snort_path=/usr/local/bin/snort
++snort_path=/usr/sbin/snort
+ 
+ # We need to know where your snort.conf file lives so that we can
+ # generate the stub files
+-config_path=/usr/local/etc/snort/snort.conf
++config_path=/etc/snort/snort.conf
+ 
+ ##### Deprecated - The stubs are now  categorically written to the  single rule file!
+ # sostub_path=/usr/local/etc/snort/rules/so_rules.rules
+@@ -128,7 +129,7 @@
+ # FreeBSD-7-3, FreeBSD-8-1
+ # OpenBSD-4-8
+ # Slackware-13-1
+-distro=FreeBSD-8.1
++distro=RHEL-6-0
+ 
+ #######  This next section is optional, but probably pretty useful to you.
+ #######  Please read thoroughly!
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% pulledpork -c /etc/pulledpork/pulledpork.conf
+
+    http://code.google.com/p/pulledpork/
+      _____ ____
+     `----,\    )
+      `--==\\  /    PulledPork v0.7.0 - Swine Flu!
+       `--==\\/
+     .-~~~~-.Y|\\_  Copyright (C) 2009-2013 JJ Cummings
+  @_/        /  66\_  cummingsj@gmail.com
+    |    \   \   _(&quot;)
+     \   /-| ||'--'  Rules give me wings!
+      \_\  \_\\
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Checking latest MD5 for snortrules-snapshot-2961.tar.gz....
+        No Match
+        Done
+Rules tarball download of snortrules-snapshot-2961.tar.gz....
+        They Match
+        Done!
+Prepping rules from snortrules-snapshot-2961.tar.gz for work....
+        Done!
+Reading rules...
+Setting Flowbit State....
+        Enabled 35 flowbits
+        Done
+Writing /etc/snort/rules/snort.rules....
+        Done
+Generating sid-msg.map....
+        Done
+Writing v1 /etc/snort/sid-msg.map....
+        Done
+Writing /var/log/sid_changes.log....
+        Done
+Rule Stats...
+        New:-------21332
+        Deleted:---0
+        Enabled Rules:----5240
+        Dropped Rules:----0
+        Disabled Rules:---16091
+        Total Rules:------21331
+No IP Blacklist Changes
+
+Done
+Please review /var/log/sid_changes.log for additional details
+Fly Piggy Fly!
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="https://code.google.com/p/pulledpork">https://code.google.com/p/pulledpork/</a></li>
+<li><a class="reference external" href="http://www.snort.org/snort-rules">http://www.snort.org/snort-rules/</a></li>
+<li><a class="reference external" href="https://www.snort.org/vrt/buy-a-subscription">https://www.snort.org/vrt/buy-a-subscription/</a></li>
+</ul>
+</div>
+</div>]]></description>
+            <category><![CDATA[ snort ]]></category>
+             <pubDate>Mon, 05 May 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/05/04/centos_snort_install.html</link>
             <guid>http://127.0.0.1/blog/html/2014/05/04/centos_snort_install.html</guid>

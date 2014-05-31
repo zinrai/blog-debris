@@ -86,6 +86,199 @@
             <li class="left"></li>
             <li class="right"><a href="page2.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>May 05, 2014</span>
+        </div>
+        <div class="section" id="snort">
+<h1><a href="2014/05/05/centos_snort_pulledpork.html">snort ルールセット自動更新</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="2014/05/04/centos_snort_install.html"><em>CentOS 6.5 snort インストール</em></a></li>
+</ul>
+<p>前回は自分でルールを書いていたが、既知の不正侵入や攻撃を検知するためのルールがまとまったもの(ルールセット)がsnort.orgから配布されている。ルールセットは大きく分けて2つある。</p>
+<ul>
+<li><div class="first line-block">
+<div class="line"><strong>Sourcefire VRT Certified Rules</strong></div>
+<div class="line">SroucefireのVulnerability Research Team(VRT)がメンテナンスをしているオフィシャルなルールセット。</div>
+<div class="line">頻繁に更新が行われている。</div>
+</div>
+<ul>
+<li><div class="first line-block">
+<div class="line"><strong>Subscriber Release</strong></div>
+<div class="line">最新のルールセット(有償)</div>
+</div>
+</li>
+<li><div class="first line-block">
+<div class="line">Registered User Release</div>
+<div class="line">「Subscriber Release」より30日遅れのルールセット。snort.orgに登録すればダウンロードできる。</div>
+</div>
+</li>
+</ul>
+</li>
+<li><div class="first line-block">
+<div class="line"><strong>Community Rules</strong></div>
+<div class="line">オープンソースコミュニティが作成したルールセットで、VRTが動作確認を行っている。</div>
+</div>
+</li>
+</ul>
+<p>pulledporkを使うとルールセットのダウンロード、展開、指定のディレクトリに配置を自動でやってくれる。今回は「Sourcefire VRT Certified Rules」の「Registered User Release」を使用する。</p>
+<div class="section" id="rpm">
+<h2>RPM作成</h2>
+<p><a class="reference external" href="http://rpm.pbone.net/index.php3/stat/4/idpl/24017916/dir/opensuse/com/pulledpork-0.6.1-6.6.noarch.rpm.html">OpenSUSE用のSRPM</a>を見付けたのでダウンロードしてSPECファイルを参考にした。rpm作成に使用したSPECファイルは<a class="reference external" href="https://gist.github.com/zinrai/c5c29760b91aa438220c">Gist</a>に置いた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ rpmbuild -ba rpmbuild/SPECS/pulledpork.spec
+</pre></div>
+</div>
+</div>
+<div class="section" id="pulledpork">
+<h2>pulledpork</h2>
+<div class="highlight-python"><div class="highlight"><pre>% diff -u pulledpork.conf.org pulledpork.conf
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>--- pulledpork.conf.org	2014-05-06 20:09:14.774046736 +0900
++++ pulledpork.conf	2014-05-06 23:26:04.791047913 +0900
+@@ -16,14 +16,15 @@
+ # i.e. rule_url=http://x.y.z/|a.tar.gz|123,http://z.y.z/|b.tar.gz|456
+ # note that the url, rule file, and oinkcode itself are separated by a pipe |
+ # i.e. url|tarball|123456789, 
+-rule_url=https://www.snort.org/reg-rules/|snortrules-snapshot.tar.gz|&lt;oinkcode&gt;
++#rule_url=https://www.snort.org/reg-rules/|snortrules-snapshot.tar.gz|&lt;oinkcode&gt;
++rule_url=https://www.snort.org/reg-rules/|snortrules-snapshot.tar.gz|123456789
+ # NEW Community ruleset:
+-rule_url=https://s3.amazonaws.com/snort-org/www/rules/community/|community-rules.tar.gz|Community
++#rule_url=https://s3.amazonaws.com/snort-org/www/rules/community/|community-rules.tar.gz|Community
+ # NEW For IP Blacklisting! Note the format is urltofile|IPBLACKLIST|&lt;oinkcode&gt;
+ # This format MUST be followed to let pulledpork know that this is a blacklist
+-rule_url=http://labs.snort.org/feeds/ip-filter.blf|IPBLACKLIST|open
++#rule_url=http://labs.snort.org/feeds/ip-filter.blf|IPBLACKLIST|open
+ # URL for rule documentation! (slow to process)
+-rule_url=https://www.snort.org/reg-rules/|opensource.gz|&lt;oinkcode&gt;
++#rule_url=https://www.snort.org/reg-rules/|opensource.gz|&lt;oinkcode&gt;
+ #rule_url=https://rules.emergingthreatspro.com/|emerging.rules.tar.gz|open
+ # THE FOLLOWING URL is for etpro downloads, note the tarball name change!
+ # and the et oinkcode requirement!
+@@ -69,14 +70,14 @@
+ # rules? (this value has changed as of 0.4.0, previously we copied 
+ # all of the rules, now we are creating a single large rules file
+ # but still keeping a separate file for your so_rules!
+-rule_path=/usr/local/etc/snort/rules/snort.rules
++rule_path=/etc/snort/rules/snort.rules
+ 
+ # What path you want the .rules files to be written to, this is UNIQUE
+ # from the rule_path and cannot be used in conjunction, this is to be used with the
+ # -k runtime flag, this can be set at runtime using the -K flag or specified
+ # here.  If specified here, the -k option must also be passed at runtime, however
+ # specifying -K &lt;path&gt; at runtime forces the -k option to also be set
+-# out_path=/usr/local/etc/snort/rules/
++out_path=/etc/snort/rules/
+ 
+ # If you are running any rules in your local.rules file, we need to
+ # know about them to properly build a sid-msg.map that will contain your
+@@ -84,10 +85,10 @@
+ # files that are local to your system here by adding a comma and more paths...
+ # remember that the FULL path must be specified for EACH value.
+ # local_rules=/path/to/these.rules,/path/to/those.rules
+-local_rules=/usr/local/etc/snort/rules/local.rules
++local_rules=/etc/snort/rules/local.rules
+ 
+ # Where should I put the sid-msg.map file?
+-sid_msg=/usr/local/etc/snort/sid-msg.map
++sid_msg=/etc/snort/sid-msg.map
+ 
+ # New for by2 and more advanced msg mapping.  Valid options are 1 or 2
+ # specify version 2 if you are running barnyard2.2+.  Otherwise use 1
+@@ -110,11 +111,11 @@
+ sorule_path=/usr/local/lib/snort_dynamicrules/
+ 
+ # Path to the snort binary, we need this to generate the stub files
+-snort_path=/usr/local/bin/snort
++snort_path=/usr/sbin/snort
+ 
+ # We need to know where your snort.conf file lives so that we can
+ # generate the stub files
+-config_path=/usr/local/etc/snort/snort.conf
++config_path=/etc/snort/snort.conf
+ 
+ ##### Deprecated - The stubs are now  categorically written to the  single rule file!
+ # sostub_path=/usr/local/etc/snort/rules/so_rules.rules
+@@ -128,7 +129,7 @@
+ # FreeBSD-7-3, FreeBSD-8-1
+ # OpenBSD-4-8
+ # Slackware-13-1
+-distro=FreeBSD-8.1
++distro=RHEL-6-0
+ 
+ #######  This next section is optional, but probably pretty useful to you.
+ #######  Please read thoroughly!
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% pulledpork -c /etc/pulledpork/pulledpork.conf
+
+    http://code.google.com/p/pulledpork/
+      _____ ____
+     `----,\    )
+      `--==\\  /    PulledPork v0.7.0 - Swine Flu!
+       `--==\\/
+     .-~~~~-.Y|\\_  Copyright (C) 2009-2013 JJ Cummings
+  @_/        /  66\_  cummingsj@gmail.com
+    |    \   \   _(&quot;)
+     \   /-| ||'--'  Rules give me wings!
+      \_\  \_\\
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Checking latest MD5 for snortrules-snapshot-2961.tar.gz....
+        No Match
+        Done
+Rules tarball download of snortrules-snapshot-2961.tar.gz....
+        They Match
+        Done!
+Prepping rules from snortrules-snapshot-2961.tar.gz for work....
+        Done!
+Reading rules...
+Setting Flowbit State....
+        Enabled 35 flowbits
+        Done
+Writing /etc/snort/rules/snort.rules....
+        Done
+Generating sid-msg.map....
+        Done
+Writing v1 /etc/snort/sid-msg.map....
+        Done
+Writing /var/log/sid_changes.log....
+        Done
+Rule Stats...
+        New:-------21332
+        Deleted:---0
+        Enabled Rules:----5240
+        Dropped Rules:----0
+        Disabled Rules:---16091
+        Total Rules:------21331
+No IP Blacklist Changes
+
+Done
+Please review /var/log/sid_changes.log for additional details
+Fly Piggy Fly!
+</pre></div>
+</div>
+<ul class="simple">
+<li><a class="reference external" href="https://code.google.com/p/pulledpork">https://code.google.com/p/pulledpork/</a></li>
+<li><a class="reference external" href="http://www.snort.org/snort-rules">http://www.snort.org/snort-rules/</a></li>
+<li><a class="reference external" href="https://www.snort.org/vrt/buy-a-subscription">https://www.snort.org/vrt/buy-a-subscription/</a></li>
+</ul>
+</div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/snort.html">snort</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/centos.html">centos</a>, <a href="tags/snort.html">snort</a>, <a href="tags/pulledpork.html">pulledpork</a>, <a href="tags/rpmbuild.html">rpmbuild</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>May 04, 2014</span>
         </div>
         <div class="section" id="centos-6-5-snort">
@@ -523,161 +716,6 @@ SHA256: bd2d31f80e7dd070228664f8b48496505395ead795e4ef190cf7bff9931af332
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/ntp.html">ntp</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>April 22, 2014</span>
-        </div>
-        <div class="section" id="freebsd-9-2-jail">
-<h1><a href="2014/04/22/freebsd_92_jail_rc_conf.html">FreeBSD 9.2 jail構築</a></h1>
-<p>ezjail,qjailなどjailを管理するツールはあるけれどrc.conf(5)にjailの設定を書いて管理する方法を考えてみた。</p>
-<p>rc.conf(5)はsh(1)によって読み込まれているので、指定したディレクトリに個々のjailの設定を置いてrc.conf(5)にsourceすればいい感じではないかと思ったのでやってみた。jail.conf(5)あるけどついカッとなってやってみた。後悔はしていない。</p>
-<ul class="simple">
-<li><a class="reference internal" href="2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
-<li><a class="reference internal" href="2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
-</ul>
-<p>が出来上がっている前提で話を進めていく。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ uname -a
-FreeBSD hoge.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013     root@hoge.localnet:/usr/obj/usr/src/9.2.0/sys/VIMAGE  amd64
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% mkdir /usr/local/etc/rc.jail
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
-jail_enable=&quot;YES&quot;
-
-for JAIL in /usr/local/etc/rc.jail/*.conf; do
-  . $JAIL
-done
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/rc.jail/testjail.conf
-. /usr/local/etc/rc.jail/jail_install.sh
-
-NAME=&quot;testjail&quot;
-IFACE=&quot;6&quot;
-IPADDR=&quot;192.168.0.6&quot;
-NETMASK=&quot;255.255.255.0&quot;
-GATEWAY=&quot;192.168.0.254&quot;
-
-JAILROOT=&quot;/jails/${NAME}&quot;
-
-if [ ! -d ${JAILROOT} ]; then
-  zfs create jails/${NAME}
-  jail_install ${JAILROOT}
-fi
-
-export jail_${NAME}_devfs_enable=&quot;YES&quot;
-export jail_${NAME}_devfs_ruleset=&quot;devfsrules_jail2&quot;
-export jail_${NAME}_nama=&quot;${NAME}&quot;
-export jail_${NAME}_hostname=&quot;${NAME}.localnet&quot;
-export jail_${NAME}_rootdir=&quot;${JAILROOT}&quot;
-export jail_${NAME}_parameters=&quot;vnet&quot;
-
-export jail_${NAME}_exec_prestart0=&quot;ifconfig epair${IFACE} create up&quot;
-export jail_${NAME}_exec_prestart1=&quot;ifconfig vswitch0 addm epair${IFACE}a&quot;
-export jail_${NAME}_exec_prestart2=&quot;mount -t nullfs -o ro /jails/ports /jails/${NAME}/usr/ports&quot;
-
-export jail_${NAME}_exec_poststart0=&quot;ifconfig epair${IFACE}b vnet ${NAME}&quot;
-export jail_${NAME}_exec_poststart1=&quot;jexec ${NAME} ifconfig lo0 127.0.0.1 up&quot;
-export jail_${NAME}_exec_poststart2=&quot;jexec ${NAME} ifconfig epair${IFACE}b ${IPADDR} netmask ${NETMASK} up&quot;
-export jail_${NAME}_exec_poststart3=&quot;jexec ${NAME} route add default ${GATEWAY}&quot;
-
-export jail_${NAME}_exec_start0=&quot;sh /etc/rc&quot;
-
-export jail_${NAME}_exec_stop0=&quot;sh /etc/rc.shutdown&quot;
-
-export jail_${NAME}_exec_poststop0=&quot;ifconfig vswitch0 deletem epair${IFACE}a&quot;
-export jail_${NAME}_exec_poststop1=&quot;ifconfig epair${IFACE}a destroy&quot;
-export jail_${NAME}_exec_poststop2=&quot;umount /jails/${NAME}/usr/ports&quot;
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/devfs.rules
-[devfsrules_jail2=5]
-add include $devfsrules_jail
-
-add path mem unhide
-add path kmem unhide
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/rc.jail/jail_install.sh
-jail_install() {
-  local JAILROOT=$1
-
-  for FILE in /usr/local/etc/rc.jail/*.txz; do
-    tar xfzp $FILE -C $JAILROOT
-  done
-
-  cp /etc/resolv.conf $JAILROOT/etc
-  cp /etc/localtime $JAILROOT/etc
-  mkdir $JAILROOT/usr/ports
-}
-</pre></div>
-</div>
-<p>bsdinstall(8)にjailというサブコマンドが用意されていてkernelを含まない環境を指定したディレクトリに展開してくれるけど、毎回ファイルをネットから取りに行くのと、インタラクティブなのがつらかったので、ファイルを取得するところだけ眺めてみた。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ cat `which bsdinstall`
-exec &quot;/usr/libexec/bsdinstall/$VERB&quot; &quot;$@&quot; 2&gt;&gt; &quot;$BSDINSTALL_LOG&quot;
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ cd /usr/libexec/bsdinstall
-$ file `ls` | grep -v &quot;ELF&quot;
-adduser:        POSIX shell script, ASCII text executable
-auto:           POSIX shell script, ASCII text executable
-checksum:       POSIX shell script, ASCII text executable
-config:         POSIX shell script, ASCII text executable
-docsinstall:    POSIX shell script, ASCII text executable
-hostname:       POSIX shell script, ASCII text executable
-jail:           POSIX shell script, ASCII text executable
-keymap:         POSIX shell script, ASCII text executable
-mirrorselect:   POSIX shell script, ASCII text executable, with very long lines
-mount:          POSIX shell script, ASCII text executable
-netconfig:      POSIX shell script, ASCII text executable
-netconfig_ipv4: POSIX shell script, ASCII text executable
-netconfig_ipv6: POSIX shell script, ASCII text executable
-rootpass:       POSIX shell script, ASCII text executable
-script:         POSIX shell script, ASCII text executable
-services:       POSIX shell script, ASCII text executable
-time:           POSIX shell script, ASCII text executable
-umount:         POSIX shell script, ASCII text executable
-wlanconfig:     POSIX shell script, ASCII text executable
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ cat mirrorselect
-_UNAME_R=`uname -r`
-
-case ${_UNAME_R} in
-        *-CURRENT|*-STABLE|*-PRERELEASE)
-                RELDIR=&quot;snapshots&quot;
-                ;;
-        *)
-                RELDIR=&quot;releases&quot;
-                ;;
-esac
-
-BSDINSTALL_DISTSITE=&quot;$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${_UNAME_R}&quot;
-</pre></div>
-</div>
-<p>mirrorselectで展開される<a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">アドレス</a>アクセスしてbase.txzと必要なファイルをダウンロードする。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://qjail.sourceforge.net">http://qjail.sourceforge.net/</a></li>
-<li><a class="reference external" href="http://erdgeist.org/arts/software/ezjail">http://erdgeist.org/arts/software/ezjail/</a></li>
-<li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html">http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html</a></li>
-<li><a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE/</a></li>
-</ul>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/freebsd.html">freebsd</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/jail.html">jail</a>, <a href="tags/vimage.html">vimage</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -686,6 +724,8 @@ BSDINSTALL_DISTSITE=&quot;$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/05/05/centos_snort_pulledpork.html">snort ルールセット自動更新</a>
+        </li><li>
             <a href="2014/05/04/centos_snort_install.html">CentOS 6.5 snort インストール</a>
         </li><li>
             <a href="2014/05/03/debian_wheezy_ntp_server.html">NTPサーバ 構築</a>
@@ -703,15 +743,13 @@ BSDINSTALL_DISTSITE=&quot;$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${
             <a href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html">Chef SoloでJenkinsをインストール</a>
         </li><li>
             <a href="2014/03/20/debian_wheezy_virtualbox_vagrant.html">Debian wheezyでVagrantを使てみた</a>
-        </li><li>
-            <a href="2014/02/26/debian_wheezy_schroot_aufs.html">schrootでaufsを使う</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (5), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (20), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (15), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (1), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (17), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (20), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (15), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (17), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
