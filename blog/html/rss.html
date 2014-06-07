@@ -5,26 +5,105 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Mon, 05 May 2014 00:00:00 +0900</pubDate>
+        <pubDate>Sat, 07 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/07/debian_wheezy_direnv_xbuild.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/07/debian_wheezy_direnv_xbuild.html</guid>
+            <title><![CDATA[direnv + xbuildで環境構築]]></title>
+            <description><![CDATA[<h1>direnv + xbuildで環境構築</h1>
+<p>direnvを使うと、ディレクトリに環境変数を設定したファイルを置いておけば、そのディレクトリがカレントになったときに設定した環境変数を有効することができる。AWSのACCESS_KEYやSECRET_KEYなどの切り替えが捗りそう。*envでPATHを.zshrcなどに設定しなければいけないことに抵抗があったので、いい感じ。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux zinrai 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2 x86_64 GNU/Linux
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="section" id="xbuild">
+<h2>xbuild</h2>
+<p>Pythonを入れてみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl
+
+$ git clone https://github.com/tagomoris/xbuild.git
+$ xbuild/python-install 2.7.6 $HOME/opt/python-2.7.6
+</pre></div>
+</div>
+</div>
+<div class="section" id="direnv">
+<h2>direnv</h2>
+<p>direnvのMakefileを眺めてみるとデフォルトは/usr/local/binにdirenvを配置するようになっている。削除については特に書かれていない。dpkg(1),apt(8)管理外のソフトに勝手にこういう場所に配置して欲しくないので<a class="reference external" href="http://www.gnu.org/software/stow">Stow</a>を使うことにする。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install -y golang
+
+$ git clone https://github.com/zimbatm/direnv.git
+$ cd direnv
+$ make
+% make install DESTDIR=/usr/local/stow/direnv
+$ cd /usr/local/stow
+% stow -v direnv
+$ type direnv
+direnv is /usr/local/bin/direnv
+</pre></div>
+</div>
+<p>zshの場合は.zshrcに以下の設定をしておく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vi $HOME/.zshrc
+type direnv &gt; /dev/null
+if [ $? -eq 0 ]; then
+  eval "$(direnv hook zsh)"
+fi
+
+$ source $HOME/.zshrc
+</pre></div>
+</div>
+<p>インストールと設定は完了したので実際に使ってみる。環境変数の設定は.envrcファイルに書く。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir -p lang/python-2.7.6
+$ cd lang/python-2.7.6
+
+$ vi .envrc
+PATH=$HOME/opt/python-2.7.6/bin:$PATH
+
+$ direnv allow .
+$  type python
+python is /home/zinrai/opt/python-2.7.6/bin/python
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz
+$ tar zvxf virtualenv-1.11.6.tar.gz
+$ python virtualenv-1.11.6/virtualenv.py venv
+$ source venv/bin/activate
+$ type python
+python is /home/zinrai/lang/python2.7.6/venv/bin/python
+</pre></div>
+</div>
+<p>試しに<a class="reference external" href="http://tinkerer.me">Tinkerer</a>でも入れてみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install libxml2-dev libxslt-dev
+
+$ pip install tinkerer
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="https://github.com/zimbatm/direnv">https://github.com/zimbatm/direnv</a></li>
+<li><a class="reference external" href="https://github.com/tagomoris/xbuild">https://github.com/tagomoris/xbuild</a></li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/virtualenv">https://pypi.python.org/pypi/virtualenv</a></li>
+<li><a class="reference external" href="https://github.com/yyuu/pyenv/wiki/Common-build-problems">https://github.com/yyuu/pyenv/wiki/Common-build-problems</a></li>
+</ul></div>]]></description>
+            <category><![CDATA[ direnv ]]></category>
+            <category><![CDATA[ xbuild ]]></category>
+             <pubDate>Sat, 07 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/05/05/centos_snort_pulledpork.html</link>
             <guid>http://127.0.0.1/blog/html/2014/05/05/centos_snort_pulledpork.html</guid>
             <title><![CDATA[snort ルールセット自動更新]]></title>
-            <description><![CDATA[<div class="section" id="snort">
-<h1>snort ルールセット自動更新</h1>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/05/04/centos_snort_install.html"><em>CentOS 6.5 snort インストール</em></a></li>
-</ul>
-<p>前回は自分でルールを書いていたが、既知の不正侵入や攻撃を検知するためのルールがまとまったもの(ルールセット)がsnort.orgから配布されている。ルールセットは大きく分けて2つある。</p>
-<ul>
-<li><div class="first line-block">
+            <description><![CDATA[<h1>snort ルールセット自動更新</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/05/04/centos_snort_install.html"><em>CentOS 6.5 snort インストール</em></a></li>
+</ul><p>前回は自分でルールを書いていたが、既知の不正侵入や攻撃を検知するためのルールがまとまったもの(ルールセット)がsnort.orgから配布されている。ルールセットは大きく分けて2つある。</p>
+<ul><li><div class="first line-block">
 <div class="line"><strong>Sourcefire VRT Certified Rules</strong></div>
 <div class="line">SroucefireのVulnerability Research Team(VRT)がメンテナンスをしているオフィシャルなルールセット。</div>
 <div class="line">頻繁に更新が行われている。</div>
 </div>
-<ul>
-<li><div class="first line-block">
+<ul><li><div class="first line-block">
 <div class="line"><strong>Subscriber Release</strong></div>
 <div class="line">最新のルールセット(有償)</div>
 </div>
@@ -34,15 +113,13 @@
 <div class="line">「Subscriber Release」より30日遅れのルールセット。snort.orgに登録すればダウンロードできる。</div>
 </div>
 </li>
-</ul>
-</li>
+</ul></li>
 <li><div class="first line-block">
 <div class="line"><strong>Community Rules</strong></div>
 <div class="line">オープンソースコミュニティが作成したルールセットで、VRTが動作確認を行っている。</div>
 </div>
 </li>
-</ul>
-<p>pulledporkを使うとルールセットのダウンロード、展開、指定のディレクトリに配置を自動でやってくれる。今回は「Sourcefire VRT Certified Rules」の「Registered User Release」を使用する。</p>
+</ul><p>pulledporkを使うとルールセットのダウンロード、展開、指定のディレクトリに配置を自動でやってくれる。今回は「Sourcefire VRT Certified Rules」の「Registered User Release」を使用する。</p>
 <div class="section" id="rpm">
 <h2>RPM作成</h2>
 <p><a class="reference external" href="http://rpm.pbone.net/index.php3/stat/4/idpl/24017916/dir/opensuse/com/pulledpork-0.6.1-6.6.noarch.rpm.html">OpenSUSE用のSRPM</a>を見付けたのでダウンロードしてSPECファイルを参考にした。rpm作成に使用したSPECファイルは<a class="reference external" href="https://gist.github.com/zinrai/c5c29760b91aa438220c">Gist</a>に置いた。</p>
@@ -141,7 +218,7 @@
        `--==\\/
      .-~~~~-.Y|\\_  Copyright (C) 2009-2013 JJ Cummings
   @_/        /  66\_  cummingsj@gmail.com
-    |    \   \   _(&quot;)
+    |    \   \   _(")
      \   /-| ||'--'  Rules give me wings!
       \_\  \_\\
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -180,13 +257,10 @@ Please review /var/log/sid_changes.log for additional details
 Fly Piggy Fly!
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="https://code.google.com/p/pulledpork">https://code.google.com/p/pulledpork/</a></li>
+<ul class="simple"><li><a class="reference external" href="https://code.google.com/p/pulledpork">https://code.google.com/p/pulledpork/</a></li>
 <li><a class="reference external" href="http://www.snort.org/snort-rules">http://www.snort.org/snort-rules/</a></li>
 <li><a class="reference external" href="https://www.snort.org/vrt/buy-a-subscription">https://www.snort.org/vrt/buy-a-subscription/</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ snort ]]></category>
              <pubDate>Mon, 05 May 2014 00:00:00 +0900</pubDate>
         </item>
@@ -195,8 +269,7 @@ Fly Piggy Fly!
             <link>http://127.0.0.1/blog/html/2014/05/04/centos_snort_install.html</link>
             <guid>http://127.0.0.1/blog/html/2014/05/04/centos_snort_install.html</guid>
             <title><![CDATA[CentOS 6.5 snort インストール]]></title>
-            <description><![CDATA[<div class="section" id="centos-6-5-snort">
-<h1>CentOS 6.5 snort インストール</h1>
+            <description><![CDATA[<h1>CentOS 6.5 snort インストール</h1>
 <p>使う用事ができたのでインストールして簡単なルールを書いて動作確認してみる。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux localhost.localdomain 2.6.32-431.11.2.el6.x86_64 #1 SMP Tue Mar 25 19:59:55 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
@@ -475,15 +548,12 @@ alert icmp any any -&gt; any any
 </pre></div>
 </div>
 <p>pingを送受信したときにアラートを掃くルールを書いて、/var/log/snort/alertにアラートが吐かれることを確認した。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://www.snort.org">http://www.snort.org/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.snort.org">http://www.snort.org/</a></li>
 <li><a class="reference external" href="http://www.snort.org/doc">http://www.snort.org/doc</a></li>
 <li><a class="reference external" href="http://manual.snort.org">http://manual.snort.org/</a></li>
 <li><a class="reference external" href="http://manual.snort.org/node23.html">http://manual.snort.org/node23.html</a></li>
 <li><a class="reference external" href="http://manual.snort.org/node176.html">http://manual.snort.org/node176.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ snort ]]></category>
              <pubDate>Sun, 04 May 2014 00:00:00 +0900</pubDate>
         </item>
@@ -492,24 +562,15 @@ alert icmp any any -&gt; any any
             <link>http://127.0.0.1/blog/html/2014/05/03/debian_wheezy_ntp_server.html</link>
             <guid>http://127.0.0.1/blog/html/2014/05/03/debian_wheezy_ntp_server.html</guid>
             <title><![CDATA[NTPサーバ 構築]]></title>
-            <description><![CDATA[<div class="section" id="ntp">
-<h1>NTPサーバ 構築</h1>
+            <description><![CDATA[<h1>NTPサーバ 構築</h1>
 <p>stratum1のNTPサーバを探してNTPサーバを構築してみた。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://www.shoshin.co.jp/c/endrun/cdma.html">SHOSHIN</a><ul>
-<li>ntp.shoshin.co.jp</li>
-</ul>
-</li>
-<li><a class="reference external" href="http://www2.nict.go.jp/aeri/sts/tsp/PubNtp">日本標準時プロジェクト</a><ul>
-<li>ntp.nict.jp</li>
-</ul>
-</li>
-<li><a class="reference external" href="http://www.e-timing.ne.jp">アマノ ビジネスソリューションズ株式会社</a><ul>
-<li>ats1.e-timing.ne.jp</li>
-</ul>
-</li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/debian_version
+<ul class="simple"><li><a class="reference external" href="http://www.shoshin.co.jp/c/endrun/cdma.html">SHOSHIN</a><ul><li>ntp.shoshin.co.jp</li>
+</ul></li>
+<li><a class="reference external" href="http://www2.nict.go.jp/aeri/sts/tsp/PubNtp">日本標準時プロジェクト</a><ul><li>ntp.nict.jp</li>
+</ul></li>
+<li><a class="reference external" href="http://www.e-timing.ne.jp">アマノ ビジネスソリューションズ株式会社</a><ul><li>ats1.e-timing.ne.jp</li>
+</ul></li>
+</ul><div class="highlight-python"><div class="highlight"><pre>$ cat /etc/debian_version
 7.5
 
 $ uname -a
@@ -539,7 +600,7 @@ Description-en: Network Time Protocol daemon and utility programs
  provide NTP service to other hosts.
  .
  For more information about the NTP protocol and NTP server
- configuration and operation, install the package &quot;ntp-doc&quot;.
+ configuration and operation, install the package "ntp-doc".
 Homepage: http://support.ntp.org/
 Description-md5: 220487bd9eceed70fec6b929cb922fd3
 Tag: admin::benchmarking, admin::configuring, implemented-in::c,
@@ -601,12 +662,10 @@ SHA256: bd2d31f80e7dd070228664f8b48496505395ead795e4ef190cf7bff9931af332
  210.168.211.231 .CDMA.           1 u   20   64    1   12.140   -0.344   0.000
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://ja.wikipedia.org/wiki/Network_Time_Protocol">http://ja.wikipedia.org/wiki/Network_Time_Protocol</a></li>
+<ul class="simple"><li><a class="reference external" href="http://ja.wikipedia.org/wiki/Network_Time_Protocol">http://ja.wikipedia.org/wiki/Network_Time_Protocol</a></li>
 <li><a class="reference external" href="http://support.ntp.org/bin/view/Main/WebHome">http://support.ntp.org/bin/view/Main/WebHome</a></li>
 <li><a class="reference external" href="http://www.eecis.udel.edu/~mills/ntp/html/comdex.html">http://www.eecis.udel.edu/~mills/ntp/html/comdex.html</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ ntp ]]></category>
              <pubDate>Sat, 03 May 2014 00:00:00 +0900</pubDate>
         </item>
@@ -615,15 +674,12 @@ SHA256: bd2d31f80e7dd070228664f8b48496505395ead795e4ef190cf7bff9931af332
             <link>http://127.0.0.1/blog/html/2014/04/22/freebsd_92_jail_rc_conf.html</link>
             <guid>http://127.0.0.1/blog/html/2014/04/22/freebsd_92_jail_rc_conf.html</guid>
             <title><![CDATA[FreeBSD 9.2 jail構築]]></title>
-            <description><![CDATA[<div class="section" id="freebsd-9-2-jail">
-<h1>FreeBSD 9.2 jail構築</h1>
+            <description><![CDATA[<h1>FreeBSD 9.2 jail構築</h1>
 <p>ezjail,qjailなどjailを管理するツールはあるけれどrc.conf(5)にjailの設定を書いて管理する方法を考えてみた。</p>
 <p>rc.conf(5)はsh(1)によって読み込まれているので、指定したディレクトリに個々のjailの設定を置いてrc.conf(5)にsourceすればいい感じではないかと思ったのでやってみた。jail.conf(5)あるけどついカッとなってやってみた。後悔はしていない。</p>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
-</ul>
-<p>が出来上がっている前提で話を進めていく。</p>
+</ul><p>が出来上がっている前提で話を進めていく。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 FreeBSD hoge.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013     root@hoge.localnet:/usr/obj/usr/src/9.2.0/sys/VIMAGE  amd64
 </pre></div>
@@ -632,7 +688,7 @@ FreeBSD hoge.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
-jail_enable=&quot;YES&quot;
+jail_enable="YES"
 
 for JAIL in /usr/local/etc/rc.jail/*.conf; do
   . $JAIL
@@ -642,42 +698,42 @@ done
 <div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/rc.jail/testjail.conf
 . /usr/local/etc/rc.jail/jail_install.sh
 
-NAME=&quot;testjail&quot;
-IFACE=&quot;6&quot;
-IPADDR=&quot;192.168.0.6&quot;
-NETMASK=&quot;255.255.255.0&quot;
-GATEWAY=&quot;192.168.0.254&quot;
+NAME="testjail"
+IFACE="6"
+IPADDR="192.168.0.6"
+NETMASK="255.255.255.0"
+GATEWAY="192.168.0.254"
 
-JAILROOT=&quot;/jails/${NAME}&quot;
+JAILROOT="/jails/${NAME}"
 
 if [ ! -d ${JAILROOT} ]; then
   zfs create jails/${NAME}
   jail_install ${JAILROOT}
 fi
 
-export jail_${NAME}_devfs_enable=&quot;YES&quot;
-export jail_${NAME}_devfs_ruleset=&quot;devfsrules_jail2&quot;
-export jail_${NAME}_nama=&quot;${NAME}&quot;
-export jail_${NAME}_hostname=&quot;${NAME}.localnet&quot;
-export jail_${NAME}_rootdir=&quot;${JAILROOT}&quot;
-export jail_${NAME}_parameters=&quot;vnet&quot;
+export jail_${NAME}_devfs_enable="YES"
+export jail_${NAME}_devfs_ruleset="devfsrules_jail2"
+export jail_${NAME}_nama="${NAME}"
+export jail_${NAME}_hostname="${NAME}.localnet"
+export jail_${NAME}_rootdir="${JAILROOT}"
+export jail_${NAME}_parameters="vnet"
 
-export jail_${NAME}_exec_prestart0=&quot;ifconfig epair${IFACE} create up&quot;
-export jail_${NAME}_exec_prestart1=&quot;ifconfig vswitch0 addm epair${IFACE}a&quot;
-export jail_${NAME}_exec_prestart2=&quot;mount -t nullfs -o ro /jails/ports /jails/${NAME}/usr/ports&quot;
+export jail_${NAME}_exec_prestart0="ifconfig epair${IFACE} create up"
+export jail_${NAME}_exec_prestart1="ifconfig vswitch0 addm epair${IFACE}a"
+export jail_${NAME}_exec_prestart2="mount -t nullfs -o ro /jails/ports /jails/${NAME}/usr/ports"
 
-export jail_${NAME}_exec_poststart0=&quot;ifconfig epair${IFACE}b vnet ${NAME}&quot;
-export jail_${NAME}_exec_poststart1=&quot;jexec ${NAME} ifconfig lo0 127.0.0.1 up&quot;
-export jail_${NAME}_exec_poststart2=&quot;jexec ${NAME} ifconfig epair${IFACE}b ${IPADDR} netmask ${NETMASK} up&quot;
-export jail_${NAME}_exec_poststart3=&quot;jexec ${NAME} route add default ${GATEWAY}&quot;
+export jail_${NAME}_exec_poststart0="ifconfig epair${IFACE}b vnet ${NAME}"
+export jail_${NAME}_exec_poststart1="jexec ${NAME} ifconfig lo0 127.0.0.1 up"
+export jail_${NAME}_exec_poststart2="jexec ${NAME} ifconfig epair${IFACE}b ${IPADDR} netmask ${NETMASK} up"
+export jail_${NAME}_exec_poststart3="jexec ${NAME} route add default ${GATEWAY}"
 
-export jail_${NAME}_exec_start0=&quot;sh /etc/rc&quot;
+export jail_${NAME}_exec_start0="sh /etc/rc"
 
-export jail_${NAME}_exec_stop0=&quot;sh /etc/rc.shutdown&quot;
+export jail_${NAME}_exec_stop0="sh /etc/rc.shutdown"
 
-export jail_${NAME}_exec_poststop0=&quot;ifconfig vswitch0 deletem epair${IFACE}a&quot;
-export jail_${NAME}_exec_poststop1=&quot;ifconfig epair${IFACE}a destroy&quot;
-export jail_${NAME}_exec_poststop2=&quot;umount /jails/${NAME}/usr/ports&quot;
+export jail_${NAME}_exec_poststop0="ifconfig vswitch0 deletem epair${IFACE}a"
+export jail_${NAME}_exec_poststop1="ifconfig epair${IFACE}a destroy"
+export jail_${NAME}_exec_poststop2="umount /jails/${NAME}/usr/ports"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% vi /etc/devfs.rules
@@ -704,11 +760,11 @@ jail_install() {
 </div>
 <p>bsdinstall(8)にjailというサブコマンドが用意されていてkernelを含まない環境を指定したディレクトリに展開してくれるけど、毎回ファイルをネットから取りに行くのと、インタラクティブなのがつらかったので、ファイルを取得するところだけ眺めてみた。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ cat `which bsdinstall`
-exec &quot;/usr/libexec/bsdinstall/$VERB&quot; &quot;$@&quot; 2&gt;&gt; &quot;$BSDINSTALL_LOG&quot;
+exec "/usr/libexec/bsdinstall/$VERB" "$@" 2&gt;&gt; "$BSDINSTALL_LOG"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>$ cd /usr/libexec/bsdinstall
-$ file `ls` | grep -v &quot;ELF&quot;
+$ file `ls` | grep -v "ELF"
 adduser:        POSIX shell script, ASCII text executable
 auto:           POSIX shell script, ASCII text executable
 checksum:       POSIX shell script, ASCII text executable
@@ -735,24 +791,22 @@ _UNAME_R=`uname -r`
 
 case ${_UNAME_R} in
         *-CURRENT|*-STABLE|*-PRERELEASE)
-                RELDIR=&quot;snapshots&quot;
+                RELDIR="snapshots"
                 ;;
         *)
-                RELDIR=&quot;releases&quot;
+                RELDIR="releases"
                 ;;
 esac
 
-BSDINSTALL_DISTSITE=&quot;$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${_UNAME_R}&quot;
+BSDINSTALL_DISTSITE="$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${_UNAME_R}"
 </pre></div>
 </div>
 <p>mirrorselectで展開される<a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">アドレス</a>アクセスしてbase.txzと必要なファイルをダウンロードする。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://qjail.sourceforge.net">http://qjail.sourceforge.net/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://qjail.sourceforge.net">http://qjail.sourceforge.net/</a></li>
 <li><a class="reference external" href="http://erdgeist.org/arts/software/ezjail">http://erdgeist.org/arts/software/ezjail/</a></li>
 <li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html">http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html</a></li>
 <li><a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE/</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ freebsd ]]></category>
              <pubDate>Tue, 22 Apr 2014 00:00:00 +0900</pubDate>
         </item>
@@ -761,8 +815,7 @@ BSDINSTALL_DISTSITE=&quot;$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${
             <link>http://127.0.0.1/blog/html/2014/03/29/debian_wheezy_ruby_build_rbenv.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/29/debian_wheezy_ruby_build_rbenv.html</guid>
             <title><![CDATA[rbenv + ruby-build]]></title>
-            <description><![CDATA[<div class="section" id="rbenv-ruby-build">
-<h1>rbenv + ruby-build</h1>
+            <description><![CDATA[<h1>rbenv + ruby-build</h1>
 <p>最近使い始めてglobal,local,shellの理解がぼんやりしていたのでメモ</p>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
@@ -783,8 +836,8 @@ Codename:       wheezy
 $ git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
 
 $ vi $HOME/.bashrc
-export PATH=&quot;$HOME/.rbenv/bin:$PATH&quot;
-eval &quot;$(rbenv init -)&quot;
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
 
 $ . .bashrc
 </pre></div>
@@ -818,24 +871,13 @@ $ rbenv rehash
 </pre></div>
 </div>
 <p>rubyのversionの切り替えには以下の3つが使われている。ここがrbenvの肝だと思う。</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="25%"/>
-<col width="75%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>~/.rbenv/version</td>
+<table border="1" class="docutils"><colgroup><col width="25%"/><col width="75%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>~/.rbenv/version</td>
 <td>デフォルトで使用するversionが書かれている。</td>
-</tr>
-<tr class="row-even"><td>.ruby-version</td>
+</tr><tr class="row-even"><td>.ruby-version</td>
 <td>カレントディレクトリにこのファイルがある場合はここに書かれているversionが優先される。</td>
-</tr>
-<tr class="row-odd"><td>RBENV_VERSION</td>
+</tr><tr class="row-odd"><td>RBENV_VERSION</td>
 <td>この環境変数がセットされている場合はここに書かれているversionが優先される。</td>
-</tr>
-</tbody>
-</table>
-<p><strong>RBENV_VERSION &gt; .ruby-version &gt; ~/.rbenv/version</strong>となっている。</p>
+</tr></tbody></table><p><strong>RBENV_VERSION &gt; .ruby-version &gt; ~/.rbenv/version</strong>となっている。</p>
 </div>
 <div class="section" id="global">
 <h3>global</h3>
@@ -858,12 +900,9 @@ $ rbenv local --unset
 $ rbenv shell --unset
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="https://github.com/sstephenson/rbenv">https://github.com/sstephenson/rbenv</a></li>
+<ul class="simple"><li><a class="reference external" href="https://github.com/sstephenson/rbenv">https://github.com/sstephenson/rbenv</a></li>
 <li><a class="reference external" href="https://github.com/sstephenson/ruby-build">https://github.com/sstephenson/ruby-build</a></li>
-</ul>
-</div>
-</div>
+</ul></div>
 </div>]]></description>
             <category><![CDATA[ rbenv ]]></category>
             <category><![CDATA[ ruby-build ]]></category>
@@ -874,13 +913,10 @@ $ rbenv shell --unset
             <link>http://127.0.0.1/blog/html/2014/03/28/debian_wheezy_packer_vagrant_box_build.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/28/debian_wheezy_packer_vagrant_box_build.html</guid>
             <title><![CDATA[Packerを使ってVagrantのBOX作成]]></title>
-            <description><![CDATA[<div class="section" id="packervagrantbox">
-<h1>Packerを使ってVagrantのBOX作成</h1>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/21/debian_wheezy_chef_solo_jenkins_install.html"><em>Chef SoloでJenkinsをインストール</em></a></li>
+            <description><![CDATA[<h1>Packerを使ってVagrantのBOX作成</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/21/debian_wheezy_chef_solo_jenkins_install.html"><em>Chef SoloでJenkinsをインストール</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html"><em>Chef Soloでvsftpdのインストールと設定</em></a></li>
-</ul>
-<p>ではOpscodeが配布しているBOXを使用していたが、今回はPackerを使い自前のBOXを作成してみる。</p>
+</ul><p>ではOpscodeが配布しているBOXを使用していたが、今回はPackerを使い自前のBOXを作成してみる。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
 </pre></div>
@@ -925,9 +961,9 @@ index f0c350c..d15ec59 100644
 --- a/packer-vagrantbox/CentOS-6.5-x86_64/Vagrantfile
 +++ b/packer-vagrantbox/CentOS-6.5-x86_64/Vagrantfile
 @@ -1,3 +1,3 @@
- Vagrant.configure(&quot;2&quot;) do |config|
--    config.vm.base_mac = &quot;{{ .BaseMacAddress }}&quot;
-+    #config.vm.base_mac = &quot;{{ .BaseMacAddress }}&quot;
+ Vagrant.configure("2") do |config|
+-    config.vm.base_mac = "{{ .BaseMacAddress }}"
++    #config.vm.base_mac = "{{ .BaseMacAddress }}"
  end
 </pre></div>
 </div>
@@ -937,14 +973,14 @@ index b9418c1..76d6013 100644
 --- a/packer-vagrantbox/CentOS-6.5-x86_64/machine.json
 +++ b/packer-vagrantbox/CentOS-6.5-x86_64/machine.json
 @@ -2,7 +2,7 @@
-   &quot;builders&quot;:[{
-     &quot;type&quot;: &quot;virtualbox-iso&quot;,
-     &quot;guest_os_type&quot;: &quot;RedHat_64&quot;,
--    &quot;iso_url&quot;: &quot;http://mozilla.ftp.iij.ad.jp/pub/linux/centos/6/isos/x86_64/CentOS-6.5-x86_64-minimal.iso&quot;,
-+    &quot;iso_url&quot;: &quot;http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.5/isos/x86_64/CentOS-6.5-x86_64-minimal.iso&quot;,
-     &quot;iso_checksum&quot;: &quot;0d9dc37b5dd4befa1c440d2174e88a87&quot;,
-     &quot;iso_checksum_type&quot;: &quot;md5&quot;,
-     &quot;ssh_username&quot;: &quot;vagrant&quot;,
+   "builders":[{
+     "type": "virtualbox-iso",
+     "guest_os_type": "RedHat_64",
+-    "iso_url": "http://mozilla.ftp.iij.ad.jp/pub/linux/centos/6/isos/x86_64/CentOS-6.5-x86_64-minimal.iso",
++    "iso_url": "http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.5/isos/x86_64/CentOS-6.5-x86_64-minimal.iso",
+     "iso_checksum": "0d9dc37b5dd4befa1c440d2174e88a87",
+     "iso_checksum_type": "md5",
+     "ssh_username": "vagrant",
 </pre></div>
 </div>
 <p>iso_urlに書かれていたURLにアクセスしてみるとForbiddenだったので、変更した。</p>
@@ -957,7 +993,7 @@ index 2b6cd8c..d4dc928 100644
  #rm -rf /home/vagrant/VBoxGuestAdditions*.iso
  sudo /etc/rc.d/init.d/vboxadd setup
 -
--sudo su -c &quot;curl -L https://www.opscode.com/chef/install.sh | bash&quot;
+-sudo su -c "curl -L https://www.opscode.com/chef/install.sh | bash"
 -which chef-solo
 -sleep 5
 </pre></div>
@@ -988,13 +1024,10 @@ $ vagrant init CentOS-6.5-x86_64-ja
 $ vagrant up
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.packer.io">http://www.packer.io/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.packer.io">http://www.packer.io/</a></li>
 <li><a class="reference external" href="https://github.com/ryuzee/sandbox-devops">https://github.com/ryuzee/sandbox-devops</a></li>
 <li><a class="reference external" href="http://docs.vagrantup.com/v2/boxes/base.html">http://docs.vagrantup.com/v2/boxes/base.html</a></li>
-</ul>
-</div>
-</div>
+</ul></div>
 </div>]]></description>
             <category><![CDATA[ packer ]]></category>
              <pubDate>Fri, 28 Mar 2014 00:00:00 +0900</pubDate>
@@ -1004,16 +1037,12 @@ $ vagrant up
             <link>http://127.0.0.1/blog/html/2014/03/25/debian_wheezy_vsftpd_serverspec.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/25/debian_wheezy_vsftpd_serverspec.html</guid>
             <title><![CDATA[serverspecを使ってみる]]></title>
-            <description><![CDATA[<div class="section" id="serverspec">
-<h1>serverspecを使ってみる</h1>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html"><em>Chef Soloでvsftpdのインストールと設定</em></a></li>
-</ul>
-<p>で構築した環境をserverspecを使ってテストしてみる。</p>
+            <description><![CDATA[<h1>serverspecを使ってみる</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html"><em>Chef Soloでvsftpdのインストールと設定</em></a></li>
+</ul><p>で構築した環境をserverspecを使ってテストしてみる。</p>
 <div class="section" id="vsftpd">
 <h2>vsftpdのテスト項目</h2>
-<ul class="simple">
-<li>インストールされているか</li>
+<ul class="simple"><li>インストールされているか</li>
 <li>自動起動は設定されているか</li>
 <li>起動しているか</li>
 <li>ポート21番でListenしているか</li>
@@ -1026,8 +1055,7 @@ $ vagrant up
 <li>anon_rootで指定しているディレクトリはChefに書いてあるpermissionになっているか(755)</li>
 <li>anon_rootで指定しているディレクトリはChefに書いてあるownerになっているか(root)</li>
 <li>anon_rootで指定しているディレクトリはChefに書いてあるgroupになっているか(root)</li>
-</ul>
-<p>の13項目をテストする。</p>
+</ul><p>の13項目をテストする。</p>
 </div>
 <div class="section" id="id1">
 <h2>serverspec</h2>
@@ -1107,13 +1135,10 @@ Finished in 1.17 seconds
 </pre></div>
 </div>
 <p>日本語で長々と書いていたものが、Resourceを指定してResourceが持っているマッチャーを使いshould be_hogehoge argと書けば表現できていい感じ。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://serverspec.org">http://serverspec.org/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://serverspec.org">http://serverspec.org/</a></li>
 <li><a class="reference external" href="http://serverspec.org/tutorial.html">http://serverspec.org/tutorial.html</a></li>
 <li><a class="reference external" href="http://serverspec.org/resource_types.html">http://serverspec.org/resource_types.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ serverspec ]]></category>
              <pubDate>Tue, 25 Mar 2014 00:00:00 +0900</pubDate>
         </item>
@@ -1122,13 +1147,10 @@ Finished in 1.17 seconds
             <link>http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html</guid>
             <title><![CDATA[Chef Soloでvsftpdのインストールと設定]]></title>
-            <description><![CDATA[<div class="section" id="chef-solovsftpd">
-<h1>Chef Soloでvsftpdのインストールと設定</h1>
-<ul class="simple">
-<li>某スイッチのアップグレードのためにFTPサーバを立てなければいけなくて、vsftpdでanonymous FTPのディレクトリを設定するのに手間取ったのでメモしておきたい。</li>
+            <description><![CDATA[<h1>Chef Soloでvsftpdのインストールと設定</h1>
+<ul class="simple"><li>某スイッチのアップグレードのためにFTPサーバを立てなければいけなくて、vsftpdでanonymous FTPのディレクトリを設定するのに手間取ったのでメモしておきたい。</li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/21/debian_wheezy_chef_solo_jenkins_install.html"><em>前回</em></a>はTemplate Resourceを使わなかったので使ってみたい。</li>
-</ul>
-<p>ということでChef Soloでvsftpdをインストール、Template Resource使った設定ファイルの設置まで行う。</p>
+</ul><p>ということでChef Soloでvsftpdをインストール、Template Resource使った設定ファイルの設置まで行う。</p>
 <p><a class="reference internal" href="http://127.0.0.1/blog/html/2014/03/21/debian_wheezy_chef_solo_jenkins_install.html"><em>前回</em></a>と同じくVagrantを使う。作ったCookbookは<a class="reference external" href="https://github.com/zinrai/chef-repo/tree/vsftpd">Github</a>に置くようにした。</p>
 <div class="section" id="vagrant">
 <h2>Vagrant</h2>
@@ -1141,13 +1163,13 @@ Vagrant 1.4.3
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure(&quot;2&quot;) do |config|
-  config.vm.hostname = &quot;vsftpd&quot;
-  config.vm.box = &quot;opscode_centos-6.4&quot;
+Vagrant.configure("2") do |config|
+  config.vm.hostname = "vsftpd"
+  config.vm.box = "opscode_centos-6.4"
 
-  config.vm.network :public_network, :ip =&gt; &quot;192.168.0.1&quot;, :netmask =&gt; &quot;255.255.255.0&quot;, :bridge =&gt; &quot;eth0&quot;
+  config.vm.network :public_network, :ip =&gt; "192.168.0.1", :netmask =&gt; "255.255.255.0", :bridge =&gt; "eth0"
   config.vm.provider :virtualbox do |vb|
-    vb.customize [&quot;modifyvm&quot;, :id, &quot;--memory&quot;, &quot;1024&quot;]
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
   end
 end
 </pre></div>
@@ -1231,8 +1253,8 @@ Codename:       wheezy
 
 site :opscode
 
-cookbook &quot;yum&quot;, &quot;3.0.6&quot;
-cookbook &quot;vsftpd&quot;, path: &quot;./site-cookbooks/vsftpd&quot;
+cookbook "yum", "3.0.6"
+cookbook "vsftpd", path: "./site-cookbooks/vsftpd"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>$ bundle exec knife cookbook create vsftpd -o ./site-cookbooks
@@ -1253,15 +1275,15 @@ directory '/var/vsftpd' do
   action :create
 end
 
-template &quot;vsftpd.conf&quot; do
-  path &quot;/etc/vsftpd/vsftpd.conf&quot;
-  source &quot;vsftpd.conf.erb&quot;
-  owner &quot;root&quot;
-  group &quot;root&quot;
-  mode &quot;600&quot;
+template "vsftpd.conf" do
+  path "/etc/vsftpd/vsftpd.conf"
+  source "vsftpd.conf.erb"
+  owner "root"
+  group "root"
+  mode "600"
 end
 
-service &quot;vsftpd&quot; do
+service "vsftpd" do
   action [:enable, :start]
 end
 </pre></div>
@@ -1283,8 +1305,8 @@ tcp_wrappers=YES
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>$ vi nodes/vsftpd.json
-{&quot;run_list&quot;:[
-    &quot;recipe[vsftpd]&quot;
+{"run_list":[
+    "recipe[vsftpd]"
   ]
 }
 </pre></div>
@@ -1297,13 +1319,10 @@ $ bundle exec knife solo cook vsftpd nodes/vsftpd.json
 </pre></div>
 </div>
 <p>などしてFTPサーバにアクセスできれば成功している。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://docs.opscode.com/resource_directory.html">http://docs.opscode.com/resource_directory.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://docs.opscode.com/resource_directory.html">http://docs.opscode.com/resource_directory.html</a></li>
 <li><a class="reference external" href="http://docs.opscode.com/resource_template.html">http://docs.opscode.com/resource_template.html</a></li>
 <li><a class="reference external" href="http://docs.vagrantup.com/v2/networking/public_network.html">http://docs.vagrantup.com/v2/networking/public_network.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ chef ]]></category>
              <pubDate>Sat, 22 Mar 2014 00:00:00 +0900</pubDate>
         </item>
@@ -1312,8 +1331,7 @@ $ bundle exec knife solo cook vsftpd nodes/vsftpd.json
             <link>http://127.0.0.1/blog/html/2014/03/21/debian_wheezy_chef_solo_jenkins_install.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/21/debian_wheezy_chef_solo_jenkins_install.html</guid>
             <title><![CDATA[Chef SoloでJenkinsをインストール]]></title>
-            <description><![CDATA[<div class="section" id="chef-solojenkins">
-<h1>Chef SoloでJenkinsをインストール</h1>
+            <description><![CDATA[<h1>Chef SoloでJenkinsをインストール</h1>
 <p>社内で詳しい人の助けを借りてChef SoloでJenkinsをインストールしてみた。</p>
 <div class="section" id="vagrant">
 <h2>Vagrant</h2>
@@ -1323,18 +1341,18 @@ $ bundle exec knife solo cook vsftpd nodes/vsftpd.json
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure(&quot;2&quot;) do |config|
-  config.vm.hostname = &quot;jenkins&quot;
-  config.vm.box = &quot;opscode_centos-6.4&quot;
+Vagrant.configure("2") do |config|
+  config.vm.hostname = "jenkins"
+  config.vm.box = "opscode_centos-6.4"
 
-  config.vm.network :private_network, ip: &quot;192.168.11.11&quot;
+  config.vm.network :private_network, ip: "192.168.11.11"
   config.vm.network :forwarded_port, guest: 8080, host: 8080
 
   config.vm.provider :virtualbox do |vb|
-    vb.customize [&quot;modifyvm&quot;, :id, &quot;--memory&quot;, &quot;1024&quot;]
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
   end
 
-  #config.omnibus.chef_version = &quot;11.10.4&quot;
+  #config.omnibus.chef_version = "11.10.4"
 end
 </pre></div>
 </div>
@@ -1380,21 +1398,11 @@ gem 'knife-solo'
 gem 'rake'
 </pre></div>
 </div>
-<table border="1" class="docutils">
-<colgroup>
-<col width="17%"/>
-<col width="83%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>berkshelf</td>
+<table border="1" class="docutils"><colgroup><col width="17%"/><col width="83%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>berkshelf</td>
 <td>cookbooksの依存関係を管理してくれるツール</td>
-</tr>
-<tr class="row-even"><td>knife-solo</td>
+</tr><tr class="row-even"><td>knife-solo</td>
 <td>ホストのrecipeをサーバへrsyncしChef Soloを実行。結果をホストに出力してくれるknifeプラグイン</td>
-</tr>
-</tbody>
-</table>
-</div>
+</tr></tbody></table></div>
 <div class="section" id="gemfile-lock">
 <h3>Gemfile.lock</h3>
 <p>2014/03/20の時点でのGemfile.lockは以下のようになっている。</p>
@@ -1603,27 +1611,17 @@ DEPENDENCIES
 </pre></div>
 </div>
 <p>ディレクトリの構成は</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="17%"/>
-<col width="83%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>cookbooks</td>
+<table border="1" class="docutils"><colgroup><col width="17%"/><col width="83%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>cookbooks</td>
 <td>サードパーティのcookbooksを格納</td>
-</tr>
-<tr class="row-even"><td>site-cookbooks</td>
+</tr><tr class="row-even"><td>site-cookbooks</td>
 <td>自分で作成したcookbooksを格納</td>
-</tr>
-</tbody>
-</table>
-<p>と使い分けるのがモダンなやり方のようだ。</p>
+</tr></tbody></table><p>と使い分けるのがモダンなやり方のようだ。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ vi Berksfile
 
 site :opscode
 
-cookbook &quot;yum&quot;, &quot;3.0.6&quot;
-cookbook &quot;jenkins&quot;, path: &quot;./site-cookbooks/jenkins&quot;
+cookbook "yum", "3.0.6"
+cookbook "jenkins", path: "./site-cookbooks/jenkins"
 </pre></div>
 </div>
 <p>Berksfileとsite-cookbooksは必ず一致させておく。</p>
@@ -1632,19 +1630,15 @@ $ bundle exec berks install --path ./cookbooks
 </pre></div>
 </div>
 <p>berkshelfでcookbookを管理している場合は、site-cookbooks以下に変更を加えたら必ずberks installを実行する。</p>
-<ul class="simple">
-<li><strong>Node</strong>: Chefで管理するサーバ/マシン</li>
-<li><strong>Cookbook</strong>: Node対して行うオペレーションをまとめた単位<ul>
-<li><strong>Recipe</strong>: Nodeに対して行うオペレーション</li>
+<ul class="simple"><li><strong>Node</strong>: Chefで管理するサーバ/マシン</li>
+<li><strong>Cookbook</strong>: Node対して行うオペレーションをまとめた単位<ul><li><strong>Recipe</strong>: Nodeに対して行うオペレーション</li>
 <li><strong>Attribute</strong>: cookbook内にあるパラメータ</li>
 <li><strong>Resource</strong>: オペレーションを抽象化したAPI</li>
-</ul>
-</li>
-</ul>
-<p>今回だと、RecipeにはJenkinsのrpmパッケージを取得してインストールして起動するまでをResourceを使って書き、Attributeには取得先のURLとパッケージバーションをパラメータとして設定して、これらがCookbookになっているという感じである。attributeにパラメータを設定して、recipeにオペレーションを書いて、nodes/jenkins.jsonに適用したいrecipeを書いて、Chef Soloを実行するまでが一連の流れになる。</p>
+</ul></li>
+</ul><p>今回だと、RecipeにはJenkinsのrpmパッケージを取得してインストールして起動するまでをResourceを使って書き、Attributeには取得先のURLとパッケージバーションをパラメータとして設定して、これらがCookbookになっているという感じである。attributeにパラメータを設定して、recipeにオペレーションを書いて、nodes/jenkins.jsonに適用したいrecipeを書いて、Chef Soloを実行するまでが一連の流れになる。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ vi site-cookbooks/jenkins/attributes/default.rb
-default['jenkins']['rpm'] = &quot;jenkins-1.555-1.1.noarch.rpm&quot;
-default['jenkins']['rpm_url'] = &quot;http://pkg.jenkins-ci.org/redhat/#{node['jenkins']['rpm']}&quot;
+default['jenkins']['rpm'] = "jenkins-1.555-1.1.noarch.rpm"
+default['jenkins']['rpm_url'] = "http://pkg.jenkins-ci.org/redhat/#{node['jenkins']['rpm']}"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>$ vi sites-cookbooks/jenkins/recipe/default.rb
@@ -1654,26 +1648,26 @@ default['jenkins']['rpm_url'] = &quot;http://pkg.jenkins-ci.org/redhat/#{node['j
   end
 end
 
-remote_file &quot;/tmp/&quot; + node[&quot;jenkins&quot;][&quot;rpm&quot;] do
-  source node[&quot;jenkins&quot;][&quot;rpm_url&quot;]
-  owner &quot;root&quot;
-  group &quot;root&quot;
-  mode &quot;0755&quot;
+remote_file "/tmp/" + node["jenkins"]["rpm"] do
+  source node["jenkins"]["rpm_url"]
+  owner "root"
+  group "root"
+  mode "0755"
 end
 
-package &quot;jenkins&quot; do
+package "jenkins" do
   action :install
-  source &quot;/tmp/&quot; + node[&quot;jenkins&quot;][&quot;rpm&quot;]
+  source "/tmp/" + node["jenkins"]["rpm"]
 end
 
-service &quot;jenkins&quot; do
+service "jenkins" do
   action [:enable, :start]
 end
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>$ vi nodes/jenkins.json
-{&quot;run_list&quot;:[
-    &quot;recipe[jenkins]&quot;
+{"run_list":[
+    "recipe[jenkins]"
   ]
 }
 </pre></div>
@@ -1683,14 +1677,11 @@ $ bundle exec knife solo cook jenkins nodes/jenkins.json
 </pre></div>
 </div>
 <p>最後のコマンドはjenkinsというサーバに対してnodes/jenkins.jsonに書かれた情報をもとにrecipeを適用するという意味である。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://berkshelf.com">http://berkshelf.com/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://berkshelf.com">http://berkshelf.com/</a></li>
 <li><a class="reference external" href="http://docs.opscode.com/chef/resources.html">http://docs.opscode.com/chef/resources.html</a></li>
 <li><a class="reference external" href="http://docs.opscode.com/chef_overview_attributes.html">http://docs.opscode.com/chef_overview_attributes.html</a></li>
 <li><a class="reference external" href="http://pkg.jenkins-ci.org/redhat">http://pkg.jenkins-ci.org/redhat/</a></li>
-</ul>
-</div>
-</div>
+</ul></div>
 </div>]]></description>
             <category><![CDATA[ chef ]]></category>
              <pubDate>Fri, 21 Mar 2014 00:00:00 +0900</pubDate>
@@ -1700,16 +1691,13 @@ $ bundle exec knife solo cook jenkins nodes/jenkins.json
             <link>http://127.0.0.1/blog/html/2014/03/20/debian_wheezy_virtualbox_vagrant.html</link>
             <guid>http://127.0.0.1/blog/html/2014/03/20/debian_wheezy_virtualbox_vagrant.html</guid>
             <title><![CDATA[Debian wheezyでVagrantを使てみた]]></title>
-            <description><![CDATA[<div class="section" id="debian-wheezyvagrant">
-<h1>Debian wheezyでVagrantを使てみた</h1>
+            <description><![CDATA[<h1>Debian wheezyでVagrantを使てみた</h1>
 <p>巷で人気のVagrantで</p>
-<ul class="simple">
-<li>BOXの追加</li>
+<ul class="simple"><li>BOXの追加</li>
 <li>仮想マシンの起動</li>
 <li>プラグインのインストール</li>
 <li>インストールしたプラグインの使用</li>
-</ul>
-<p>までやってみた。</p>
+</ul><p>までやってみた。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
 </pre></div>
@@ -1759,13 +1747,13 @@ opscode_centos-6.4 (virtualbox)
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure(&quot;2&quot;) do |config|
-  config.vm.hostname = &quot;test&quot;
-  config.vm.box = &quot;opscode_centos-6.4&quot;
+Vagrant.configure("2") do |config|
+  config.vm.hostname = "test"
+  config.vm.box = "opscode_centos-6.4"
 
-  config.vm.network :private_network, ip: &quot;192.168.11.11&quot;
+  config.vm.network :private_network, ip: "192.168.11.11"
   config.vm.provider :virtualbox do |vb|
-    vb.customize [&quot;modifyvm&quot;, :id, &quot;--memory&quot;, &quot;1024&quot;]
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
   end
 end
 </pre></div>
@@ -1795,30 +1783,17 @@ Available subcommands:
      status
 </pre></div>
 </div>
-<table border="1" class="docutils">
-<colgroup>
-<col width="13%"/>
-<col width="88%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>commit</td>
+<table border="1" class="docutils"><colgroup><col width="13%"/><col width="88%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>commit</td>
 <td>保存されて状態以降の変更を保存する。</td>
-</tr>
-<tr class="row-even"><td>off</td>
+</tr><tr class="row-even"><td>off</td>
 <td>sandboxをoffにする。保存されちている状態以降の変更は保存される。</td>
-</tr>
-<tr class="row-odd"><td>on</td>
+</tr><tr class="row-odd"><td>on</td>
 <td>onにした時点の仮想マシンの状態が保存される。</td>
-</tr>
-<tr class="row-even"><td>rollback</td>
+</tr><tr class="row-even"><td>rollback</td>
 <td>最後に保存した時点までロールバックする。</td>
-</tr>
-<tr class="row-odd"><td>status</td>
+</tr><tr class="row-odd"><td>status</td>
 <td>sandbox状態かの確認</td>
-</tr>
-</tbody>
-</table>
-<div class="highlight-python"><div class="highlight"><pre>$ vagrant status
+</tr></tbody></table><div class="highlight-python"><div class="highlight"><pre>$ vagrant status
 Current machine states:
 
 default                   running (virtualbox)
@@ -1833,14 +1808,11 @@ $ vagrant sandbox rollback
 </pre></div>
 </div>
 <p>sandboxをonにしてVagrantで管理している仮想マシンにアクセスして変更を加えたあとrollbackすると仮想マシンがon時の状態に戻る。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://www.vagrantup.com">http://www.vagrantup.com/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.vagrantup.com">http://www.vagrantup.com/</a></li>
 <li><a class="reference external" href="http://opscode.github.io/bento">http://opscode.github.io/bento/</a></li>
 <li><a class="reference external" href="https://github.com/jedi4ever/sahara">https://github.com/jedi4ever/sahara</a></li>
 <li><a class="reference external" href="https://www.virtualbox.org/wiki/Linux_Downloads">https://www.virtualbox.org/wiki/Linux_Downloads</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ vagrant ]]></category>
              <pubDate>Thu, 20 Mar 2014 00:00:00 +0900</pubDate>
         </item>
@@ -1849,8 +1821,7 @@ $ vagrant sandbox rollback
             <link>http://127.0.0.1/blog/html/2014/02/26/debian_wheezy_schroot_aufs.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/26/debian_wheezy_schroot_aufs.html</guid>
             <title><![CDATA[schrootでaufsを使う]]></title>
-            <description><![CDATA[<div class="section" id="schrootaufs">
-<h1>schrootでaufsを使う</h1>
+            <description><![CDATA[<h1>schrootでaufsを使う</h1>
 <p>schroot(1)でaufsを使いたいなと思いschroot.conf(5)を眺めてみたところunion-type,union-mount-optionsというオプションを見付けた。union-typeにaufsを指定し、union-mount-optionsにunion mountするときのオプションを書けばオプションをパースしてくれる。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
@@ -1871,7 +1842,6 @@ profile=fuga
 users=hoge
 root-groups=root
 </pre></div>
-</div>
 </div>]]></description>
             <category><![CDATA[ schroot ]]></category>
              <pubDate>Wed, 26 Feb 2014 00:00:00 +0900</pubDate>
@@ -1881,8 +1851,7 @@ root-groups=root
             <link>http://127.0.0.1/blog/html/2014/02/25/debian_wheezy_synergy.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/25/debian_wheezy_synergy.html</guid>
             <title><![CDATA[Synergyでマウスとキーボードを共有]]></title>
-            <description><![CDATA[<div class="section" id="synergy">
-<h1>Synergyでマウスとキーボードを共有</h1>
+            <description><![CDATA[<h1>Synergyでマウスとキーボードを共有</h1>
 <p>最近、デスクトップPCの横にノートPCを置いて作業をるすことが多くなったのでsynergyを入れてみた。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
@@ -1937,12 +1906,9 @@ end
 </pre></div>
 </div>
 <p>synergys(1),synergyc(1)をforegroundで起動したいときは、どちらも「-f」オプションを付ける。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://synergy-foss.org/?hl=ja">http://synergy-foss.org/?hl=ja</a></li>
+<ul class="simple"><li><a class="reference external" href="http://synergy-foss.org/?hl=ja">http://synergy-foss.org/?hl=ja</a></li>
 <li><a class="reference external" href="http://synergy2.sourceforge.net/configuration.html">http://synergy2.sourceforge.net/configuration.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ synergy ]]></category>
              <pubDate>Tue, 25 Feb 2014 00:00:00 +0900</pubDate>
         </item>
@@ -1951,8 +1917,7 @@ end
             <link>http://127.0.0.1/blog/html/2014/02/07/debian_wheezy_openvpn.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/07/debian_wheezy_openvpn.html</guid>
             <title><![CDATA[OpenVPN サーバ構築]]></title>
-            <description><![CDATA[<div class="section" id="openvpn">
-<h1>OpenVPN サーバ構築</h1>
+            <description><![CDATA[<h1>OpenVPN サーバ構築</h1>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux
 </pre></div>
@@ -2002,7 +1967,7 @@ cert server.crt
 key server.key
 dh dh1024.pem
 server-bridge 192.168.2.1 255.255.255.0 192.168.2.250 192.168.2.253
-push &quot;route 192.168.2.0 255.255.255.0&quot;
+push "route 192.168.2.0 255.255.255.0"
 duplicate-cn
 keepalive 10 120
 comp-lzo
@@ -2056,12 +2021,9 @@ comp-lzo
 verb 3
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#RoutedOrBridged">http://www.openvpn.jp/document/how-to/#RoutedOrBridged</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#RoutedOrBridged">http://www.openvpn.jp/document/how-to/#RoutedOrBridged</a></li>
 <li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#CertificateAuthority">http://www.openvpn.jp/document/how-to/#CertificateAuthority</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ openvpn ]]></category>
              <pubDate>Fri, 07 Feb 2014 00:00:00 +0900</pubDate>
         </item>
@@ -2070,8 +2032,7 @@ verb 3
             <link>http://127.0.0.1/blog/html/2014/02/06/debian_wheezy_kvm_zfs.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/06/debian_wheezy_kvm_zfs.html</guid>
             <title><![CDATA[KVMのGuestOSにZVOLを使う]]></title>
-            <description><![CDATA[<div class="section" id="kvmguestoszvol">
-<h1>KVMのGuestOSにZVOLを使う</h1>
+            <description><![CDATA[<h1>KVMのGuestOSにZVOLを使う</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html"><em>ZFS on Linux (Debian wheezy)</em></a>」で最後に書いたブロックデバイスとして見えないかを調べてみた。</p>
 <div class="section" id="zvol">
 <h2>ZVOL</h2>
@@ -2093,7 +2054,7 @@ lrwxrwxrwx 1 root root 10 Feb  6 12:37 disk2 -&gt; ../../zd16
 <h2>sparse volume</h2>
 <p>上記だと20GBの領域がまるまる割り当てられてしまうので、thin provisioning的な機能はないかzfs(8)を眺めてみた。</p>
 <p>man zfsして「thin provisioning」で検索して「 “sparse volume” (also known as “thin provisioning”)」の文の見付けて「sparse volume」で検索したらオプションを探し当てることができた。</p>
-<div class="highlight-python"><div class="highlight"><pre>Though not recommended, a &quot;sparse volume&quot; (also known as &quot;thin provisioning&quot;) can be created by specifying the -s option to the  zfs  create  -V command,  or by changing the reservation after the volume has been created. A &quot;sparse volume&quot; is a volume where the reservation is less then the volume size. Consequently, writes to a sparse volume can fail with ENOSPC when the pool is low on space. For a sparse volume, changes to volsize are not reflected in the reservation.
+<div class="highlight-python"><div class="highlight"><pre>Though not recommended, a "sparse volume" (also known as "thin provisioning") can be created by specifying the -s option to the  zfs  create  -V command,  or by changing the reservation after the volume has been created. A "sparse volume" is a volume where the reservation is less then the volume size. Consequently, writes to a sparse volume can fail with ENOSPC when the pool is low on space. For a sparse volume, changes to volsize are not reflected in the reservation.
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>-s
@@ -2151,18 +2112,18 @@ zfspool/kvm1  snapdev               hidden                 default
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$3</span>
 <span class="nv">OS</span><span class="o">=</span><span class="nv">$4</span>
 
-<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">&quot;/dev/zvol/zfspool/$VM_NAME&quot;</span>
+<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">"/dev/zvol/zfspool/$VM_NAME"</span>
 
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;centos&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"centos"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># CentOS 6.4 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;precise&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"precise"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Ubuntu 12.04 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;squeeze&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"squeeze"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Squeeze amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;wheezy&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"wheezy"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Wheezy amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
 <span class="k">fi</span>
@@ -2199,11 +2160,8 @@ zfspool/kvm1@snap1   600K      -  1.57G  -
 % zfs rollback zfspool/kvm1@snap1
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols">https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/</a></li>
-</ul>
-</div>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols">https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/</a></li>
+</ul></div>]]></description>
             <category><![CDATA[ debian ]]></category>
              <pubDate>Thu, 06 Feb 2014 00:00:00 +0900</pubDate>
         </item>
@@ -2212,8 +2170,7 @@ zfspool/kvm1@snap1   600K      -  1.57G  -
             <link>http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html</link>
             <guid>http://127.0.0.1/blog/html/2014/02/05/debian_wheezy_zfs.html</guid>
             <title><![CDATA[ZFS on Linux (Debian wheezy)]]></title>
-            <description><![CDATA[<div class="section" id="zfs-on-linux-debian-wheezy">
-<h1>ZFS on Linux (Debian wheezy)</h1>
+            <description><![CDATA[<h1>ZFS on Linux (Debian wheezy)</h1>
 <p>LinuxでもZFSがいい感じで動くという話を聞いたので使ってみた。</p>
 <div class="highlight-python"><div class="highlight"><pre>% uname -a
 Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux
@@ -2234,8 +2191,8 @@ Codename:       wheezy
 </pre></div>
 </div>
 <p>2TBのHDDをRAID1してみる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% parted /dev/sda -s &quot;mklabel gpt&quot;
-% parted /dev/sdc -s &quot;mklabel gpt&quot;
+<div class="highlight-python"><div class="highlight"><pre>% parted /dev/sda -s "mklabel gpt"
+% parted /dev/sdc -s "mklabel gpt"
 
 % zpool create zfspool mirror sda sdc
 % zpool list -v
@@ -2254,11 +2211,9 @@ zfspool/disk1   136K  1.78T   136K  /zfspool/disk1
 </pre></div>
 </div>
 <p>ブロックデバイスとして見えたらKVMのGuestOS用のディスクとして使えると思うので、その辺を調べてみる。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://zfsonlinux.org/debian.html">http://zfsonlinux.org/debian.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://zfsonlinux.org/debian.html">http://zfsonlinux.org/debian.html</a></li>
 <li><a class="reference external" href="http://sourceforge.jp/magazine/13/04/01/133000">http://sourceforge.jp/magazine/13/04/01/133000</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ debian ]]></category>
             <category><![CDATA[ zfs ]]></category>
              <pubDate>Wed, 05 Feb 2014 00:00:00 +0900</pubDate>
@@ -2268,12 +2223,9 @@ zfspool/disk1   136K  1.78T   136K  /zfspool/disk1
             <link>http://127.0.0.1/blog/html/2013/12/03/ubuntu_docker_ansible.html</link>
             <guid>http://127.0.0.1/blog/html/2013/12/03/ubuntu_docker_ansible.html</guid>
             <title><![CDATA[Ansibleを使ってみる]]></title>
-            <description><![CDATA[<div class="section" id="ansible">
-<h1>Ansibleを使ってみる</h1>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/11/28/ubuntu_docker.html"><em>Dockerを使ってみる</em></a></li>
-</ul>
-<p>前回はDockerの使い方を調べたので、今回はDocker上のコンテナで巷で噂の<a class="reference external" href="http://www.ansibleworks.com">Ansible</a>を動かしてみる。</p>
+            <description><![CDATA[<h1>Ansibleを使ってみる</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/11/28/ubuntu_docker.html"><em>Dockerを使ってみる</em></a></li>
+</ul><p>前回はDockerの使い方を調べたので、今回はDocker上のコンテナで巷で噂の<a class="reference external" href="http://www.ansibleworks.com">Ansible</a>を動かしてみる。</p>
 <div class="section" id="id1">
 <h2>コンテナ起動</h2>
 <div class="highlight-python"><div class="highlight"><pre>% docker run -i -t -id --name test01 ubuntu:latest /bin/bash
@@ -2291,12 +2243,10 @@ Release:        12.04
 Codename:       precise
 </pre></div>
 </div>
-<ul class="simple">
-<li>Python,SSHインストール</li>
+<ul class="simple"><li>Python,SSHインストール</li>
 <li>SSH公開鍵 設定</li>
 <li>sudo設定</li>
-</ul>
-<p>起動したコンテナで上記の作業してコンテナイメージを作成する。</p>
+</ul><p>起動したコンテナで上記の作業してコンテナイメージを作成する。</p>
 <div class="highlight-python"><div class="highlight"><pre>% apt-get install python2.7 python2.7-dev openssh-server vim sudo wget ca-certificates
 
 % mkdir /var/run/sshd
@@ -2341,11 +2291,9 @@ $ cp id_rsa.pub authorized_keys
 </div>
 <div class="section" id="id3">
 <h2>Ansible</h2>
-<ul class="simple">
-<li><a class="reference external" href="http://www.ansibleworks.com">Ansible</a>はvirtualenv上で動かす。</li>
+<ul class="simple"><li><a class="reference external" href="http://www.ansibleworks.com">Ansible</a>はvirtualenv上で動かす。</li>
 <li>–ask-sudo-passオプションが使えるようにsshpassをインストール</li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
+</ul><div class="highlight-python"><div class="highlight"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.10.1.tar.gz
 $ tar zvxf virtualenv-1.10.1.tar.gz
 $ python virtualenv-1.10.1/virtualenv.py ansible
 $ source ansible/bin/activate
@@ -2415,12 +2363,9 @@ PLAY RECAP ********************************************************************
 172.17.0.11                : ok=2    changed=1    unreachable=0    failed=0
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.ansibleworks.com/docs/playbooks.html">http://www.ansibleworks.com/docs/playbooks.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.ansibleworks.com/docs/playbooks.html">http://www.ansibleworks.com/docs/playbooks.html</a></li>
 <li><a class="reference external" href="http://www.slideshare.net/takushimizu/ansible-26200860">http://www.slideshare.net/takushimizu/ansible-26200860</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ ansible ]]></category>
              <pubDate>Tue, 03 Dec 2013 00:00:00 +0900</pubDate>
         </item>
@@ -2429,8 +2374,7 @@ PLAY RECAP ********************************************************************
             <link>http://127.0.0.1/blog/html/2013/11/28/ubuntu_docker.html</link>
             <guid>http://127.0.0.1/blog/html/2013/11/28/ubuntu_docker.html</guid>
             <title><![CDATA[Dockerを使ってみる]]></title>
-            <description><![CDATA[<div class="section" id="docker">
-<h1>Dockerを使ってみる</h1>
+            <description><![CDATA[<h1>Dockerを使ってみる</h1>
 <p><a class="reference external" href="https://www.dotcloud.com">dotcloud</a>がオープンソースで公開している<a class="reference external" href="http://docs.docker.io">Docker</a>というソフトウェアを知った。Linuxコンテナの実装の一つである<a class="reference external" href="http://linuxcontainers.org">LXC</a>を使いOSレベルの仮想化を行い、<a class="reference external" href="http://aufs.sourceforge.net">Aufs</a>で「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/10/debian_wheezy_chroot_aufs.html"><em>aufsを使ったchroot環境</em></a>」のようにベースファイルを書き換えずに、更新が発生した部分は別ディレクトリに書き込み、この差分をGitっぽく管理できるフロントエンドなのかなというのが触ってみた印象だった。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux asuna 3.8.0-33-generic #48~precise1-Ubuntu SMP Thu Oct 24 16:28:06 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
@@ -2449,8 +2393,8 @@ Codename:       precise
 $ sudo apt-get install linux-image-generic-lts-raring linux-headers-generic-lts-raring
 $ sudo reboot
 
-$ sudo sh -c &quot;wget -qO- https://get.docker.io/gpg | apt-key add -&quot;
-$ sudo sh -c &quot;echo deb http://get.docker.io/ubuntu docker main &gt; /etc/apt/sources.list.d/docker.list&quot;
+$ sudo sh -c "wget -qO- https://get.docker.io/gpg | apt-key add -"
+$ sudo sh -c "echo deb http://get.docker.io/ubuntu docker main &gt; /etc/apt/sources.list.d/docker.list"
 $ sudo apt-get update
 $ sudo apt-get install lxc-docker
 </pre></div>
@@ -2548,11 +2492,9 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
 8fcfa5265233        ubuntu:12.04        /bin/bash           8 hours ago         Up 8 hours                                                         ubuntu01
 </pre></div>
 </div>
-<ul class="simple">
-<li>「-a」オプションで停止中のコンテナの情報を表示できる。</li>
+<ul class="simple"><li>「-a」オプションで停止中のコンテナの情報を表示できる。</li>
 <li>「-q」オプションでコンテナIDのみを表示できる。</li>
-</ul>
-</div>
+</ul></div>
 <div class="section" id="attach">
 <h3>attach</h3>
 <div class="highlight-python"><div class="highlight"><pre>% docker attach ubuntu01
@@ -2611,14 +2553,11 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
 </div>
 <p>アーカイブは他の<a class="reference external" href="http://docs.docker.io">Docker</a>にimportすることができる。「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」を使って実機やKVMなどの仮想マシンにも展開できそう。</p>
 <p>環境を手軽に作れて差分で新たな環境を作ったりできてすごく便利。次は作成したコンテナでなにか動かしてみたいと思う。</p>
-<ul class="simple">
-<li><a class="reference external" href="https://index.docker.io">https://index.docker.io/</a></li>
+<ul class="simple"><li><a class="reference external" href="https://index.docker.io">https://index.docker.io/</a></li>
 <li><a class="reference external" href="http://docs.docker.io/en/latest/commandline/cli">http://docs.docker.io/en/latest/commandline/cli/</a></li>
 <li><a class="reference external" href="http://docs.docker.io/en/latest/installation/ubuntulinux/ubuntu_docker.html#ubuntu-precise">http://docs.docker.io/en/latest/installation/ubuntulinux/#ubuntu-precise</a></li>
 <li><a class="reference external" href="http://www.infoq.com/jp/articles/docker-containers">http://www.infoq.com/jp/articles/docker-containers</a></li>
-</ul>
-</div>
-</div>
+</ul></div>
 </div>]]></description>
             <category><![CDATA[ docker ]]></category>
              <pubDate>Thu, 28 Nov 2013 00:00:00 +0900</pubDate>
@@ -2628,8 +2567,7 @@ fe54b9318dba        ubuntu:12.04        /bin/bash           8 hours ago         
             <link>http://127.0.0.1/blog/html/2013/11/25/fabric_template_upload.html</link>
             <guid>http://127.0.0.1/blog/html/2013/11/25/fabric_template_upload.html</guid>
             <title><![CDATA[Fabric テンプレート アップロード]]></title>
-            <description><![CDATA[<div class="section" id="fabric">
-<h1>Fabric テンプレート アップロード</h1>
+            <description><![CDATA[<h1>Fabric テンプレート アップロード</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/11/22/fabric_decorators_task.html"><em>Fabric decorators task</em></a>」でディストリビューションやOSごとにファイルを分割してタスクを書けるようにした。今回はインストールスルクリプトをテンプレート化してアップロードするタスクを書いてみる。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ vi __init__.py
 </pre></div>
@@ -2685,7 +2623,7 @@ $ vi templates/debian_template.conf
 <span class="nv">DISK</span><span class="o">=</span>/dev/<span class="o">{{</span> disk <span class="o">}}</span>
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
 <span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">&quot;/mnt/$3&quot;</span>
+<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
 
 dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
 
@@ -2785,15 +2723,13 @@ Available commands:
     gentoo.cmd
 </pre></div>
 </div>
-<div class="highlight-python"><div class="highlight"><pre>$ fab server debian.upload:macaddress=&quot;01:23:45:67:89:ab&quot;,disk=&quot;vda&quot;,hostname=&quot;hoge.localnet&quot;,ipaddress=&quot;192.168.0.50&quot;,netmask=&quot;255.255.255.0&quot;,gateway=&quot;192.168.0.254&quot;,source_template=&quot;templates/debian_template.conf&quot;,dest_template=&quot;/var/diskless/scripts/debian_template.conf&quot;
+<div class="highlight-python"><div class="highlight"><pre>$ fab server debian.upload:macaddress="01:23:45:67:89:ab",disk="vda",hostname="hoge.localnet",ipaddress="192.168.0.50",netmask="255.255.255.0",gateway="192.168.0.254",source_template="templates/debian_template.conf",dest_template="/var/diskless/scripts/debian_template.conf"
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/contrib/files.html">http://docs.fabfile.org/en/1.8/api/contrib/files.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/contrib/files.html">http://docs.fabfile.org/en/1.8/api/contrib/files.html</a></li>
 <li><a class="reference external" href="http://docs.fabfile.org/en/1.8/usage/fab.html#task-arguments">http://docs.fabfile.org/en/1.8/usage/fab.html#task-arguments</a></li>
 <li><a class="reference external" href="https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes">https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ fabric ]]></category>
              <pubDate>Mon, 25 Nov 2013 00:00:00 +0900</pubDate>
         </item>
@@ -2802,17 +2738,14 @@ Available commands:
             <link>http://127.0.0.1/blog/html/2013/11/22/fabric_decorators_task.html</link>
             <guid>http://127.0.0.1/blog/html/2013/11/22/fabric_decorators_task.html</guid>
             <title><![CDATA[Fabric decorators task]]></title>
-            <description><![CDATA[<div class="section" id="fabric-decorators-task">
-<h1>Fabric decorators task</h1>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a></li>
+            <description><![CDATA[<h1>Fabric decorators task</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/08/gentoo_install_script.html"><em>Gentoo Linux インストールスクリプト</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html"><em>virtioを組み込んだmfsBSDイメージ作成</em></a></li>
-</ul>
-<p>シェルスクリプトでLinuxをインストールする環境はできたが、サーバに接続してシェルスクリプトをコピー・編集するという状態である。Fabricを使いこの作業をホストから行えるようにしてみる。fabfile.pyひとつにタスクを書いていくのではなくディストリビューションやOSごとにファイルを分割してタスクを書いていく。</p>
+</ul><p>シェルスクリプトでLinuxをインストールする環境はできたが、サーバに接続してシェルスクリプトをコピー・編集するという状態である。Fabricを使いこの作業をホストから行えるようにしてみる。fabfile.pyひとつにタスクを書いていくのではなくディストリビューションやOSごとにファイルを分割してタスクを書いていく。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ python -V
 Python 2.7.3
 
@@ -2879,12 +2812,10 @@ Available commands:
     gentoo.cmd
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://docs.fabfile.org/en/1.8">http://docs.fabfile.org/en/1.8/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://docs.fabfile.org/en/1.8">http://docs.fabfile.org/en/1.8/</a></li>
 <li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/core/decorators.html">http://docs.fabfile.org/en/1.8/api/core/decorators.html</a></li>
 <li><a class="reference external" href="https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes">https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ fabric ]]></category>
              <pubDate>Fri, 22 Nov 2013 00:00:00 +0900</pubDate>
         </item>
@@ -2893,8 +2824,7 @@ Available commands:
             <link>http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html</link>
             <guid>http://127.0.0.1/blog/html/2013/11/01/freebsd_mfsbsd.html</guid>
             <title><![CDATA[virtioを組み込んだmfsBSDイメージ作成]]></title>
-            <description><![CDATA[<div class="section" id="virtiomfsbsd">
-<h1>virtioを組み込んだmfsBSDイメージ作成</h1>
+            <description><![CDATA[<h1>virtioを組み込んだmfsBSDイメージ作成</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」だとFreeBSD母艦が必要になるので、どうにかして<a class="reference external" href="http://www.syslinux.org/wiki/index.php/The_Syslinux_Project">Syslinux</a>にまとめられないか調べてみたところ<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>というものを見付けた。今回は「9.1-RELEASE」のmfsBSDを作成した。</p>
 <div class="section" id="mfsbsd">
 <h2>mfsBSDイメージ作成</h2>
@@ -2951,11 +2881,9 @@ mfsbsd-9.1-RELEASE-amd64.img
 </div>
 <div class="section" id="syslinux">
 <h2>Syslinux</h2>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
-</ul>
-<p>これでDebian,CentOS,FreeBSDのディスクレスブート環境が出来上がった。</p>
+</ul><p>これでDebian,CentOS,FreeBSDのディスクレスブート環境が出来上がった。</p>
 <div class="highlight-python"><div class="highlight"><pre>% vi /path/pxelinux.cfg/default
 
 default menu.c32
@@ -2978,33 +2906,30 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk
 +DISK=vtbd0
  IFACE=$1
  CWD=$2
- CHROOT_FREEBSD=&quot;/mnt/$3&quot;
+ CHROOT_FREEBSD="/mnt/$3"
 @@ -27,8 +27,16 @@
    tar xfzp $FILE
  done
 
 +cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/boot/loader.conf
-+virtio_load=&quot;YES&quot;
-+virtio_pci_load=&quot;YES&quot;
-+virtio_blk_load=&quot;YES&quot;
-+if_vtnet_load=&quot;YES&quot;
-+virtio_balloon_load=&quot;YES&quot;
++virtio_load="YES"
++virtio_pci_load="YES"
++virtio_blk_load="YES"
++if_vtnet_load="YES"
++virtio_balloon_load="YES"
 +EOF
 +
  cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/rc.conf
--hostname=&quot;freebsd-install.local&quot;
-+hostname=&quot;freebsd-virtio.local&quot;
- keymap=&quot;us.iso.kbd&quot;
- ifconfig_${IFACE}=&quot; inet 192.168.2.200 netmask 255.255.255.0&quot;
- defaultrouter=&quot;192.168.2.254&quot;
+-hostname="freebsd-install.local"
++hostname="freebsd-virtio.local"
+ keymap="us.iso.kbd"
+ ifconfig_${IFACE}=" inet 192.168.2.200 netmask 255.255.255.0"
+ defaultrouter="192.168.2.254"
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://mfsbsd.vx.sk">http://mfsbsd.vx.sk/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://mfsbsd.vx.sk">http://mfsbsd.vx.sk/</a></li>
 <li><a class="reference external" href="http://people.freebsd.org/~kuriyama/virtio">http://people.freebsd.org/~kuriyama/virtio/</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ mfsbsd ]]></category>
              <pubDate>Fri, 01 Nov 2013 00:00:00 +0900</pubDate>
         </item>
@@ -3013,8 +2938,7 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk
             <link>http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/26/centos_diskless.html</guid>
             <title><![CDATA[CentOS ディスクレスブートサーバ構築]]></title>
-            <description><![CDATA[<div class="section" id="centos">
-<h1>CentOS ディスクレスブートサーバ構築</h1>
+            <description><![CDATA[<h1>CentOS ディスクレスブートサーバ構築</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a>」にCentOSのディスクレスブート環境を追加してみる。</p>
 <div class="highlight-python"><div class="highlight"><pre>% cat /etc/centos-release
 CentOS release 6.4 (Final)
@@ -3067,10 +2991,8 @@ kernel vmlinuz-2.6.32-358.23.2.el6.x86_64
 append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4">http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4</a></li>
-</ul>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4">http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4</a></li>
+</ul>]]></description>
             <category><![CDATA[ centos ]]></category>
              <pubDate>Sat, 26 Oct 2013 00:00:00 +0900</pubDate>
         </item>
@@ -3079,8 +3001,7 @@ append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/v
             <link>http://127.0.0.1/blog/html/2013/10/25/gentoo_emerge_sync_local_mirror.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/25/gentoo_emerge_sync_local_mirror.html</guid>
             <title><![CDATA[Gentoo Linux rsync ロカールミラー]]></title>
-            <description><![CDATA[<div class="section" id="gentoo-linux-rsync">
-<h1>Gentoo Linux rsync ロカールミラー</h1>
+            <description><![CDATA[<h1>Gentoo Linux rsync ロカールミラー</h1>
 <p>Gentoo Linuxマシンを複数台動かしている場合、それぞれのGentooマシンからemerge –syncするとリモートのミラーサーバに負荷が掛かるのでローカルにミラーサーバを構築し参照するようにした。</p>
 <div class="section" id="id1">
 <h2>サーバ</h2>
@@ -3131,12 +3052,11 @@ drwxr-xr-x        4096 2013/10/25 06:01:13 app-backup
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% vi /etc/portage/make.conf
-SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;
+SYNC="rsync://192.168.2.1/gentoo-portage"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% emerge --sync
 </pre></div>
-</div>
 </div>
 </div>]]></description>
             <category><![CDATA[ gentoo ]]></category>
@@ -3147,8 +3067,7 @@ SYNC=&quot;rsync://192.168.2.1/gentoo-portage&quot;
             <link>http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html</guid>
             <title><![CDATA[Proxy DHCPを使ったディスクレスブート環境構築]]></title>
-            <description><![CDATA[<div class="section" id="proxy-dhcp">
-<h1>Proxy DHCPを使ったディスクレスブート環境構築</h1>
+            <description><![CDATA[<h1>Proxy DHCPを使ったディスクレスブート環境構築</h1>
 <p>Proxy DHCPを使ってDHCPサーバとネットワークブートサーバを切り離し、ディスクレスブート環境を構築してみる。</p>
 <p>DHCPサーバ,Proxy DHCPともにdnsmasq、OSはDebian wheezyを使用する。</p>
 <div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
@@ -3180,7 +3099,7 @@ dhcp-option=3,192.168.2.254
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% vi /etc/dnsmasq.d/pxe.conf
 dhcp-range=192.168.2.0,proxy
-pxe-service=x86PC, &quot;os install&quot;, pxelinux
+pxe-service=x86PC, "os install", pxelinux
 enable-tftp
 tftp-root=/var/diskless
 </pre></div>
@@ -3218,7 +3137,6 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
 % service nfs-kernel-server restart
 </pre></div>
 </div>
-</div>
 </div>]]></description>
             <category><![CDATA[ dnsmasq ]]></category>
              <pubDate>Thu, 24 Oct 2013 00:00:00 +0900</pubDate>
@@ -3228,8 +3146,7 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
             <link>http://127.0.0.1/blog/html/2013/10/22/debian_wheezy_openvswitch_bridge.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/22/debian_wheezy_openvswitch_bridge.html</guid>
             <title><![CDATA[Open vSwitchを使ってみる]]></title>
-            <description><![CDATA[<div class="section" id="open-vswitch">
-<h1>Open vSwitchを使ってみる</h1>
+            <description><![CDATA[<h1>Open vSwitchを使ってみる</h1>
 <p>bridgeをOpen vSwitchに変えてみた。</p>
 <div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
@@ -3281,19 +3198,19 @@ brcompat_mod
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% ovs-vsctl show
 2a8eb1c3-4273-42b3-9f84-108918d53d15
-    Bridge &quot;br0&quot;
-        Port &quot;eth0&quot;
-            Interface &quot;eth0&quot;
-        Port &quot;br0&quot;
-            Interface &quot;br0&quot;
+    Bridge "br0"
+        Port "eth0"
+            Interface "eth0"
+        Port "br0"
+            Interface "br0"
                 type: internal
-    Bridge &quot;br1&quot;
-        Port &quot;eth1&quot;
-            Interface &quot;eth1&quot;
-        Port &quot;br1&quot;
-            Interface &quot;br1&quot;
+    Bridge "br1"
+        Port "eth1"
+            Interface "eth1"
+        Port "br1"
+            Interface "br1"
                 type: internal
-    ovs_version: &quot;1.4.2&quot;
+    ovs_version: "1.4.2"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% vi /etc/network/interfaces
@@ -3324,11 +3241,8 @@ libvirtd (libvirt) 0.9.12
 &lt;/interface&gt;
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://libvirt.org/formatnetwork.html">http://libvirt.org/formatnetwork.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://libvirt.org/formatnetwork.html">http://libvirt.org/formatnetwork.html</a></li>
+</ul></div>]]></description>
             <category><![CDATA[ openvswitch ]]></category>
              <pubDate>Tue, 22 Oct 2013 00:00:00 +0900</pubDate>
         </item>
@@ -3337,8 +3251,7 @@ libvirtd (libvirt) 0.9.12
             <link>http://127.0.0.1/blog/html/2013/10/17/freebsd_supervisor_uwsgi.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/17/freebsd_supervisor_uwsgi.html</guid>
             <title><![CDATA[Supervisorを使ってuWSGIを管理]]></title>
-            <description><![CDATA[<div class="section" id="supervisoruwsgi">
-<h1>Supervisorを使ってuWSGIを管理</h1>
+            <description><![CDATA[<h1>Supervisorを使ってuWSGIを管理</h1>
 <p>uWSGIのプロセスをSupervisorを使って管理してみる。</p>
 <div class="highlight-python"><div class="highlight"><pre>% uname -a
 FreeBSD uwsgi.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013
@@ -3368,14 +3281,14 @@ uid = www
 gid = www
 pidfile = /path/app/uwsgi.pid
 logto = /path/app/uwsgi.log
-log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;
+log-format = %(addr) - %(user) [%(ltime)] "%(method) %(uri) %(proto)" %(status) %(size)`` "%(referer)" "%(uagent)"
 </pre></div>
 </div>
 </div>
 <div class="section" id="supervisor">
 <h2>Supervisor</h2>
 <div class="highlight-python"><div class="highlight"><pre>% cd /usr/local/etc
-% grep -v &quot;^;&quot; supervisord.conf.sample &gt; supervisord.conf
+% grep -v "^;" supervisord.conf.sample &gt; supervisord.conf
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/supervisord.conf
@@ -3413,8 +3326,8 @@ stopasgroup = true
 <p>子プロセスまでkillするにはstopasgroupオプションが必要</p>
 <p>stopasgroupオプションを有効にしなければ、Supervisor経由でuWSGIを止められない。(stopasgroupオプションなしでは、Supervisorのstopを実行したときにuWSGIの親プロセスしかkillされず、子プロセスが残ったままになってしまう。)</p>
 <div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
-supervisord_enable=&quot;YES&quot;
-supervisord_flags=&quot;-c /usr/local/etc/supervisord.conf&quot;
+supervisord_enable="YES"
+supervisord_flags="-c /usr/local/etc/supervisord.conf"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>% service supervisord start
@@ -3427,12 +3340,9 @@ uwsgi                            RUNNING    pid 58014, uptime 0:15:23
 % supervisorctl start uwsgi
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://supervisord.org/configuration.html">http://supervisord.org/configuration.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://supervisord.org/configuration.html">http://supervisord.org/configuration.html</a></li>
 <li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/Options.html">http://uwsgi-docs.readthedocs.org/en/latest/Options.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ supervisor ]]></category>
              <pubDate>Thu, 17 Oct 2013 00:00:00 +0900</pubDate>
         </item>
@@ -3441,8 +3351,7 @@ uwsgi                            RUNNING    pid 58014, uptime 0:15:23
             <link>http://127.0.0.1/blog/html/2013/10/02/xdm_setting.html</link>
             <guid>http://127.0.0.1/blog/html/2013/10/02/xdm_setting.html</guid>
             <title><![CDATA[XDM 設定]]></title>
-            <description><![CDATA[<div class="section" id="xdm">
-<h1>XDM 設定</h1>
+            <description><![CDATA[<h1>XDM 設定</h1>
 <p>XDMのログイン画面はデフォルトだと寂しいので、ログイン毎に背景画像が代わるようにしている。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
@@ -3599,7 +3508,6 @@ fi
  XConsole.text.geometry:      480x130
 </pre></div>
 </div>
-</div>
 </div>]]></description>
             <category><![CDATA[ xdm ]]></category>
              <pubDate>Wed, 02 Oct 2013 00:00:00 +0900</pubDate>
@@ -3609,8 +3517,7 @@ fi
             <link>http://127.0.0.1/blog/html/2013/09/20/ssh_proxycommand.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/20/ssh_proxycommand.html</guid>
             <title><![CDATA[netcatを使わずに多段SSH]]></title>
-            <description><![CDATA[<div class="section" id="netcatssh">
-<h1>netcatを使わずに多段SSH</h1>
+            <description><![CDATA[<h1>netcatを使わずに多段SSH</h1>
 <p>netcatを使い多段SSHをしている記事をよく見掛けるが、私はnetcatのプロセスが動くのが気持ち悪いのでこちらの方法で多段SSHをしている。いつからあるオプションなのかは知らないがCentOS 6.4のSSH(OpenSSH 5.3)ではすでに存在している。</p>
 <p>ssh(1)より。</p>
 <div class="highlight-python"><div class="highlight"><pre>-W host:port
@@ -3635,7 +3542,6 @@ Host server1
 </div>
 <div class="highlight-python"><div class="highlight"><pre>$ ssh server1
 </pre></div>
-</div>
 </div>]]></description>
             <category><![CDATA[ ssh ]]></category>
              <pubDate>Fri, 20 Sep 2013 00:00:00 +0900</pubDate>
@@ -3645,8 +3551,7 @@ Host server1
             <link>http://127.0.0.1/blog/html/2013/09/19/debian_wheezy_schroot_chroot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/19/debian_wheezy_schroot_chroot.html</guid>
             <title><![CDATA[schrootを使って一般ユーザでchroot]]></title>
-            <description><![CDATA[<div class="section" id="schrootchroot">
-<h1>schrootを使って一般ユーザでchroot</h1>
+            <description><![CDATA[<h1>schrootを使って一般ユーザでchroot</h1>
 <p>schrootはroot権限を持たない一般ユーザでもchrootできるようにするwrapperである。オプションや設定ひとつでホストの環境,環境変数を引き継ぐことができとても便利なツールだ。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
@@ -3787,10 +3692,8 @@ root-groups=root
 <div class="highlight-python"><div class="highlight"><pre>$ schroot -c wheezy -p bash
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="https://wiki.debian.org/Schroot">https://wiki.debian.org/Schroot</a></li>
-</ul>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="https://wiki.debian.org/Schroot">https://wiki.debian.org/Schroot</a></li>
+</ul>]]></description>
             <category><![CDATA[ schroot ]]></category>
              <pubDate>Thu, 19 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -3799,15 +3702,12 @@ root-groups=root
             <link>http://127.0.0.1/blog/html/2013/09/11/debian_wheezy_cowbuilder_chroot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/11/debian_wheezy_cowbuilder_chroot.html</guid>
             <title><![CDATA[cowbuilderを使ったsandbox環境]]></title>
-            <description><![CDATA[<div class="section" id="cowbuildersandbox">
-<h1>cowbuilderを使ったsandbox環境</h1>
+            <description><![CDATA[<h1>cowbuilderを使ったsandbox環境</h1>
 <p>今回もchrootネタである。cowbuilderを使うとホスト環境を汚さずにいろいろできる。</p>
-<ul class="simple">
-<li>気になるパッケージをとりあえずインストールして使ってみたい</li>
+<ul class="simple"><li>気になるパッケージをとりあえずインストールして使ってみたい</li>
 <li>Debianのパッケージが古く最新のソースをビルドして使ってみる</li>
 <li>Texを使いたいがホスト環境には入れたくない</li>
-</ul>
-<p>などのシーンで私は使っている。</p>
+</ul><p>などのシーンで私は使っている。</p>
 <div class="highlight-python"><div class="highlight"><pre>lsb_release -a
 No LSB modules are available.
 Distributor ID: Debian
@@ -3827,24 +3727,13 @@ Codename:       wheezy
 % cp -R base_wheezy_amd64.cow rails3_wheezy_amd64.cow
 </pre></div>
 </div>
-<table border="1" class="docutils">
-<colgroup>
-<col width="18%"/>
-<col width="82%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>–distribution</td>
+<table border="1" class="docutils"><colgroup><col width="18%"/><col width="82%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>–distribution</td>
 <td>作成するディストリビューションの指定。sidもしくはコードネームを選ぶ。(省略した場合のデフォルトはsid)</td>
-</tr>
-<tr class="row-even"><td>–architecture</td>
+</tr><tr class="row-even"><td>–architecture</td>
 <td>アーキテクチャの指定。(省略した場合のデフォルトはホストと同じ)</td>
-</tr>
-<tr class="row-odd"><td>–basepath</td>
+</tr><tr class="row-odd"><td>–basepath</td>
 <td>テンプレートのディレクトリパス(省略した場合のデフォルトは/var/cache/pbuilder/base.cow)</td>
-</tr>
-</tbody>
-</table>
-<p>「–save」オプションを付けると変更を保存できる。オプションなしの場合はログアウトすると変更は消える。</p>
+</tr></tbody></table><p>「–save」オプションを付けると変更を保存できる。オプションなしの場合はログアウトすると変更は消える。</p>
 <div class="highlight-python"><div class="highlight"><pre>% cowbuilder --login --save --basepath /var/cache/pbuilder/base_wheezy_amd64.cow
 </pre></div>
 </div>
@@ -3852,8 +3741,7 @@ Codename:       wheezy
 <div class="highlight-python"><div class="highlight"><pre>% cowbuilder --login --save --bindmount /home/hoge/dir --basepath /var/cache/pbuilder/base_wheezy_amd64.cow
 </pre></div>
 </div>
-<p>ほかにもいろいろオプションがあるのでcowbuilder(8)を眺めてみるといい。</p>
-</div>]]></description>
+<p>ほかにもいろいろオプションがあるのでcowbuilder(8)を眺めてみるといい。</p>]]></description>
             <category><![CDATA[ cowbuilder ]]></category>
              <pubDate>Wed, 11 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -3862,8 +3750,7 @@ Codename:       wheezy
             <link>http://127.0.0.1/blog/html/2013/09/10/debian_wheezy_chroot_aufs.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/10/debian_wheezy_chroot_aufs.html</guid>
             <title><![CDATA[aufsを使ったchroot環境]]></title>
-            <description><![CDATA[<div class="section" id="aufschroot">
-<h1>aufsを使ったchroot環境</h1>
+            <description><![CDATA[<h1>aufsを使ったchroot環境</h1>
 <p>aufsとはLinuxにおけるunion mountの実装の1つである。union mountとは複数のファイルシステムを重ね合わせ一つのファイルシステムに見せる機能である。この機能はchroot環境と組み合わせると非常に勝手がいい。chroot環境をリードオンリーにし書き込み用のディレクトリと重ね合わせることでchroot環境を汚すことなく使うことができるようになる。</p>
 <div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
 No LSB modules are available.
@@ -3906,10 +3793,8 @@ parm:           brs:use &lt;sysfs&gt;/fs/aufs/si_*/brN (int)
 aufs
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://aufs.sourceforge.net">http://aufs.sourceforge.net/</a></li>
-</ul>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://aufs.sourceforge.net">http://aufs.sourceforge.net/</a></li>
+</ul>]]></description>
             <category><![CDATA[ debian ]]></category>
              <pubDate>Tue, 10 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -3918,8 +3803,7 @@ aufs
             <link>http://127.0.0.1/blog/html/2013/09/09/centos_chroot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/09/centos_chroot.html</guid>
             <title><![CDATA[CentOSでchroot環境構築]]></title>
-            <description><![CDATA[<div class="section" id="centoschroot">
-<h1>CentOSでchroot環境構築</h1>
+            <description><![CDATA[<h1>CentOSでchroot環境構築</h1>
 <p>yum(8)では役割単位(Web,Mailサーバなど)でパッケージがグループ化されており、グループ名を指定することでグループに属しているパッケージをまとめてインストールできるようになっている。</p>
 <p>グループ名はサブコマンドgrouplistで調べることができる。</p>
 <div class="highlight-python"><div class="highlight"><pre># cat /etc/centos-release
@@ -3947,7 +3831,7 @@ Available Groups:
 </pre></div>
 </div>
 <p>サブコマンドgroupifnoでグループに属しているパッケージを調べられる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% yum groupinfo &quot;E-mail Server&quot;
+<div class="highlight-python"><div class="highlight"><pre>% yum groupinfo "E-mail Server"
 Loaded plugins: fastestmirror
 Setting up Group Process
 Loading mirror speeds from cached hostfile
@@ -3974,7 +3858,7 @@ Group: E-mail server
 <p>BaseはCentOSのベースシステムがグループ化されている。</p>
 <p>さらに「–installroot」オプションで指定したディレクトリにベースシステムを展開できる。</p>
 <p>これを使えばCentOSのchroot環境を簡単に構築できる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall &quot;Base&quot;
+<div class="highlight-python"><div class="highlight"><pre>% yum -y --releasever=6 --installroot=/root/centos6 groupinstall "Base"
 % cd /root/centos6
 % cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
 % cp /etc/resolv.conf etc/
@@ -3991,7 +3875,6 @@ Group: E-mail server
 <p>chroot環境のアップグレードは下記のようにすればいい。</p>
 <div class="highlight-python"><div class="highlight"><pre>% yum upgrade --releasever=6 --installroot=/root/centos6 -y
 </pre></div>
-</div>
 </div>]]></description>
             <category><![CDATA[ centos ]]></category>
              <pubDate>Mon, 09 Sep 2013 00:00:00 +0900</pubDate>
@@ -4001,19 +3884,14 @@ Group: E-mail server
             <link>http://127.0.0.1/blog/html/2013/09/08/gentoo_install_script.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/08/gentoo_install_script.html</guid>
             <title><![CDATA[Gentoo Linux インストールスクリプト]]></title>
-            <description><![CDATA[<div class="section" id="gentoo-linux">
-<h1>Gentoo Linux インストールスクリプト</h1>
-<ul class="simple">
-<li>「そして私はOpenOfficeのビルドを諦めた」</li>
+            <description><![CDATA[<h1>Gentoo Linux インストールスクリプト</h1>
+<ul class="simple"><li>「そして私はOpenOfficeのビルドを諦めた」</li>
 <li>「俺たちはなにと戦っているのだ...」</li>
-</ul>
-<p>などの名言で知られる(私調べ)Gentoo Linuxのインストールスクリプトを書いてみた。</p>
-<ul class="simple">
-<li>「Gentoo LiveCD」を使わなくてもGentooはインストール出来るよ</li>
+</ul><p>などの名言で知られる(私調べ)Gentoo Linuxのインストールスクリプトを書いてみた。</p>
+<ul class="simple"><li>「Gentoo LiveCD」を使わなくてもGentooはインストール出来るよ</li>
 <li>Gentooインストールまでの各種コマンドを間違いなく打ち込む自身がないよ</li>
 <li>Gentoo怖くないよ</li>
-</ul>
-<p>などが今回のモチベーションである。</p>
+</ul><p>などが今回のモチベーションである。</p>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」で構築した環境にスクリプトを配置する。</p>
 <p>その他に、<a class="reference external" href="http://www.gentoo.org/main/en/where.xml">stage3</a>,<a class="reference external" href="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots">portage</a>, カーネルのコンフィグファイルをスクリプトのあるディレクトリに用意しておく。</p>
 <p>実機,仮想環境(KVM)ともに動作することは確認した。Gentooを複数台セットアップする予定はいまのところない。</p>
@@ -4030,12 +3908,12 @@ Group: E-mail server
 
 <span class="c"># 01:23:45:67:89:ab</span>
 
-<span class="nv">DATETIME</span><span class="o">=</span><span class="sb">`</span>date +<span class="s2">&quot;%m%d%H%M%Y&quot;</span><span class="sb">`</span>
+<span class="nv">DATETIME</span><span class="o">=</span><span class="sb">`</span>date +<span class="s2">"%m%d%H%M%Y"</span><span class="sb">`</span>
 
-<span class="nv">DISK</span><span class="o">=</span><span class="s2">&quot;/dev/vda&quot;</span>
+<span class="nv">DISK</span><span class="o">=</span><span class="s2">"/dev/vda"</span>
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
 <span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">CHROOT_GENTOO</span><span class="o">=</span><span class="s2">&quot;/mnt/$3&quot;</span>
+<span class="nv">CHROOT_GENTOO</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
 
 dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
 
@@ -4068,22 +3946,22 @@ mount -t proc none <span class="k">${</span><span class="nv">CHROOT_GENTOO</span
 mount --rbind /sys <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/sys
 
 cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/hostname</span>
-<span class="s">HOSTNAME=&quot;gentoo.localnet&quot;</span>
+<span class="s">HOSTNAME="gentoo.localnet"</span>
 <span class="s">EOF</span>
 
 cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/hwclock</span>
-<span class="s">clock=&quot;local&quot;</span>
+<span class="s">clock="local"</span>
 <span class="s">EOF</span>
 
 cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/keymaps</span>
-<span class="s">KEYMAP=&quot;us&quot;</span>
+<span class="s">KEYMAP="us"</span>
 <span class="s">EOF</span>
 
 cp -L /etc/resolv.conf <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/etc
 
 cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/net</span>
-<span class="s">config_${IFACE}=&quot;192.168.2.251/24&quot;</span>
-<span class="s">routes_${IFACE}=&quot;default via 192.168.2.254&quot;</span>
+<span class="s">config_${IFACE}="192.168.2.251/24"</span>
+<span class="s">routes_${IFACE}="default via 192.168.2.254"</span>
 <span class="s">EOF</span>
 
 <span class="nb">cd</span> <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/etc/init.d
@@ -4097,8 +3975,8 @@ cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/fstab</span>
 <span class="s">EOF</span>
 
 cat <span class="s">&lt;&lt; EOF &gt;&gt; ${CHROOT_GENTOO}/etc/portage/make.conf</span>
-<span class="s">SYNC=&quot;rsync://ftp.jaist.ac.jp/pub/Linux/Gentoo&quot;</span>
-<span class="s">GENTOO_MIRRORS=&quot;http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ ftp://ftp.iij.ad.jp/pub/linux/gentoo/&quot;</span>
+<span class="s">SYNC="rsync://ftp.jaist.ac.jp/pub/Linux/Gentoo"</span>
+<span class="s">GENTOO_MIRRORS="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ ftp://ftp.iij.ad.jp/pub/linux/gentoo/"</span>
 <span class="s">EOF</span>
 
 cp /var/scripts/config-* <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/root
@@ -4107,13 +3985,13 @@ cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/tmp/gentoo_setup.sh</span
 <span class="s">env-update</span>
 <span class="s">source /etc/profile</span>
 
-<span class="s">export CONFIG_PROTECT_MASK=&quot;/etc&quot;</span>
+<span class="s">export CONFIG_PROTECT_MASK="/etc"</span>
 
 <span class="s">cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime</span>
-<span class="s">echo &quot;Asia/Tokyo&quot; &gt; /etc/timezone</span>
+<span class="s">echo "Asia/Tokyo" &gt; /etc/timezone</span>
 <span class="s">date $DATETIME</span>
 
-<span class="s">echo &quot;ja_JP.UTF-8 UTF-8&quot; &gt;&gt; /etc/locale.gen</span>
+<span class="s">echo "ja_JP.UTF-8 UTF-8" &gt;&gt; /etc/locale.gen</span>
 <span class="s">locale-gen</span>
 
 <span class="s">emerge-webrsync</span>
@@ -4164,11 +4042,9 @@ rmdir <span class="nv">$CHROOT_GENTOO</span>
 reboot
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://d.hatena.ne.jp/meech/20120221/1329839829">http://d.hatena.ne.jp/meech/20120221/1329839829</a></li>
+<ul class="simple"><li><a class="reference external" href="http://d.hatena.ne.jp/meech/20120221/1329839829">http://d.hatena.ne.jp/meech/20120221/1329839829</a></li>
 <li><a class="reference external" href="http://www.gentoo.org/doc/ja/handbook/handbook-amd64.xml?full=1">http://www.gentoo.org/doc/ja/handbook/handbook-amd64.xml?full=1</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ gentoo ]]></category>
              <pubDate>Sun, 08 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -4177,8 +4053,7 @@ reboot
             <link>http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/07/debian_wheezy_pxeboot.html</guid>
             <title><![CDATA[シェルスクリプトでDebian wheezyのインストール自動化]]></title>
-            <description><![CDATA[<div class="section" id="debian-wheezy">
-<h1>シェルスクリプトでDebian wheezyのインストール自動化</h1>
+            <description><![CDATA[<h1>シェルスクリプトでDebian wheezyのインストール自動化</h1>
 <p>みなさん、Debianのインストール作業はどうやっているだろうか。私は、OSのインストール作業なんてお金を貰わない限り手動でやりたくないので自動化している。OSの手動インストールをするだけでお金が発生するのであれば喜んでやらせていただく所存である。RedHat系の「<a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">Kickstart</a>」と同じような仕組みの「<a class="reference external" href="http://www.debian.org/releases/stable/amd64/apb.html.ja">preseed</a>」というものがDebianにも存在するが、これを使わずに「pxeboot + debootstrap + シェルスクリプト」でインストールの自動化をしている。</p>
 <div class="section" id="pxeboot">
 <h2>pxeboot</h2>
@@ -4260,10 +4135,10 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.2
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
 get_conf<span class="o">()</span> <span class="o">{</span>
-  <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;</span>
-  <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/HWaddr/ {print $NF}'`&quot;</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/ether/ {print $NF}'`"</span>
+  <span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/HWaddr/ {print $NF}'`"</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
@@ -4276,15 +4151,15 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
 <span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
 
-<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">"$CONFFILE"</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nb">printf</span> <span class="s1">'Script Not Found\n'</span>
   <span class="nb">exit </span>1
 <span class="k">fi</span>
 
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($1 ~ /^default$/) print $6}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
 <span class="k">fi</span>
@@ -4299,10 +4174,10 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 
 <span class="c"># 01:23:45:67:89:ab</span>
 
-<span class="nv">DISK</span><span class="o">=</span><span class="s2">&quot;/dev/vda&quot;</span>
+<span class="nv">DISK</span><span class="o">=</span><span class="s2">"/dev/vda"</span>
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
 <span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">&quot;/mnt/$3&quot;</span>
+<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
 
 dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
 
@@ -4399,7 +4274,7 @@ reboot
 # rc.local
 #
 # This script is executed at the end of each multiuser runlevel.
-# Make sure that the script will &quot;exit 0&quot; on success or any other
+# Make sure that the script will "exit 0" on success or any other
 # value on error.
 #
 # In order to enable or disable this script just change the execution
@@ -4412,12 +4287,9 @@ reboot
 exit 0
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">http://fedoraproject.org/wiki/Anaconda/Kickstart</a></li>
+<ul class="simple"><li><a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">http://fedoraproject.org/wiki/Anaconda/Kickstart</a></li>
 <li><a class="reference external" href="http://www.debian.org/releases/stable/amd64/apb.html.ja">http://www.debian.org/releases/stable/amd64/apb.html.ja</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ debian ]]></category>
             <category><![CDATA[ pxeboot ]]></category>
              <pubDate>Sat, 07 Sep 2013 00:00:00 +0900</pubDate>
@@ -4427,8 +4299,7 @@ exit 0
             <link>http://127.0.0.1/blog/html/2013/09/06/debian_wheezy_sshfs.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/06/debian_wheezy_sshfs.html</guid>
             <title><![CDATA[sshfs]]></title>
-            <description><![CDATA[<div class="section" id="sshfs">
-<h1>sshfs</h1>
+            <description><![CDATA[<h1>sshfs</h1>
 <p>言わずと知れたSSH経由でリモートサーバのディレクトリをマウントしてくれるツール</p>
 <p>いつも便利に使わせてもらっている。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get instal sshfs</span>
@@ -4456,10 +4327,8 @@ using FUSE kernel interface version 7.18
 $ fusermount -u remote_dir
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://fuse.sourceforge.net/sshfs.html">http://fuse.sourceforge.net/sshfs.html</a></li>
-</ul>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://fuse.sourceforge.net/sshfs.html">http://fuse.sourceforge.net/sshfs.html</a></li>
+</ul>]]></description>
             <category><![CDATA[ sshfs ]]></category>
              <pubDate>Fri, 06 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -4468,12 +4337,11 @@ $ fusermount -u remote_dir
             <link>http://127.0.0.1/blog/html/2013/09/05/freebsd_python_uwsgi_logformat.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/05/freebsd_python_uwsgi_logformat.html</guid>
             <title><![CDATA[uWSGIのログフォーマット]]></title>
-            <description><![CDATA[<div class="section" id="uwsgi">
-<h1>uWSGIのログフォーマット</h1>
+            <description><![CDATA[<h1>uWSGIのログフォーマット</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html"><em>Nginxでリバースプロキシ</em></a>」でバックエンドにアクセス元のIPアドレスがログに記録されると書いたが、バックエンド側でも設定しなければログには記録されない。個人でひっそりとWebサービスを運営していてもディレクトリトラバーサルや某CMSを攻撃しているのかなと思われるリクエストがログに記録されている。ログを眺めるのは楽しいものだ。</p>
 <p>今回はバックエンドに「<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>」を置いた場合のログ設定について書く。動作するまでを書いた記事はよく見掛けるが、ログについて書いている記事は見たことがない。ドキュメントに書いてある通りに設定すればいいだけなので、わざわざ書き留めるほどの情報ではないのだろうか。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># pw groupadd uwsgi -g 9090</span>
-<span class="c"># pw useradd uwsgi -u 9090 -g 9090 -c &quot;uWSGI&quot; -d /nonexistent -s /usr/sbin/nologin</span>
+<span class="c"># pw useradd uwsgi -u 9090 -g 9090 -c "uWSGI" -d /nonexistent -s /usr/sbin/nologin</span>
 </pre></div>
 </div>
 <p>アクセスしたら「Hellow World」を出力するだけの<a class="reference external" href="http://flask.pocoo.org">Flask</a>を使ったアプリケーション</p>
@@ -4484,7 +4352,7 @@ $ fusermount -u remote_dir
 
 <span class="nd">@app.route</span><span class="p">(</span><span class="s">'/myapp'</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
-    <span class="k">return</span> <span class="s">&quot;Hello World!&quot;</span>
+    <span class="k">return</span> <span class="s">"Hello World!"</span>
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
     <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -4507,38 +4375,25 @@ gid = uwsgi
 log-x-forwarded-for = true
 daemonize = uwsgi.log
 touch-reload = reload.txt
-log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; %(status) %(size)`` &quot;%(referer)&quot; &quot;%(uagent)&quot;
+log-format = %(addr) - %(user) [%(ltime)] "%(method) %(uri) %(proto)" %(status) %(size)`` "%(referer)" "%(uagent)"
 </pre></div>
 </div>
-<table border="1" class="docutils">
-<colgroup>
-<col width="23%"/>
-<col width="77%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>virtualenv</td>
+<table border="1" class="docutils"><colgroup><col width="23%"/><col width="77%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>virtualenv</td>
 <td>virtualenvを使用している場合、virtualenvのパスを指定する</td>
-</tr>
-<tr class="row-even"><td>python-path</td>
+</tr><tr class="row-even"><td>python-path</td>
 <td>アプリケーションのパスを指定する。</td>
-</tr>
-<tr class="row-odd"><td>touch-reload</td>
+</tr><tr class="row-odd"><td>touch-reload</td>
 <td>指定したファイルをtouchすることでアプリと<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>の設定がリロードされる</td>
-</tr>
-</tbody>
-</table>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># touch reload.txt</span>
+</tr></tbody></table><div class="highlight-python"><div class="highlight"><pre><span class="c"># touch reload.txt</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># uwsgi development.ini</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html">http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html">http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html</a></li>
 <li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/Options.html">http://uwsgi-docs.readthedocs.org/en/latest/Options.html</a></li>
 <li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html">http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ uwsgi ]]></category>
              <pubDate>Thu, 05 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -4547,14 +4402,11 @@ log-format = %(addr) - %(user) [%(ltime)] &quot;%(method) %(uri) %(proto)&quot; 
             <link>http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/04/freebsd_nginx_reverse_proxy.html</guid>
             <title><![CDATA[Nginxでリバースプロキシ]]></title>
-            <description><![CDATA[<div class="section" id="nginx">
-<h1>Nginxでリバースプロキシ</h1>
+            <description><![CDATA[<h1>Nginxでリバースプロキシ</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html"><em>jail環境でJenkinsを動かす</em></a>」からの続きでlocalhostでListenしているJenkinsをNginxのリバースプロキシを使いlocalhost以外からもアクセスできるようにする。</p>
 <p>Nginxのディレクトリ構成は下記を参考に</p>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html"><em>Nginxでバーチャルホスト</em></a></li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre># nginx -v
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html"><em>Nginxでバーチャルホスト</em></a></li>
+</ul><div class="highlight-python"><div class="highlight"><pre># nginx -v
 nginx version: nginx/1.4.2
 </pre></div>
 </div>
@@ -4592,11 +4444,9 @@ http {
 }
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass</a></li>
+<ul class="simple"><li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass</a></li>
 <li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ nginx ]]></category>
              <pubDate>Wed, 04 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -4605,14 +4455,11 @@ http {
             <link>http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/03/freebsd_jail_jenkins.html</guid>
             <title><![CDATA[jail環境でJenkinsを動かす]]></title>
-            <description><![CDATA[<div class="section" id="jailjenkins">
-<h1>jail環境でJenkinsを動かす</h1>
+            <description><![CDATA[<h1>jail環境でJenkinsを動かす</h1>
 <p>会社員だったときに仕様書がエルセル方眼紙だったので、「<a class="reference external" href="http://sphinx-doc.org">Sphinx</a>にするとプレーンテキストで管理でき、gitなどのバージョン管理システムの管理下に置け、さらに<a class="reference external" href="http://jenkins-ci.org">Jenkins</a>を使えば手元に<a class="reference external" href="http://sphinx-doc.org">Sphinx</a>がなくてもバージョン管理下に置いたソースをリモートリポジトリにpushするだけでビルドしてくれる環境ができますよ」というようなことをもう少しわかりやすく提案し見事に却下された。エクセル方眼紙は3人で編集していたのでマージ作業が辛かった。</p>
 <p>jail環境の構築は下記を参考に</p>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
-</ul>
-<p>FreeBSDにJenkinsをインストールするとインストール後に下記のように表示される。</p>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+</ul><p>FreeBSDにJenkinsをインストールするとインストール後に下記のように表示される。</p>
 <div class="highlight-python"><div class="highlight"><pre>======================================================================
 
 This OpenJDK implementation requires fdescfs(5) mounted on /dev/fd and
@@ -4634,10 +4481,10 @@ To make it permanent, you need the following lines in /etc/fstab:
 <p>jail環境ではマウントできないのでホストのjail.conf(5)にjail起動時にマウントするよう書いておく。</p>
 <div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 jenkins {
-        exec.prestart += &quot;mount -t fdescfs fdesc /jails/${name}/dev/fd&quot;;
-        exec.prestart += &quot;mount -t procfs proc /jails/${name}/proc&quot;;
-        exec.poststop += &quot;umount /jails/${name}/dev/fd&quot;;
-        exec.poststop += &quot;umount /jails/${name}/proc&quot;;
+        exec.prestart += "mount -t fdescfs fdesc /jails/${name}/dev/fd";
+        exec.prestart += "mount -t procfs proc /jails/${name}/proc";
+        exec.poststop += "umount /jails/${name}/dev/fd";
+        exec.poststop += "umount /jails/${name}/proc";
         $if = 9;
         $ipaddr = 192.168.0.9;
 }
@@ -4646,19 +4493,16 @@ jenkins {
 <div class="section" id="jenkins">
 <h2>jenkins</h2>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">jenkins_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">jenkins_enable</span><span class="o">=</span><span class="s">"YES"</span>
 
 <span class="c"># service jenkins start</span>
 </pre></div>
 </div>
 <p>JenkinsはlocalhostでListenしているので、このままだと他からアクセスできない。</p>
 <p>次回はリバースプロキシにnginxを使いJenkinsにアクセスできるようにする。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://sphinx-users.jp">http://sphinx-users.jp/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://sphinx-users.jp">http://sphinx-users.jp/</a></li>
 <li><a class="reference external" href="http://build-shokunin.org">http://build-shokunin.org/</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ jenkins ]]></category>
              <pubDate>Tue, 03 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -4667,13 +4511,10 @@ jenkins {
             <link>http://127.0.0.1/blog/html/2013/09/02/freebsd_irc_znc.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/02/freebsd_irc_znc.html</guid>
             <title><![CDATA[ZNCでIRC Proxy]]></title>
-            <description><![CDATA[<div class="section" id="zncirc-proxy">
-<h1>ZNCでIRC Proxy</h1>
+            <description><![CDATA[<h1>ZNCでIRC Proxy</h1>
 <p>IRCクライアオンからIRCサーバに接続してない間の発言は見ることが出来無い。IRC Proxyを置けば接続していない間の発言を記録し、IRCクライアントからIRC Proxyに接続すれば記録された発言を見ることが出来る。IRC Proxyでログを定期的にメールすると外出中は捗る。IRC Proxyといえばネットでは「<a class="reference external" href="http://www.clovery.jp/tiarra">Tiarra</a>」をよく見掛けるが、SSL接続のために「<a class="reference external" href="http://sourceforge.jp/projects/stone">stone</a>」などを使わなければならず面倒くさい。SSL接続できるIRC Proxyはないか探してみたところ「<a class="reference external" href="http://wiki.znc.in/ZNC">ZNC</a>」を見付け使っている。</p>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/01/freebsd_irc_ngircd.html"><em>ngircdでIRCサーバ</em></a></li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># pw useradd -n znc -s /bin/tcsh -m</span>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/09/01/freebsd_irc_ngircd.html"><em>ngircdでIRCサーバ</em></a></li>
+</ul><div class="highlight-python"><div class="highlight"><pre><span class="c"># pw useradd -n znc -s /bin/tcsh -m</span>
 <span class="c"># su - znc</span>
 </pre></div>
 </div>
@@ -4859,9 +4700,9 @@ Version = 1.0
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">znc_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-<span class="n">znc_user</span><span class="o">=</span><span class="s">&quot;znc&quot;</span>
-<span class="n">znc_conf_dir</span><span class="o">=</span><span class="s">&quot;/home/znc/.znc&quot;</span>
+<span class="n">znc_enable</span><span class="o">=</span><span class="s">"YES"</span>
+<span class="n">znc_user</span><span class="o">=</span><span class="s">"znc"</span>
+<span class="n">znc_conf_dir</span><span class="o">=</span><span class="s">"/home/znc/.znc"</span>
 
 <span class="c"># service znc start</span>
 </pre></div>
@@ -4874,13 +4715,10 @@ Version = 1.0
 /disconnect hoge
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.weechat.org">http://www.weechat.org/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.weechat.org">http://www.weechat.org/</a></li>
 <li><a class="reference external" href="http://wiki.znc.in/Weechat">http://wiki.znc.in/Weechat</a></li>
 <li><a class="reference external" href="http://wiki.znc.in/Using_commands">http://wiki.znc.in/Using_commands</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ znc ]]></category>
              <pubDate>Mon, 02 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -4889,8 +4727,7 @@ Version = 1.0
             <link>http://127.0.0.1/blog/html/2013/09/01/freebsd_irc_ngircd.html</link>
             <guid>http://127.0.0.1/blog/html/2013/09/01/freebsd_irc_ngircd.html</guid>
             <title><![CDATA[ngircdでIRCサーバ]]></title>
-            <description><![CDATA[<div class="section" id="ngircdirc">
-<h1>ngircdでIRCサーバ</h1>
+            <description><![CDATA[<h1>ngircdでIRCサーバ</h1>
 <p>IT系のアルバイトをしていたときにNagios,Zabbixなどから定期的にメールがバンバン飛んできて、未読が4万通くらいになってメーラーを立ち上げるのを諦めたことがある。なんでもかんでもメールで飛ばすのは嫌いだ。メール振り分けなどの作業を各々がやらなければいけないなんて時間のムダだし、集約できる情報を各々にわざわざ管理させ余計な負担を強いているのがイケてないと私はいつも思っている。</p>
 <p>このイライラをIRCは解決してくれる。IRCはチャットとして使うよりも、情報を集約させるのに非常に便利である。Nagiosのアラート,SSHのログイン情報などをIRCにポストするようにしている。IRCを積極的に使っている会社に勤めたことがないので個人でひっそりとやっているだけだが、IRCを眺めれば何が起っているかわかり、いい感じである。</p>
 <p>「つかれた」とポストしたら返事をしてくれる(妹)BOTを仕込んで荒んだ心を癒すことも出来る。</p>
@@ -4907,7 +4744,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/local/etc</span>
 <span class="c"># touch ngircd.conf</span>
 <span class="c"># yes | ngircd -t | tee ngircd.conf</span>
-<span class="c"># echo &quot;SUPER SONIKO&quot; | tee ngircd.motd</span>
+<span class="c"># echo "SUPER SONIKO" | tee ngircd.motd</span>
 <span class="c"># cp ngircd.conf ngircd.conf.org</span>
 </pre></div>
 </div>
@@ -5000,20 +4837,18 @@ Homepage: &lt;http://ngircd.barton.de/&gt;
 This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-Reading configuration from &quot;/usr/local/etc/ngircd.conf&quot; ...
+Reading configuration from "/usr/local/etc/ngircd.conf" ...
 OK, press enter to see a dump of your server configuration ...
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">ngircd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">ngircd_enable</span><span class="o">=</span><span class="s">"YES"</span>
 
 <span class="c"># service ngircd start</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://ngircd.barton.de/documentation.php.en">http://ngircd.barton.de/documentation.php.en</a></li>
-</ul>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://ngircd.barton.de/documentation.php.en">http://ngircd.barton.de/documentation.php.en</a></li>
+</ul>]]></description>
             <category><![CDATA[ ngircd ]]></category>
              <pubDate>Sun, 01 Sep 2013 00:00:00 +0900</pubDate>
         </item>
@@ -5022,15 +4857,12 @@ OK, press enter to see a dump of your server configuration ...
             <link>http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/31/freebsd_nginx_virtualhost.html</guid>
             <title><![CDATA[Nginxでバーチャルホスト]]></title>
-            <description><![CDATA[<div class="section" id="nginx">
-<h1>Nginxでバーチャルホスト</h1>
+            <description><![CDATA[<h1>Nginxでバーチャルホスト</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a>」で課題にしていたnginxでのバーチャルホストの設定を行う。</p>
 <p>バーチャルホストには</p>
-<ul class="simple">
-<li><strong>IPベース</strong>: 1台のサーバに対して複数のドメイン,IPアドレスで運用する。</li>
+<ul class="simple"><li><strong>IPベース</strong>: 1台のサーバに対して複数のドメイン,IPアドレスで運用する。</li>
 <li><strong>名前ベース</strong>: 1台のサーバに対して複数のドメインを1つのIPアドレスで共用する。</li>
-</ul>
-<p>の2種類がある。</p>
+</ul><p>の2種類がある。</p>
 <p>今回は「名前ベース」のバーチャルホストを設定する。</p>
 <div class="section" id="dnsmasq">
 <h2>dnsmasq</h2>
@@ -5090,12 +4922,9 @@ server {
 </pre></div>
 </div>
 <p>packages.localnetにアクセスするとpackagesが見え、srv.localnetにアクセスするとnginxのインデックスページが見えれば名前ベースバーチャルホストの設定は完了である。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://ja.wikipedia.org/wiki/バーチャルホスト">http://ja.wikipedia.org/wiki/バーチャルホスト</a></li>
+<ul class="simple"><li><a class="reference external" href="http://ja.wikipedia.org/wiki/バーチャルホスト">http://ja.wikipedia.org/wiki/バーチャルホスト</a></li>
 <li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_core_module.html#server">http://nginx.org/en/docs/http/ngx_http_core_module.html#server</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ nginx ]]></category>
              <pubDate>Sat, 31 Aug 2013 00:00:00 +0900</pubDate>
         </item>
@@ -5104,17 +4933,14 @@ server {
             <link>http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/30/freebsd_dns_dnsmasq.html</guid>
             <title><![CDATA[dnsmasqを使ったDNSサーバ]]></title>
-            <description><![CDATA[<div class="section" id="dnsmasqdns">
-<h1>dnsmasqを使ったDNSサーバ</h1>
+            <description><![CDATA[<h1>dnsmasqを使ったDNSサーバ</h1>
 <p>「<a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a>」で課題にしていたDNSサーバ構築を行う。DNSサーバというとBINDや<a class="reference external" href="http://www.nlnetlabs.nl/projects/nsd">NSD</a>などが思い浮ぶだろうが、これらを使うのは腰が重い(とくにBIND、またはBIND、あるいはBIND)。</p>
 <p><a class="reference external" href="http://www.thekelleys.org.uk/dnsmasq">dnsmasq</a>は少しの設定ファイル変更とhosts(5)を書くだけでDNSサーバとして機能する。DHCP,TFTPサーバの機能も持っており、PXE Bootなどに使え非常に勝手がいい。</p>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html"><em>portsのパッケージをビルドする環境を構築する</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html"><em>packages配布サーバ構築</em></a></li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/dns</span>
+</ul><div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/dns</span>
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
@@ -5161,9 +4987,9 @@ expand-hosts
 # does the following things.
 # 1) Allows DHCP hosts to have fully qualified domain names, as long
 #     as the domain part matches this setting.
-# 2) Sets the &quot;domain&quot; DHCP option thereby potentially setting the
+# 2) Sets the "domain" DHCP option thereby potentially setting the
 #    domain of all systems configured by DHCP
-# 3) Provides the domain part for &quot;expand-hosts&quot;
+# 3) Provides the domain part for "expand-hosts"
 domain=localnet
 </pre></div>
 </div>
@@ -5176,17 +5002,14 @@ domain=localnet
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">dnsmasq_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">dnsmasq_enable</span><span class="o">=</span><span class="s">"YES"</span>
 
 <span class="c"># service dnsmasq start</span>
 </pre></div>
 </div>
 <p>これで自前のpackages配布サーバを名前で引けるようになった。あとはresolv.confにdnsmasqが動いているサーバを指定するだけである。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
-</ul>
-</div>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
+</ul></div>]]></description>
             <category><![CDATA[ dnsmasq ]]></category>
              <pubDate>Fri, 30 Aug 2013 00:00:00 +0900</pubDate>
         </item>
@@ -5195,16 +5018,13 @@ domain=localnet
             <link>http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/29/freebsd_packages_nginx.html</guid>
             <title><![CDATA[packages配布サーバ構築]]></title>
-            <description><![CDATA[<div class="section" id="packages">
-<h1>packages配布サーバ構築</h1>
+            <description><![CDATA[<h1>packages配布サーバ構築</h1>
 <p><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html"><em>前回</em></a>はpackagesを作成する環境を構築した。</p>
 <p>今回は作成したpackagesを各FreeBSDマシンに配布する環境を構築する。</p>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html"><em>portsのパッケージをビルドする環境を構築する</em></a></li>
-</ul>
-<p>jails/pkg/packagesにpackagesが作られているので配布サーバ用jailにリードオンリーでマウントしてWebサーバ(nginx)を動かすだけの簡単なお仕事である。</p>
+</ul><p>jails/pkg/packagesにpackagesが作られているので配布サーバ用jailにリードオンリーでマウントしてWebサーバ(nginx)を動かすだけの簡単なお仕事である。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs clone jails/test01@base jails/pkgsrv</span>
 <span class="c"># mkdir /jails/pkgsrv/var/packages</span>
 </pre></div>
@@ -5216,8 +5036,8 @@ test02 {
 }
 
 pkgsrv {
-        exec.prestart += &quot;mount -t nullfs -o ro /jails/pkg/packages /jails/${name}/var/packages&quot;;
-        exec.poststop += &quot;umount /jails/${name}/var/packages&quot;;
+        exec.prestart += "mount -t nullfs -o ro /jails/pkg/packages /jails/${name}/var/packages";
+        exec.poststop += "umount /jails/${name}/var/packages";
         $if = 5;
         $ipaddr = 192.168.0.5;
 }
@@ -5271,12 +5091,9 @@ setenv PACKAGESITE http://192.168.0.5/Latest/
 </div>
 <p>packages配布サーバの構築は無事に完了した。ただ、IP直打ちだと配布サーバのIPを変更したとき環境変数を書き換えなければならず面倒だし、nginxを配布サーバ以外のことにも使いたい。</p>
 <p>というわけで</p>
-<ul class="simple">
-<li>DNSサーバの構築</li>
+<ul class="simple"><li>DNSサーバの構築</li>
 <li>nginx バーチャルホストの設定</li>
-</ul>
-<p>を課題としておく。</p>
-</div>
+</ul><p>を課題としておく。</p>
 </div>]]></description>
             <category><![CDATA[ freebsd ]]></category>
             <category><![CDATA[ nginx ]]></category>
@@ -5287,24 +5104,19 @@ setenv PACKAGESITE http://192.168.0.5/Latest/
             <link>http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/28/freebsd_jail_ports_packages.html</guid>
             <title><![CDATA[portsのパッケージをビルドする環境を構築する]]></title>
-            <description><![CDATA[<div class="section" id="ports">
-<h1>portsのパッケージをビルドする環境を構築する</h1>
+            <description><![CDATA[<h1>portsのパッケージをビルドする環境を構築する</h1>
 <p>FreeBSDを複数台動かす場合、パッケージをどのような手段でインストールするか考えることになると思う。</p>
 <p>FreeBSDでのパッケージのインストールは</p>
-<ul class="simple">
-<li><strong>ports</strong>: ソースコードをコンパイルしてインストール</li>
+<ul class="simple"><li><strong>ports</strong>: ソースコードをコンパイルしてインストール</li>
 <li><strong>packages</strong>:  コンパイル済みのバイナリをインストール</li>
-</ul>
-<p>の2種類が用意されている。</p>
+</ul><p>の2種類が用意されている。</p>
 <p>それぞれのFreeBSDにあるportsからパッケージをインストールするのは面倒だし、コンパイルオプションの指定ミスなどが発生したとき原因調査に時間を取られて泣きをみることは間違いない。</p>
 <p>というわけでpackagesを使いFreeBSDマシンにパッケージをインストールする。packagesはFreeBSDから提供されているが、portsからも作成できる。portsからだとコンパイルオプションを自分の好きなようにカスタマイズしたpackagesを作ることが出来る。ただし、portsからpackagesを作成するにはパッケージをインストールしなければならない。</p>
 <p>FreeBSDでは自前のpackagesを作成するツールとして「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」が存在する。「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」は様々なユーザーランド,portsを組み合わせビルド環境を作り、packagesを作成してくれる。WebUIも供えておりpackagesにしたいパッケージを登録すれば勝手にビルドしていく。4.0.0からDBにSQLiteが使えるようになり導入のハードルがグッと下っているので気になったら触ってみて欲しい。</p>
 <p>今回は「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」は使わず、「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」の動きを真似たビルド環境を自分で構築することにした。下記の記事のような環境がすでに出来ているものとする。</p>
-<ul class="simple">
-<li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
 <li><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
-</ul>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/pkg</span>
+</ul><div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/pkg</span>
 <span class="c"># zfs create jails/buildbox</span>
 
 <span class="c"># cd /usr/src/9.1.0</span>
@@ -5332,8 +5144,8 @@ PORT_DBDIR = /var/ports/coptions/
 </div>
 <div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 buildbox {
-        exec.prestart += &quot;mount -t nullfs /jails/pkg /jails/${name}/var/ports&quot;;
-        exec.poststop += &quot;umount /jails/${name}/var/ports&quot;;
+        exec.prestart += "mount -t nullfs /jails/pkg /jails/${name}/var/ports";
+        exec.poststop += "umount /jails/${name}/var/ports";
         $if = 4;
         $ipaddr = 192.168.0.4;
 }
@@ -5356,10 +5168,8 @@ buildbox {
 </div>
 <p>すれば/jails/pkg/packagesにpackagesが作られる。</p>
 <p>packagesをどう配布するかは次の機会に。(調べればすぐに見付かるけど...)</p>
-<ul class="simple">
-<li><a class="reference external" href="http://ftp.marcuscom.com">http://ftp.marcuscom.com/</a></li>
-</ul>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://ftp.marcuscom.com">http://ftp.marcuscom.com/</a></li>
+</ul>]]></description>
             <category><![CDATA[ freebsd ]]></category>
              <pubDate>Wed, 28 Aug 2013 00:00:00 +0900</pubDate>
         </item>
@@ -5368,8 +5178,7 @@ buildbox {
             <link>http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/23/freebsd_jail_nullfs_ports.html</guid>
             <title><![CDATA[nullfsを使いjailのportsを共有する]]></title>
-            <description><![CDATA[<div class="section" id="nullfsjailports">
-<h1>nullfsを使いjailのportsを共有する</h1>
+            <description><![CDATA[<h1>nullfsを使いjailのportsを共有する</h1>
 <p>jailを複数動かしているとports(Ports Collection)をどのように取り扱うかという壁にブチ当たると思う。jailごとにportsnap fetchしているとportsnapサーバに負荷がかかるし、管理が面倒くさい。ということでjailのportsは共有し、ホストからしかfetch,updateなどが出来ないようにしてみた。</p>
 <p><a class="reference internal" href="http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html"><em>前回</em></a>からの続きということで。</p>
 <div class="highlight-python"><div class="highlight"><pre># cd 9.1.0/sys/amd64/conf
@@ -5393,22 +5202,22 @@ options         NULLFS
 <p>設定があちこちに散らばると管理が面倒なのでnullfsのマウントはホストのfstabではなくjail.conf(5)に書く。</p>
 <div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 
-exec.prestart  = &quot;ifconfig epair${if} create up &gt; /dev/null&quot;;
-exec.prestart += &quot;ifconfig vswitch0 addm epair${if}a&quot;;
-exec.prestart += &quot;mount -t nullfs -o ro /jails/ports /jails/${name}/usr/ports&quot;;
-exec.start     = &quot;ifconfig lo0 up 127.0.0.1&quot;;
-exec.start    += &quot;ifconfig epair${if}b up $ipaddr&quot;;
-exec.start    += &quot;route add default 192.168.0.254&quot;;
-exec.start    += &quot;sh /etc/rc&quot;;
-exec.stop      = &quot;sh /etc/rc.shutdown&quot;;
-exec.poststop  = &quot;ifconfig epair${if}a destroy&quot;;
-exec.poststop += &quot;umount /jails/${name}/usr/ports&quot;;
-host.hostname = &quot;${name}.localnet&quot;;
+exec.prestart  = "ifconfig epair${if} create up &gt; /dev/null";
+exec.prestart += "ifconfig vswitch0 addm epair${if}a";
+exec.prestart += "mount -t nullfs -o ro /jails/ports /jails/${name}/usr/ports";
+exec.start     = "ifconfig lo0 up 127.0.0.1";
+exec.start    += "ifconfig epair${if}b up $ipaddr";
+exec.start    += "route add default 192.168.0.254";
+exec.start    += "sh /etc/rc";
+exec.stop      = "sh /etc/rc.shutdown";
+exec.poststop  = "ifconfig epair${if}a destroy";
+exec.poststop += "umount /jails/${name}/usr/ports";
+host.hostname = "${name}.localnet";
 mount.devfs;
 devfs_ruleset = 5;
 vnet;
-vnet.interface = &quot;epair${if}b&quot;;
-path = &quot;/jails/${name}&quot;;
+vnet.interface = "epair${if}b";
+path = "/jails/${name}";
 persist;
 
 test01 {
@@ -5432,7 +5241,6 @@ PACKAGES = /var/ports/packages/
 # mkdir -p /jails/test01/var/ports/distfiles
 # mkdir -p /jails/test01/var/ports/packages
 </pre></div>
-</div>
 </div>]]></description>
             <category><![CDATA[ freebsd ]]></category>
             <category><![CDATA[ jail ]]></category>
@@ -5443,8 +5251,7 @@ PACKAGES = /var/ports/packages/
             <link>http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html</link>
             <guid>http://127.0.0.1/blog/html/2013/08/22/freebsd_jail_vimage_zfs.html</guid>
             <title><![CDATA[FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築]]></title>
-            <description><![CDATA[<div class="section" id="freebsd-9-1-vimage-zfs-jail">
-<h1>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</h1>
+            <description><![CDATA[<h1>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</h1>
 <p>VIMAGE + ZFSでいくらでも作ったり、壊したり、巻き戻したり出来る環境を構築してみる。jail環境をビルドするためにソースを取ってくる。ソースはsubversionで管理されている。まずsubversionをインストールから。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># portsnap fetch</span>
 <span class="c"># portsnap extract</span>
@@ -5486,12 +5293,12 @@ jails   356G   900M   355G     0%  1.00x  ONLINE  -
 </div>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
 
-<span class="n">ifconfig_re0</span><span class="o">=</span><span class="s">&quot; inet 192.168.0.253 netmask 255.255.255.0&quot;</span>
-<span class="n">defaultrouter</span><span class="o">=</span><span class="s">&quot;192.168.0.254&quot;</span>
+<span class="n">ifconfig_re0</span><span class="o">=</span><span class="s">" inet 192.168.0.253 netmask 255.255.255.0"</span>
+<span class="n">defaultrouter</span><span class="o">=</span><span class="s">"192.168.0.254"</span>
 
-<span class="n">cloned_interfaces</span><span class="o">=</span><span class="s">&quot;bridge0&quot;</span>
-<span class="n">ifconfig_bridge0_name</span><span class="o">=</span><span class="s">&quot;vswitch0&quot;</span>
-<span class="n">ifconfig_vswitch0</span><span class="o">=</span><span class="s">&quot;addm re0&quot;</span>
+<span class="n">cloned_interfaces</span><span class="o">=</span><span class="s">"bridge0"</span>
+<span class="n">ifconfig_bridge0_name</span><span class="o">=</span><span class="s">"vswitch0"</span>
+<span class="n">ifconfig_vswitch0</span><span class="o">=</span><span class="s">"addm re0"</span>
 </pre></div>
 </div>
 <p>netstatしたときなどに/dev/kmem,/dev/memがないよと言われるので、/etc/default/devfs.rulesを参考に、devfs.rules(5)のルールを追加しておく。</p>
@@ -5509,20 +5316,20 @@ add path kmem unhide
 <p>jailの設定はrc.conf(5)ではなくjail.conf(5)に書く。jail(8)を眺めながら設定ファイルを書いてみた。変数が使えていい感じ。ネームサーバーを設定するパラメータが見当らないので、ネームサーバーの設定はjail内のresolv.confに書くことにする。</p>
 <div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
 
-exec.prestart  = &quot;ifconfig epair${if} create up &gt; /dev/null&quot;;
-exec.prestart += &quot;ifconfig vswitch0 addm epair${if}a&quot;;
-exec.start     = &quot;ifconfig lo0 up 127.0.0.1&quot;;
-exec.start    += &quot;ifconfig epair${if}b up $ipaddr&quot;;
-exec.start    += &quot;route add default 192.168.0.254&quot;;
-exec.start    += &quot;sh /etc/rc&quot;;
-exec.stop      = &quot;sh /etc/rc.shutdown&quot;;
-exec.poststop  = &quot;ifconfig epair${if}a destroy&quot;;
-host.hostname  = &quot;${name}.localnet&quot;;
+exec.prestart  = "ifconfig epair${if} create up &gt; /dev/null";
+exec.prestart += "ifconfig vswitch0 addm epair${if}a";
+exec.start     = "ifconfig lo0 up 127.0.0.1";
+exec.start    += "ifconfig epair${if}b up $ipaddr";
+exec.start    += "route add default 192.168.0.254";
+exec.start    += "sh /etc/rc";
+exec.stop      = "sh /etc/rc.shutdown";
+exec.poststop  = "ifconfig epair${if}a destroy";
+host.hostname  = "${name}.localnet";
 mount.devfs;
 devfs_ruleset = 5;
 vnet;
-vnet.interface = &quot;epair${if}b&quot;;
-path = &quot;/jails/${name}&quot;;
+vnet.interface = "epair${if}b";
+path = "/jails/${name}";
 persist;
 
 test01 {
@@ -5548,8 +5355,8 @@ test02 {
 <p>FreeBSD起動時にjailを起動させたければrc.conf(5)下記のように書いておく。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
 
-<span class="n">jail_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-<span class="n">jail_list</span><span class="o">=</span><span class="s">&quot;test01 test02&quot;</span>
+<span class="n">jail_enable</span><span class="o">=</span><span class="s">"YES"</span>
+<span class="n">jail_list</span><span class="o">=</span><span class="s">"test01 test02"</span>
 </pre></div>
 </div>
 <p>ZFSのスナップショット、ロールバックで何度でもやり直せる。</p>
@@ -5559,11 +5366,9 @@ test02 {
 <span class="c"># zfs clone jails/test01@snap01 jails/test03</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/svn-mirrors.html">http://www.freebsd.org/doc/ja/books/handbook/svn-mirrors.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/svn-mirrors.html">http://www.freebsd.org/doc/ja/books/handbook/svn-mirrors.html</a></li>
 <li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/kernelconfig-building.html">http://www.freebsd.org/doc/ja/books/handbook/kernelconfig-building.html</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ freebsd ]]></category>
             <category><![CDATA[ jail ]]></category>
             <category><![CDATA[ zfs ]]></category>
@@ -5574,8 +5379,7 @@ test02 {
             <link>http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html</link>
             <guid>http://127.0.0.1/blog/html/2013/07/20/freebsd_pxeboot.html</guid>
             <title><![CDATA[シェルスクリプトでFreeBSD 9.1のインストール自動化]]></title>
-            <description><![CDATA[<div class="section" id="freebsd-9-1">
-<h1>シェルスクリプトでFreeBSD 9.1のインストール自動化</h1>
+            <description><![CDATA[<h1>シェルスクリプトでFreeBSD 9.1のインストール自動化</h1>
 <p>OSインストールをするだけでお金が貰えるならば喜んでやるが、趣味の時間をOSインストールに奪われるのはつらいので、自動化してみた。</p>
 <div class="section" id="pxe-boot">
 <h2>PXE boot サーバ構築</h2>
@@ -5603,15 +5407,15 @@ tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var
 
 # vi /usr/local/etc/dhcpd.conf
 ddns-update-style none;
-server-name &quot;pxeboot&quot;;            # name of the tftp-server
+server-name "pxeboot";            # name of the tftp-server
 server-identifier 192.168.0.253;  # address of the tftp-server
 next-server 192.168.0.253;        # address of the NFS-server
 
 subnet 192.168.0.0 netmask 255.255.255.0 {
     range 192.168.0.220 192.168.0.250;
     option routers 192.168.0.254;
-    option root-path &quot;/var/pxeboot&quot;; # root-path for NFS
-    filename &quot;pxeboot&quot;;              # filename of NBP (network bootstrap program)
+    option root-path "/var/pxeboot"; # root-path for NFS
+    filename "pxeboot";              # filename of NBP (network bootstrap program)
 }
 
 # /usr/local/etc/rc.d/isc-dhcpd onestart
@@ -5625,10 +5429,10 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 </div>
 <p>再起動後もデーモンを起動させておきたければrc.confに書いておく。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">inetd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-<span class="n">dhcpd_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
-<span class="n">dhcpd_ifaces</span><span class="o">=</span><span class="s">&quot;em0&quot;</span>
-<span class="n">nfs_server_enable</span><span class="o">=</span><span class="s">&quot;YES&quot;</span>
+<span class="n">inetd_enable</span><span class="o">=</span><span class="s">"YES"</span>
+<span class="n">dhcpd_enable</span><span class="o">=</span><span class="s">"YES"</span>
+<span class="n">dhcpd_ifaces</span><span class="o">=</span><span class="s">"em0"</span>
+<span class="n">nfs_server_enable</span><span class="o">=</span><span class="s">"YES"</span>
 </pre></div>
 </div>
 </div>
@@ -5646,10 +5450,10 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 <div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
 
 get_conf<span class="o">()</span> <span class="o">{</span>
-  <span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/ether/ {print $NF}'`&quot;</span>
-  <span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">&quot;`ifconfig | awk '/HWaddr/ {print $NF}'`&quot;</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/ether/ {print $NF}'`"</span>
+  <span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/HWaddr/ {print $NF}'`"</span>
   <span class="k">fi</span>
 
 <span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
@@ -5662,15 +5466,15 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
 <span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
 
-<span class="k">if</span> <span class="o">[</span> -z <span class="s2">&quot;$CONFFILE&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">"$CONFFILE"</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nb">printf</span> <span class="s1">'Script Not Found\n'</span>
   <span class="nb">exit </span>1
 <span class="k">fi</span>
 
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;FreeBSD&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($1 ~ /^default$/) print $6}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;Linux&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
 <span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
   <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
 <span class="k">fi</span>
@@ -5688,7 +5492,7 @@ get_conf<span class="o">()</span> <span class="o">{</span>
 <span class="nv">DISK</span><span class="o">=</span>ada0
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
 <span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">CHROOT_FREEBSD</span><span class="o">=</span><span class="s2">&quot;/mnt/$3&quot;</span>
+<span class="nv">CHROOT_FREEBSD</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
 <span class="nv">DIST_TXZ</span><span class="o">=</span><span class="sb">`</span>ls <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/freebsd91/*.txz<span class="sb">`</span>
 
 gpart destroy -F <span class="nv">$DISK</span>
@@ -5711,13 +5515,13 @@ mount /dev/<span class="k">${</span><span class="nv">DISK</span><span class="k">
 <span class="k">done</span>
 
 cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/rc.conf</span>
-<span class="s">hostname=&quot;freebsd.local&quot;</span>
-<span class="s">keymap=&quot;us.iso.kbd&quot;</span>
-<span class="s">ifconfig_${IFACE}=&quot; inet 192.168.0.252 netmask 255.255.255.0&quot;</span>
-<span class="s">defaultrouter=&quot;192.168.0.254&quot;</span>
-<span class="s">sshd_enable=&quot;YES&quot;</span>
-<span class="s"># Set dumpdev to &quot;AUTO&quot; to enable crash dumps, &quot;NO&quot; to disable</span>
-<span class="s">dumpdev=&quot;AUTO&quot;</span>
+<span class="s">hostname="freebsd.local"</span>
+<span class="s">keymap="us.iso.kbd"</span>
+<span class="s">ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"</span>
+<span class="s">defaultrouter="192.168.0.254"</span>
+<span class="s">sshd_enable="YES"</span>
+<span class="s"># Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable</span>
+<span class="s">dumpdev="AUTO"</span>
 <span class="s">EOF</span>
 
 cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/resolv.conf</span>
@@ -5740,10 +5544,10 @@ cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/tmp/freebsd_setup.sh</sp
 <span class="s">EOF</span>
 
 cat <span class="s">&lt;&lt; 'EOF' &gt; ${CHROOT_FREEBSD}/tmp/user_acount.sh</span>
-<span class="s">printf &quot;$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs.&quot; | pw usermod -n root -H 0</span>
+<span class="s">printf "$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs." | pw usermod -n root -H 0</span>
 
 <span class="s">pw useradd -n nanashi -s /bin/tcsh -G wheel -m</span>
-<span class="s">printf &quot;$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1&quot; | pw usermod -n nanashi -H 0</span>
+<span class="s">printf "$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1" | pw usermod -n nanashi -H 0</span>
 <span class="s">EOF</span>
 
 mount -t devfs dev <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/dev
@@ -5771,12 +5575,9 @@ reboot
 /var/script/os_install.sh
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
+<ul class="simple"><li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
 <li><a class="reference external" href="http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren">http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ freebsd ]]></category>
             <category><![CDATA[ pxeboot ]]></category>
              <pubDate>Sat, 20 Jul 2013 00:00:00 +0900</pubDate>
@@ -5786,8 +5587,7 @@ reboot
             <link>http://127.0.0.1/blog/html/2013/06/22/centos_cobbler_puppet_install.html</link>
             <guid>http://127.0.0.1/blog/html/2013/06/22/centos_cobbler_puppet_install.html</guid>
             <title><![CDATA[Cobbler + Puppet]]></title>
-            <description><![CDATA[<div class="section" id="cobbler-puppet">
-<h1>Cobbler + Puppet</h1>
+            <description><![CDATA[<h1>Cobbler + Puppet</h1>
 <p>前回はCobblerでとりあえずOSインストールが出来るところまでやったので、今回はkickstartファイルの編集、Puppet(Puppet client)のインストールとセットアップを自動化してみる。</p>
 <div class="section" id="dnsmasq">
 <h2>dnsmasq</h2>
@@ -5913,8 +5713,8 @@ Yum Options                    : {}
 </pre></div>
 </div>
 <p>profileにリポジトリの情報を追加</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --repos=&quot;CentOS6.4-epel&quot;</span>
-<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_client --repos=&quot;CentOS6.4-epel&quot;</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --repos="CentOS6.4-epel"</span>
+<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_client --repos="CentOS6.4-epel"</span>
 </pre></div>
 </div>
 <p>profileをコピーしたままの状態ではsample.ksファイルが読み込まれるので、ksファイルをコピーしてPuppetをインストールするよう書き換える。</p>
@@ -5968,21 +5768,11 @@ pxe_just_once: 1
 <div class="section" id="puppet">
 <h2>Puppet</h2>
 <p>PuppetにはPUSHモードとPULLモードがある。</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="14%"/>
-<col width="86%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>PULL</td>
+<table border="1" class="docutils"><colgroup><col width="14%"/><col width="86%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>PULL</td>
 <td>クライアントからサーバへ定期的にマニュフェストを取得し適用する。</td>
-</tr>
-<tr class="row-even"><td>PUSH</td>
+</tr><tr class="row-even"><td>PUSH</td>
 <td>サーバからクライアントへマニュフェストを取得し適用するよう指示する。</td>
-</tr>
-</tbody>
-</table>
-<p>今回はPUSHモードのPuppet環境を構築する。</p>
+</tr></tbody></table><p>今回はPUSHモードのPuppet環境を構築する。</p>
 <div class="section" id="puppet-server">
 <h3>Puppet server</h3>
 <p>Puppet clientを自動構築するためにPuppet serverを作り込む。</p>
@@ -6052,7 +5842,7 @@ PUPPET_LOG=/var/log/puppet/puppet.log
 
 # You may specify other parameters to the puppet client here
 #PUPPET_EXTRA_OPTS=--waitforcert=500
-PUPPET_EXTRA_OPTS=&quot;--listen --no-client&quot;
+PUPPET_EXTRA_OPTS="--listen --no-client"
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/manifests/files/auth.conf
@@ -6164,14 +5954,11 @@ $SNIPPET('kickstart_done')
 # End final steps
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html">Managing DNS</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html">Managing DNS</a></li>
 <li><a class="reference external" href="http://www.cobblerd.org/manuals/2.2.3/4/3/1_-_Managing_DHCP.html">Managing DHCP</a></li>
 <li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
 <li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add">http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add/</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ puppet ]]></category>
             <category><![CDATA[ cobbler ]]></category>
              <pubDate>Sat, 22 Jun 2013 00:00:00 +0900</pubDate>
@@ -6181,8 +5968,7 @@ $SNIPPET('kickstart_done')
             <link>http://127.0.0.1/blog/html/2013/06/18/centos_cobbler_setup.html</link>
             <guid>http://127.0.0.1/blog/html/2013/06/18/centos_cobbler_setup.html</guid>
             <title><![CDATA[CentOS6.4にCobblerサーバ構築]]></title>
-            <description><![CDATA[<div class="section" id="centos6-4cobbler">
-<h1>CentOS6.4にCobblerサーバ構築</h1>
+            <description><![CDATA[<h1>CentOS6.4にCobblerサーバ構築</h1>
 <p>サーバ100台くらいにOSインストールする作業が発生するかもしれないので怠けるための作業をメモしておく。まずはCobblerサーバを構築してOSインストールが出来るまで。</p>
 <div class="highlight-python"><div class="highlight"><pre># uname -a
 Linux localhost.localdomain 2.6.32-358.11.1.el6.x86_64 #1 SMP Wed Jun 12 03:34:52 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
@@ -6220,7 +6006,7 @@ The following are potential configuration items that you may want to fix:
 4 : change 'disable' to 'no' in /etc/xinetd.d/rsync
 5 : since iptables may be running, ensure 69, 80/443, and 25151 are unblocked
 6 : debmirror package is not installed, it will be required to manage debian deployments and repositories
-7 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: &quot;openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'&quot; to generate new one
+7 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: "openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'" to generate new one
 8 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them
 
 Restart cobblerd and then run 'cobbler sync' to apply changes.
@@ -6244,7 +6030,7 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
      option domain-name-servers 8.8.8.8;
      option subnet-mask         255.255.255.0;
      range dynamic-bootp        192.168.0.200 192.168.0.250;
-     filename                   &quot;/pxelinux.0&quot;;
+     filename                   "/pxelinux.0";
      default-lease-time         21600;
      max-lease-time             43200;
      next-server                $next_server;
@@ -6267,32 +6053,30 @@ subnet 192.168.0.0 netmask 255.255.255.0 {
 The following are potential configuration items that you may want to fix:
 
 1 : debmirror package is not installed, it will be required to manage debian deployments and repositories
-2 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: &quot;openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'&quot; to generate new one
+2 : The default password used by the sample templates for newly installed machines (default_password_crypted in /etc/cobbler/settings) is still set to 'cobbler' and should be changed, try: "openssl passwd -1 -salt 'random-phrase-here' 'your-password-here'" to generate new one
 3 : fencing tools were not found, and are required to use the (optional) power management features. install cman or fence-agents to use them
 
 Restart cobblerd and then run 'cobbler sync' to apply changes.
 </pre></div>
 </div>
 <p>に書いてあるように</p>
-<div class="highlight-python"><div class="highlight"><pre># openssl passwd -1 -salt &quot;cobbler&quot; &quot;password&quot;
+<div class="highlight-python"><div class="highlight"><pre># openssl passwd -1 -salt "cobbler" "password"
 $1$cobbler$UTIGTKoLfLdeMAPNxROQZ1
 </pre></div>
 </div>
 <p>を実行して</p>
 <div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/settings
-default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;
+default_password_crypted: "$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1"
 </pre></div>
 </div>
 <p>設定ファイルを書き換えてCobblerを再起動</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># /etc/init.d/cobblerd restart</span>
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html">http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html">http://www.asahi-net.or.jp/~aa4t-nngk/pxeinstall.html</a></li>
 <li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/15/cobbler-install">http://blog.glidenote.com/blog/2012/03/15/cobbler-install/</a></li>
 <li><a class="reference external" href="http://www.ibm.com/developerworks/jp/linux/library/l-cobbler">http://www.ibm.com/developerworks/jp/linux/library/l-cobbler/</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ cobbler ]]></category>
              <pubDate>Tue, 18 Jun 2013 00:00:00 +0900</pubDate>
         </item>
@@ -6301,8 +6085,7 @@ default_password_crypted: &quot;$1$cobbler$UTIGTKoLfLdeMAPNxROQZ1&quot;
             <link>http://127.0.0.1/blog/html/2013/06/08/ubuntu_mongodb_rails3_setup.html</link>
             <guid>http://127.0.0.1/blog/html/2013/06/08/ubuntu_mongodb_rails3_setup.html</guid>
             <title><![CDATA[Rails3でMongoDBを使ってみる]]></title>
-            <description><![CDATA[<div class="section" id="rails3mongodb">
-<h1>Rails3でMongoDBを使ってみる</h1>
+            <description><![CDATA[<h1>Rails3でMongoDBを使ってみる</h1>
 <div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
 No LSB modules are available.
 Distributor ID: Ubuntu
@@ -6345,15 +6128,13 @@ mongodb_app_development 0.203125GB
 &gt; show collections
 posts
 &gt; db.posts.find()
-{ &quot;_id&quot; : ObjectId(&quot;51b1ea5da64aef614e000001&quot;), &quot;title&quot; : &quot;sample&quot;, &quot;subscription&quot; : &quot;text&quot; }
-{ &quot;_id&quot; : ObjectId(&quot;51b2afb0a64aef0c3f000001&quot;), &quot;title&quot; : &quot;hogehoge&quot;, &quot;subscription&quot; : &quot;fugafuga&quot; }
+{ "_id" : ObjectId("51b1ea5da64aef614e000001"), "title" : "sample", "subscription" : "text" }
+{ "_id" : ObjectId("51b2afb0a64aef0c3f000001"), "title" : "hogehoge", "subscription" : "fugafuga" }
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://mongoid.org/en/mongoid">http://mongoid.org/en/mongoid/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://mongoid.org/en/mongoid">http://mongoid.org/en/mongoid/</a></li>
 <li><a class="reference external" href="http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3">http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3/</a></li>
-</ul>
-</div>]]></description>
+</ul>]]></description>
             <category><![CDATA[ mongodb ]]></category>
             <category><![CDATA[ rails ]]></category>
              <pubDate>Sat, 08 Jun 2013 00:00:00 +0900</pubDate>
@@ -6363,8 +6144,7 @@ posts
             <link>http://127.0.0.1/blog/html/2013/06/05/debian_wheezy_nested_kvm.html</link>
             <guid>http://127.0.0.1/blog/html/2013/06/05/debian_wheezy_nested_kvm.html</guid>
             <title><![CDATA[Debian wheezyでNested KVMを試してみる]]></title>
-            <description><![CDATA[<div class="section" id="debian-wheezynested-kvm">
-<h1>Debian wheezyでNested KVMを試してみる</h1>
+            <description><![CDATA[<h1>Debian wheezyでNested KVMを試してみる</h1>
 <p><a class="reference external" href="https://code.google.com/p/ganeti">ganeti</a>のbetaを触るのに実機を2,3台用意しないといけないことから開放されそう。</p>
 <div class="section" id="kvm">
 <h2>KVM インストール</h2>
@@ -6418,18 +6198,18 @@ Y
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$4</span>
 <span class="nv">OS</span><span class="o">=</span><span class="nv">$5</span>
 
-<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">&quot;/var/lib/libvirt/images/$VM_NAME&quot;</span>
+<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">"/var/lib/libvirt/images/$VM_NAME"</span>
 
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;centos&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"centos"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># CentOS 6.4 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;precise&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"precise"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Ubuntu 12.04 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;squeeze&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"squeeze"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Squeeze amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;wheezy&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"wheezy"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Wheezy amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
 <span class="k">fi</span>
@@ -6465,18 +6245,18 @@ virt-install --hvm --accelerate --nographics <span class="se">\</span>
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$4</span>
 <span class="nv">OS</span><span class="o">=</span><span class="nv">$5</span>
 
-<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">&quot;/var/lib/libvirt/images/$VM_NAME&quot;</span>
+<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">"/var/lib/libvirt/images/$VM_NAME"</span>
 
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;centos&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"centos"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># CentOS 6.4 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;precise&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"precise"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Ubuntu 12.04 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;squeeze&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"squeeze"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Squeeze amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;wheezy&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"wheezy"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Wheezy amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
 <span class="k">fi</span>
@@ -6501,13 +6281,10 @@ default              inactive   no
 # vm-install.sh debian7_nested 500 50 virbr0 wheezy
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.debian.org/releases/wheezy">http://www.debian.org/releases/wheezy/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.debian.org/releases/wheezy">http://www.debian.org/releases/wheezy/</a></li>
 <li><a class="reference external" href="http://wiki.debian.org/KVM">http://wiki.debian.org/KVM</a></li>
 <li><a class="reference external" href="http://aikotobaha.blogspot.jp/2012/02/kvm-on-kvmnested-kvm.html">http://aikotobaha.blogspot.jp/2012/02/kvm-on-kvmnested-kvm.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ kvm ]]></category>
              <pubDate>Wed, 05 Jun 2013 00:00:00 +0900</pubDate>
         </item>
@@ -6516,8 +6293,7 @@ default              inactive   no
             <link>http://127.0.0.1/blog/html/2013/05/26/ubuntu_mongodb_install.html</link>
             <guid>http://127.0.0.1/blog/html/2013/05/26/ubuntu_mongodb_install.html</guid>
             <title><![CDATA[Ubuntu12.04にMongoDBをインストール]]></title>
-            <description><![CDATA[<div class="section" id="ubuntu12-04mongodb">
-<h1>Ubuntu12.04にMongoDBをインストール</h1>
+            <description><![CDATA[<h1>Ubuntu12.04にMongoDBをインストール</h1>
 <p>積読になっていた「MongoDB イン・アクション」をようやく読み始めた。</p>
 <p>「Ubuntu 12.04 amd64」にMongoDBをインストールして手を動かしてみたのでメモしておく。</p>
 <p>Railsで使いたいなと思っているところ。</p>
@@ -6534,7 +6310,7 @@ $ sudo apt-get install mongodb-10gen
 </pre></div>
 </div>
 <p>で指定のVersionをインストールすることが出来る。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># echo &quot;mongodb-10gen hold&quot; | dpkg --set-selections</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># echo "mongodb-10gen hold" | dpkg --set-selections</span>
 </pre></div>
 </div>
 <p>でインストールしたVersionからアップグレードしないように出来る。</p>
@@ -6545,7 +6321,7 @@ $ sudo apt-get install mongodb-10gen
 MongoDB shell version: 2.4.3
 connecting to: test
 Welcome to the MongoDB shell.
-For interactive help, type &quot;help&quot;.
+For interactive help, type "help".
 For more comprehensive documentation, see
         http://docs.mongodb.org/
 Questions? Try the support group
@@ -6553,34 +6329,31 @@ Questions? Try the support group
 
 use tutorial
 
-db.users.insert({username: &quot;hoge&quot;})
+db.users.insert({username: "hoge"})
 
 db.users.find()
-{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
+{ "_id" : ObjectId("51a1f5c136f07a662784e8ae"), "username" : "hoge" }
 
-db.users.save({username: &quot;moge&quot;})
+db.users.save({username: "moge"})
 
 db.users.find()
-{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;username&quot; : &quot;hoge&quot; }
-{ &quot;_id&quot; : ObjectId(&quot;51a1f8d336f07a662784e8af&quot;), &quot;username&quot; : &quot;moge&quot; }
+{ "_id" : ObjectId("51a1f5c136f07a662784e8ae"), "username" : "hoge" }
+{ "_id" : ObjectId("51a1f8d336f07a662784e8af"), "username" : "moge" }
 
 db.users.count()
 2
 
-db.users.update({username: &quot;hoge&quot;}, {$set: {country: &quot;canada&quot;}})
-db.users.find({username: &quot;hoge&quot;})
-{ &quot;_id&quot; : ObjectId(&quot;51a1f5c136f07a662784e8ae&quot;), &quot;country&quot; : &quot;canada&quot;, &quot;username&quot; : &quot;hoge&quot; }
+db.users.update({username: "hoge"}, {$set: {country: "canada"}})
+db.users.find({username: "hoge"})
+{ "_id" : ObjectId("51a1f5c136f07a662784e8ae"), "country" : "canada", "username" : "hoge" }
 
-db.users.update({username: &quot;hoge&quot;}, {$unset: {country: 1}})
-db.users.find({username: &quot;hoge&quot;})
-{ &quot;_id&quot; : ObjectId(&quot;51adf33a197bc318df1ad8ad&quot;), &quot;username&quot; : &quot;hoge&quot; }
+db.users.update({username: "hoge"}, {$unset: {country: 1}})
+db.users.find({username: "hoge"})
+{ "_id" : ObjectId("51adf33a197bc318df1ad8ad"), "username" : "hoge" }
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a></li>
-</ul>
-</div>
-</div>]]></description>
+<ul class="simple"><li><a class="reference external" href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a></li>
+</ul></div>]]></description>
             <category><![CDATA[ mongodb ]]></category>
              <pubDate>Sun, 26 May 2013 00:00:00 +0900</pubDate>
         </item>
@@ -6589,29 +6362,17 @@ db.users.find({username: &quot;hoge&quot;})
             <link>http://127.0.0.1/blog/html/2013/05/20/unbound_nsd.html</link>
             <guid>http://127.0.0.1/blog/html/2013/05/20/unbound_nsd.html</guid>
             <title><![CDATA[Unbound + NSD]]></title>
-            <description><![CDATA[<div class="section" id="unbound-nsd">
-<h1>Unbound + NSD</h1>
+            <description><![CDATA[<h1>Unbound + NSD</h1>
 <p>Chef Serverと戯れるときにhostsをいちいち書き換えるのは</p>
 <p>面倒なので内部にDNSサーバを立ててみた。</p>
-<table border="1" class="docutils">
-<caption>Ubuntu 12.04 server amd64</caption>
-<colgroup>
-<col width="33%"/>
-<col width="33%"/>
-<col width="33%"/>
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td>コンテンツサーバ</td>
+<table border="1" class="docutils"><caption>Ubuntu 12.04 server amd64</caption>
+<colgroup><col width="33%"/><col width="33%"/><col width="33%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>コンテンツサーバ</td>
 <td>NSD(3.2.9)</td>
 <td>192.168.0.1</td>
-</tr>
-<tr class="row-even"><td>キャッシュサーバ</td>
+</tr><tr class="row-even"><td>キャッシュサーバ</td>
 <td>Unbound(1.4.16)</td>
 <td>192.168.0.2</td>
-</tr>
-</tbody>
-</table>
-<div class="section" id="nsd">
+</tr></tbody></table><div class="section" id="nsd">
 <h2>NSD</h2>
 <p>今回は正引きだけ設定した。</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install nsd</span>
@@ -6624,13 +6385,13 @@ db.users.find({username: &quot;hoge&quot;})
   ip-address: 192.168.0.1
   hide-version: yes
   ipv4-only: yes
-  database: &quot;/etc/nsd3/nsd.conf&quot;
-  pidfile: &quot;/etc/nsd3/nsd.pid&quot;
-  chroot: &quot;/etc/nsd3&quot;
+  database: "/etc/nsd3/nsd.conf"
+  pidfile: "/etc/nsd3/nsd.pid"
+  chroot: "/etc/nsd3"
   username: nsd
-  zonedir: &quot;/etc/nsd3&quot;
-  difffile: &quot;/etc/nsd3/ixfr.db&quot;
-  xfrdfile: &quot;/etc/nsd3/xfrd.state&quot;
+  zonedir: "/etc/nsd3"
+  difffile: "/etc/nsd3/ixfr.db"
+  xfrdfile: "/etc/nsd3/xfrd.state"
 
 zone:
   name: chef.local
@@ -6674,24 +6435,21 @@ moge  IN  A 192.168.0.6
   do-ip6: no
   access-control: 127.0.0.0/8 allow
   access-control: 192.168.0.0/24 allow
-  chroot: &quot;etc/unbound&quot;
-  username: &quot;unbound&quot;
-  directory: &quot;/etc/unbound&quot;
+  chroot: "etc/unbound"
+  username: "unbound"
+  directory: "/etc/unbound"
   use-syslog: yes
-  pidfile: &quot;/etc/unbound/unbound.pid&quot;
+  pidfile: "/etc/unbound/unbound.pid"
 
 stub-zone:
-  name: &quot;chef.local&quot;
+  name: "chef.local"
   stub-addr: 192.168.0.1
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://unbound.jp">http://unbound.jp/</a></li>
+<ul class="simple"><li><a class="reference external" href="http://unbound.jp">http://unbound.jp/</a></li>
 <li><a class="reference external" href="http://unbound.jp/news20110624">http://unbound.jp/news20110624/</a></li>
 <li><a class="reference external" href="http://gihyo.jp/admin/feature/01/unbound">http://gihyo.jp/admin/feature/01/unbound</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ nsd ]]></category>
             <category><![CDATA[ unbound ]]></category>
              <pubDate>Mon, 20 May 2013 00:00:00 +0900</pubDate>
@@ -6701,8 +6459,7 @@ stub-zone:
             <link>http://127.0.0.1/blog/html/2013/03/23/tinkerer_github.html</link>
             <guid>http://127.0.0.1/blog/html/2013/03/23/tinkerer_github.html</guid>
             <title><![CDATA[Tinkerer + Github]]></title>
-            <description><![CDATA[<div class="section" id="tinkerer-github">
-<h1>Tinkerer + Github</h1>
+            <description><![CDATA[<h1>Tinkerer + Github</h1>
 <p>jekyll + Githubを使ってブログを書いていたのだけれどローカルで確認するのにWEBRick動かすということに面倒くささを感じ流らく放置してしまっていた。</p>
 <p>もっと手軽な(Sphinxみたいにhtmlが掃き出される)ものはないかと探してみたところTinkererというものを見付けた。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ pip install tinkerer
@@ -6726,7 +6483,7 @@ $ touch .nojekyll
 
 <span class="c"># Add templates to be rendered in sidebar here</span>
 <span class="n">html_sidebars</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&quot;**&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s">&quot;recent.html&quot;</span><span class="p">,</span> <span class="s">&quot;categories.html&quot;</span><span class="p">,</span> <span class="s">&quot;tags.html&quot;</span><span class="p">,</span> <span class="s">&quot;searchbox.html&quot;</span><span class="p">]</span>
+    <span class="s">"**"</span><span class="p">:</span> <span class="p">[</span><span class="s">"recent.html"</span><span class="p">,</span> <span class="s">"categories.html"</span><span class="p">,</span> <span class="s">"tags.html"</span><span class="p">,</span> <span class="s">"searchbox.html"</span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -6739,12 +6496,9 @@ $ git remote add origin git@github.com:zinrai/zinrai.github.com.git
 $ git push -u origin master
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.tinkerer.me/exts/withgithub.html">http://www.tinkerer.me/exts/withgithub.html</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.tinkerer.me/exts/withgithub.html">http://www.tinkerer.me/exts/withgithub.html</a></li>
 <li><a class="reference external" href="http://sphinx-users.jp/reverse-dict/html/japanese.html">http://sphinx-users.jp/reverse-dict/html/japanese.html</a></li>
-</ul>
-</div>
-</div>]]></description>
+</ul></div>]]></description>
             <category><![CDATA[ tinkerer ]]></category>
              <pubDate>Sat, 23 Mar 2013 00:00:00 +0900</pubDate>
         </item>

@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/07/debian_wheezy_direnv_xbuild
    2014/05/05/centos_snort_pulledpork
    2014/05/04/centos_snort_install
    2014/05/03/debian_wheezy_ntp_server

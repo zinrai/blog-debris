@@ -21,7 +21,7 @@
             <link rel="stylesheet" href="_static/main.css" type="text/css">
             <link rel="stylesheet" href="_static/dark.css" type="text/css">
             <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-            <link rel="stylesheet" href="_static/webfont.css" type="text/css">
+            <link rel="stylesheet" href="_static/font-awesome.min.css" type="text/css">
         <link rel="shortcut icon" href="_static/tinkerer.ico" /><!-- Load modernizr and JQuery -->
         <script src="_static/vendor/modernizr-2.6.2.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
@@ -31,7 +31,7 @@
         <link rel="next" title="Older" href="page6.html" /><link rel="prev" title="Newer" href="page4.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="rss.html" /><script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.0',
+        VERSION:     '1.4.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -56,7 +56,7 @@
             }
         });
     </script></head>
-    <body>
+    <body role="document">
         <!--[if lt IE 7]>
             <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
         <![endif]-->
@@ -76,20 +76,94 @@
               <a href="pages/about.html">About</a>
             </li>
             <li class="quicklink"><div class="rss">
-        <a href="rss.html" title="Subscribe via RSS"><span class="webfont">B</span></a>
+        <a href="rss.html" title="Subscribe via RSS"><span class="fa fa-lg fa-rss"></span></a>
     </div></li></ul>
         </nav>
     </header>
 </div>
 
-<div class="main-container"><div class="main wrapper clearfix"><article><ul class="related clearfix">
+<div class="main-container" role="main"><div class="main wrapper clearfix"><article role="article"><ul class="related clearfix">
             <li class="left"> &laquo; <a href="page4.html">Newer</a></li>
             <li class="right"><a href="page6.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>February 25, 2014</span>
+        </div>
+        <h1><a href="2014/02/25/debian_wheezy_synergy.html">Synergyでマウスとキーボードを共有</a></h1>
+<p>最近、デスクトップPCの横にノートPCを置いて作業をるすことが多くなったのでsynergyを入れてみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+
+$ apt-cache show synergy
+Package: synergy
+Version: 1.3.8-2
+
+% apt-get install synergy
+</pre></div>
+</div>
+<div class="section" id="server">
+<h2>Server</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ vi $HOME/.synergy.conf
+
+section: screens
+  hoge:
+  fuga:
+end
+
+section: links
+  hoge:
+    right = fuga
+  fuga:
+    left = hoge
+end
+
+section: aliases
+  hoge:
+    192.168.0.1
+  fuga:
+    192.168.0.2
+end
+
+section: options
+  keystroke(alt+control+j) = switchToScreen(hoge)
+  keystroke(alt+control+k) = switchToScreen(fuga)
+end
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ synergys
+</pre></div>
+</div>
+</div>
+<div class="section" id="client">
+<h2>Client</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ synergyc 192.168.0.1
+</pre></div>
+</div>
+<p>synergys(1),synergyc(1)をforegroundで起動したいときは、どちらも「-f」オプションを付ける。</p>
+<ul class="simple"><li><a class="reference external" href="http://synergy-foss.org/?hl=ja">http://synergy-foss.org/?hl=ja</a></li>
+<li><a class="reference external" href="http://synergy2.sourceforge.net/configuration.html">http://synergy2.sourceforge.net/configuration.html</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/synergy.html">synergy</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/synergy.html">synergy</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>February 07, 2014</span>
         </div>
-        <div class="section" id="openvpn">
-<h1><a href="2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a></h1>
+        <h1><a href="2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a></h1>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -a
 Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux
 </pre></div>
@@ -139,7 +213,7 @@ cert server.crt
 key server.key
 dh dh1024.pem
 server-bridge 192.168.2.1 255.255.255.0 192.168.2.250 192.168.2.253
-push &quot;route 192.168.2.0 255.255.255.0&quot;
+push "route 192.168.2.0 255.255.255.0"
 duplicate-cn
 keepalive 10 120
 comp-lzo
@@ -193,12 +267,9 @@ comp-lzo
 verb 3
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#RoutedOrBridged">http://www.openvpn.jp/document/how-to/#RoutedOrBridged</a></li>
+<ul class="simple"><li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#RoutedOrBridged">http://www.openvpn.jp/document/how-to/#RoutedOrBridged</a></li>
 <li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#CertificateAuthority">http://www.openvpn.jp/document/how-to/#CertificateAuthority</a></li>
-</ul>
-</div>
-</div>
+</ul></div>
         <div class="postmeta">
         <div class="author">
             <span>Posted by zinrai</span>
@@ -216,8 +287,7 @@ verb 3
         </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>February 06, 2014</span>
         </div>
-        <div class="section" id="kvmguestoszvol">
-<h1><a href="2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a></h1>
+        <h1><a href="2014/02/06/debian_wheezy_kvm_zfs.html">KVMのGuestOSにZVOLを使う</a></h1>
 <p>「<a class="reference internal" href="2014/02/05/debian_wheezy_zfs.html"><em>ZFS on Linux (Debian wheezy)</em></a>」で最後に書いたブロックデバイスとして見えないかを調べてみた。</p>
 <div class="section" id="zvol">
 <h2>ZVOL</h2>
@@ -239,7 +309,7 @@ lrwxrwxrwx 1 root root 10 Feb  6 12:37 disk2 -&gt; ../../zd16
 <h2>sparse volume</h2>
 <p>上記だと20GBの領域がまるまる割り当てられてしまうので、thin provisioning的な機能はないかzfs(8)を眺めてみた。</p>
 <p>man zfsして「thin provisioning」で検索して「 “sparse volume” (also known as “thin provisioning”)」の文の見付けて「sparse volume」で検索したらオプションを探し当てることができた。</p>
-<div class="highlight-python"><div class="highlight"><pre>Though not recommended, a &quot;sparse volume&quot; (also known as &quot;thin provisioning&quot;) can be created by specifying the -s option to the  zfs  create  -V command,  or by changing the reservation after the volume has been created. A &quot;sparse volume&quot; is a volume where the reservation is less then the volume size. Consequently, writes to a sparse volume can fail with ENOSPC when the pool is low on space. For a sparse volume, changes to volsize are not reflected in the reservation.
+<div class="highlight-python"><div class="highlight"><pre>Though not recommended, a "sparse volume" (also known as "thin provisioning") can be created by specifying the -s option to the  zfs  create  -V command,  or by changing the reservation after the volume has been created. A "sparse volume" is a volume where the reservation is less then the volume size. Consequently, writes to a sparse volume can fail with ENOSPC when the pool is low on space. For a sparse volume, changes to volsize are not reflected in the reservation.
 </pre></div>
 </div>
 <div class="highlight-python"><div class="highlight"><pre>-s
@@ -297,18 +367,18 @@ zfspool/kvm1  snapdev               hidden                 default
 <span class="nv">IFACE</span><span class="o">=</span><span class="nv">$3</span>
 <span class="nv">OS</span><span class="o">=</span><span class="nv">$4</span>
 
-<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">&quot;/dev/zvol/zfspool/$VM_NAME&quot;</span>
+<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">"/dev/zvol/zfspool/$VM_NAME"</span>
 
-<span class="k">if</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;centos&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"centos"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># CentOS 6.4 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;precise&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"precise"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Ubuntu 12.04 amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;squeeze&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"squeeze"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Squeeze amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">&quot;$OS&quot;</span> <span class="o">=</span> <span class="s2">&quot;wheezy&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"wheezy"</span> <span class="o">]</span>; <span class="k">then</span>
   <span class="c"># Debian Wheezy amd64</span>
   <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
 <span class="k">fi</span>
@@ -345,11 +415,8 @@ zfspool/kvm1@snap1   600K      -  1.57G  -
 % zfs rollback zfspool/kvm1@snap1
 </pre></div>
 </div>
-<ul class="simple">
-<li><a class="reference external" href="https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols">https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/</a></li>
-</ul>
-</div>
-</div>
+<ul class="simple"><li><a class="reference external" href="https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols">https://pthree.org/2012/12/21/zfs-administration-part-xiv-zvols/</a></li>
+</ul></div>
         <div class="postmeta">
         <div class="author">
             <span>Posted by zinrai</span>
@@ -364,70 +431,6 @@ zfspool/kvm1@snap1   600K      -  1.57G  -
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/kvm.html">kvm</a>, <a href="tags/zfs.html">zfs</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>February 05, 2014</span>
-        </div>
-        <div class="section" id="zfs-on-linux-debian-wheezy">
-<h1><a href="2014/02/05/debian_wheezy_zfs.html">ZFS on Linux (Debian wheezy)</a></h1>
-<p>LinuxでもZFSがいい感じで動くという話を聞いたので使ってみた。</p>
-<div class="highlight-python"><div class="highlight"><pre>% uname -a
-Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.3 (wheezy)
-Release:        7.3
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% wget http://archive.zfsonlinux.org/debian/pool/main/z/zfsonlinux/zfsonlinux_2%7Ewheezy_all.deb
-% dpkg -i zfsonlinux_2~wheezy_all.deb
-% apt-get update
-% apt-get install debian-zfs
-</pre></div>
-</div>
-<p>2TBのHDDをRAID1してみる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% parted /dev/sda -s &quot;mklabel gpt&quot;
-% parted /dev/sdc -s &quot;mklabel gpt&quot;
-
-% zpool create zfspool mirror sda sdc
-% zpool list -v
-NAME   SIZE  ALLOC   FREE    CAP  DEDUP  HEALTH  ALTROOT
-zfspool  1.81T   556K  1.81T     0%  1.00x  ONLINE  -
-  mirror  1.81T   556K  1.81T         -
-    sda      -      -      -         -
-    sdc      -      -      -         -
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% zfs create zfspool/disk1
-% zfs list
-NAME            USED  AVAIL  REFER  MOUNTPOINT
-zfspool         692K  1.78T   136K  /zfspool
-zfspool/disk1   136K  1.78T   136K  /zfspool/disk1
-</pre></div>
-</div>
-<p>ブロックデバイスとして見えたらKVMのGuestOS用のディスクとして使えると思うので、その辺を調べてみる。</p>
-<ul class="simple">
-<li><a class="reference external" href="http://zfsonlinux.org/debian.html">http://zfsonlinux.org/debian.html</a></li>
-<li><a class="reference external" href="http://sourceforge.jp/magazine/13/04/01/133000">http://sourceforge.jp/magazine/13/04/01/133000</a></li>
-</ul>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/debian.html">debian</a>, <a href="categories/zfs.html">zfs</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/zfs.html">zfs</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -436,6 +439,8 @@ zfspool/disk1   136K  1.78T   136K  /zfspool/disk1
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/07/debian_wheezy_direnv_xbuild.html">direnv + xbuildで環境構築</a>
+        </li><li>
             <a href="2014/05/05/centos_snort_pulledpork.html">snort ルールセット自動更新</a>
         </li><li>
             <a href="2014/05/04/centos_snort_install.html">CentOS 6.5 snort インストール</a>
@@ -453,23 +458,21 @@ zfspool/disk1   136K  1.78T   136K  /zfspool/disk1
             <a href="2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html">Chef Soloでvsftpdのインストールと設定</a>
         </li><li>
             <a href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html">Chef SoloでJenkinsをインストール</a>
-        </li><li>
-            <a href="2014/03/20/debian_wheezy_virtualbox_vagrant.html">Debian wheezyでVagrantを使てみた</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (20), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (15), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (17), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (21), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (15), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (18), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
-        <button type="submit"><span class="webfont">L</span></button>
+        <button type="submit"><span class="fa fa-search"></span></button>
     </form>
 </div></section></aside></div> <!-- #main --></div> <!-- #main-container -->
 
-        <div class="footer-container"><footer class="wrapper">&copy; Copyright 2012, zinrai. Powered by <a href="http://www.tinkerer.me/">Tinkerer</a> and <a href="http://sphinx.pocoo.org/">Sphinx</a>.</footer></div> <!-- footer-container -->
+        <div class="footer-container" role="contentinfo"><footer class="wrapper">&copy; Copyright 2012, zinrai. Powered by <a href="http://www.tinkerer.me/">Tinkerer</a> and <a href="http://sphinx.pocoo.org/">Sphinx</a>.</footer></div> <!-- footer-container -->
 
       </div> <!--! end of #container --><!--[if lt IE 7 ]>
           <script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.3/CFInstall.min.js"></script>
