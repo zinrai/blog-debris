@@ -86,6 +86,52 @@
             <li class="left"></li>
             <li class="right"><a href="page2.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>June 08, 2014</span>
+        </div>
+        <h1><a href="2014/06/08/freebsd_nfsv4_server.html">FreeBSD 10 NFSv4 Server</a></h1>
+<p>FreeBSDでNFSv4サーバを構築してみる。nfsv4(4),exports(5)を眺めながら構築してみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+FreeBSD zinrai.localnet 10.0-RELEASE-p3 FreeBSD 10.0-RELEASE-p3 #0: Tue May 13 18:31:10 UTC 2014     root@amd64-builder.daemonology.net:/usr/obj/usr/src/sys/GENERIC  amd64
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
+nfs_server_enable="YES"
+nfsv4_server_enable="YES"
+nfsuserd_enable="YES"
+nfsd_enable="YES"
+rpcbind_enable="YES"
+mountd_enable="YES"
+# NFSv3
+rpc_statd_enable="YES"
+rpc_lockd_enable="YES"
+</pre></div>
+</div>
+<p>nfsv4(4)にはnfs_server_enable,nfsv4_server_enable,nfsuserd_enableをrc.conf(5)に設定するよう書かれている。/etc/rc.dディレクトリでnfs_server_enableをgrepしするとnfdsがマッチした。/etc/rc.d/nfsd(起動スクリプト)を眺めてみると、依存するmountd(8),rpcbind(8)を起動してくれている。ただrc.conf(5)に関係するものをすべて書いておいたほうがどのサービスが動いているのかがわかりやすいのでこうしている。exports(5)を書き換えて設定を反映させたいときはmountd(8)を再起動しなければいけないので、service(8)での明示的な起動と停止ができるこちらのほうが便利である。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
+V4: / -network 192.168.0.1 -mask 255.255.255.0
+/mnt/nfs -network 192.168.0.1 -mask 255.255.255.0
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% showmount -e
+Exports list on localhost:
+/mnt/nfs                   192.168.0.1
+</pre></div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/nfs.html">nfs</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/nfs.html">nfs</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>June 07, 2014</span>
         </div>
         <h1><a href="2014/06/07/debian_wheezy_direnv_xbuild.html">direnv + xbuildで環境構築</a></h1>
@@ -360,308 +406,6 @@ Fly Piggy Fly!
                 Tags:
                 <a href="tags/centos.html">centos</a>, <a href="tags/snort.html">snort</a>, <a href="tags/pulledpork.html">pulledpork</a>, <a href="tags/rpmbuild.html">rpmbuild</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>May 04, 2014</span>
-        </div>
-        <h1><a href="2014/05/04/centos_snort_install.html">CentOS 6.5 snort インストール</a></h1>
-<p>使う用事ができたのでインストールして簡単なルールを書いて動作確認してみる。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ uname -a
-Linux localhost.localdomain 2.6.32-431.11.2.el6.x86_64 #1 SMP Tue Mar 25 19:59:55 UTC 2014 x86_64 x86_64 x86_64 GNU/Linux
-
-$ cat /etc/centos-release
-CentOS release 6.5 (Final)
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ yum info snort
-Name        : snort
-Arch        : x86_64
-Epoch       : 1
-Version     : 2.9.6.1
-Release     : 1
-Size        : 15 M
-Repo        : installed
-Summary     : An open source Network Intrusion Detection System (NIDS)
-URL         : http://www.snort.org/
-License     : GPL
-Description : Snort is an open source network intrusion detection system, capable of
-            : performing real-time traffic analysis and packet logging on IP networks.
-            : It can perform protocol analysis, content searching/matching and can be
-            : used to detect a variety of attacks and probes, such as buffer overflows,
-            : stealth port scans, CGI attacks, SMB probes, OS fingerprinting attempts,
-            : and much more.
-            :
-            : Snort has three primary uses. It can be used as a straight packet sniffer
-            : like tcpdump(1), a packet logger (useful for network traffic debugging,
-            : etc), or as a full blown network intrusion detection system.
-            :
-            : You MUST edit /etc/snort/snort.conf to configure snort before it will work!
-            :
-            : There are 5 different packages available. All of them require the base
-            : snort rpm (this one). Additionally, you may need to chose a different
-            : binary to install if you want database support.
-            :
-            : If you install a different binary package /usr/sbin/snort should end up
-            : being a symlink to a binary in one of the following configurations:
-            :
-            :         plain                Snort (this package, required)
-            :
-            : Please see the documentation in /usr/share/doc/snort-2.9.6.1 for more
-            : information on snort features and configuration.
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ yum info daq
-Name        : daq
-Arch        : x86_64
-Version     : 2.0.2
-Release     : 1
-Size        : 961 k
-Repo        : installed
-Summary     : Data Acquisition Library
-URL         : http://www.snort.org/
-License     : GNU General Public License
-Description : Data Acquisition library for Snort.
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>Name        : libdnet
-Arch        : x86_64
-Version     : 1.12
-Release     : 6.el6
-Size        : 65 k
-Repo        : installed
-From repo   : epel
-Summary     : Simple portable interface to lowlevel networking routines
-URL         : http://code.google.com/p/libdnet/
-License     : BSD
-Description : libdnet provides a simplified, portable interface to several
-            : low-level networking routines, including network address
-            : manipulation, kernel arp(4) cache and route(4) table lookup and
-            : manipulation, network firewalling (IP filter, ipfw, ipchains,
-            : pf, ...), network interface lookup and manipulation, raw IP
-            : packet and Ethernet frame, and data transmission.
-</pre></div>
-</div>
-<div class="section" id="rpmbuild">
-<h2>rpmbuild</h2>
-<p>snort本家のCentOS用のRPMがうまくインストールできなかったので、snort本家が配布しているSRPMをrebuildした。</p>
-<div class="highlight-python"><div class="highlight"><pre>% yum install rpm-build rpmdevtools
-$ rpmdev-setuptree
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ curl -o snort-2.9.6.1-1.src.rpm -O -L http://www.snort.org/downloads/2909
-$ curl -o daq-2.0.2-1.src.rpm -O -L http://www.snort.org/downloads/2900
-</pre></div>
-</div>
-<div class="section" id="daq">
-<h3>daq</h3>
-<div class="highlight-python"><div class="highlight"><pre>% yum install flex bison
-$ rpmbuild --rebuild daq-2.0.2-1.src.rpm
-% rpm -ivh rpmbuild/RPMS/x86_64/daq-2.0.2-1.x86_64.rpm
-</pre></div>
-</div>
-</div>
-<div class="section" id="snort">
-<h3>snort</h3>
-<div class="highlight-python"><div class="highlight"><pre>% rpm -ivh http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64/epel-release-6-8.noarch.rpm
-% yum-config-manager --disable epel
-
-% yum --enablerepo=epel install libdnet-devel
-% yum install autoconf automake pcre-devel libpcap-devel gcc openssl-devel
-
-$ rpmbuild --rebuild snort-2.9.6.1-1.src.rpm
-% rpm -ivh rpmbuild/RPMS/x86_64/snort-2.9.6.1-1.x86_64.rpm
-</pre></div>
-</div>
-</div>
-</div>
-<div class="section" id="id1">
-<h2>snort 設定</h2>
-<div class="highlight-python"><div class="highlight"><pre>$ diff -u snort.conf.org snort.conf
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>--- snort.conf.org	2014-05-04 23:52:08.958045878 +0900
-+++ snort.conf	2014-05-05 20:00:07.720036619 +0900
-@@ -246,7 +246,7 @@
- dynamicengine /usr/lib64/snort-2.9.6.1_dynamicengine/libsf_engine.so
- 
- # path to dynamic rules libraries
--dynamicdetection directory /usr/local/lib/snort_dynamicrules
-+#dynamicdetection directory /usr/local/lib/snort_dynamicrules
- 
- ###################################################
- # Step #5: Configure preprocessors
-@@ -499,12 +499,12 @@
-    check_crc
- 
- # Reputation preprocessor. For more information see README.reputation
--preprocessor reputation: \
--   memcap 500, \
--   priority whitelist, \
--   nested_ip inner, \
--   whitelist $WHITE_LIST_PATH/white_list.rules, \
--   blacklist $BLACK_LIST_PATH/black_list.rules 
-+#preprocessor reputation: \
-+#   memcap 500, \
-+#   priority whitelist, \
-+#   nested_ip inner, \
-+#   whitelist $WHITE_LIST_PATH/white_list.rules, \
-+#   blacklist $BLACK_LIST_PATH/black_list.rules 
- 
- ###################################################
- # Step #6: Configure output plugins
-@@ -538,123 +538,7 @@
- ###################################################
- 
- # site specific rules
--include $RULE_PATH/local.rules
--
--include $RULE_PATH/app-detect.rules
--include $RULE_PATH/attack-responses.rules
--include $RULE_PATH/backdoor.rules
--include $RULE_PATH/bad-traffic.rules
--include $RULE_PATH/blacklist.rules
--include $RULE_PATH/botnet-cnc.rules
--include $RULE_PATH/browser-chrome.rules
--include $RULE_PATH/browser-firefox.rules
--include $RULE_PATH/browser-ie.rules
--include $RULE_PATH/browser-other.rules
--include $RULE_PATH/browser-plugins.rules
--include $RULE_PATH/browser-webkit.rules
--include $RULE_PATH/chat.rules
--include $RULE_PATH/content-replace.rules
--include $RULE_PATH/ddos.rules
--include $RULE_PATH/dns.rules
--include $RULE_PATH/dos.rules
--include $RULE_PATH/experimental.rules
--include $RULE_PATH/exploit-kit.rules
--include $RULE_PATH/exploit.rules
--include $RULE_PATH/file-executable.rules
--include $RULE_PATH/file-flash.rules
--include $RULE_PATH/file-identify.rules
--include $RULE_PATH/file-image.rules
--include $RULE_PATH/file-java.rules
--include $RULE_PATH/file-multimedia.rules
--include $RULE_PATH/file-office.rules
--include $RULE_PATH/file-other.rules
--include $RULE_PATH/file-pdf.rules
--include $RULE_PATH/finger.rules
--include $RULE_PATH/ftp.rules
--include $RULE_PATH/icmp-info.rules
- include $RULE_PATH/icmp.rules
--include $RULE_PATH/imap.rules
--include $RULE_PATH/indicator-compromise.rules
--include $RULE_PATH/indicator-obfuscation.rules
--include $RULE_PATH/indicator-scan.rules
--include $RULE_PATH/indicator-shellcode.rules
--include $RULE_PATH/info.rules
--include $RULE_PATH/malware-backdoor.rules
--include $RULE_PATH/malware-cnc.rules
--include $RULE_PATH/malware-other.rules
--include $RULE_PATH/malware-tools.rules
--include $RULE_PATH/misc.rules
--include $RULE_PATH/multimedia.rules
--include $RULE_PATH/mysql.rules
--include $RULE_PATH/netbios.rules
--include $RULE_PATH/nntp.rules
--include $RULE_PATH/oracle.rules
--include $RULE_PATH/os-linux.rules
--include $RULE_PATH/os-mobile.rules
--include $RULE_PATH/os-other.rules
--include $RULE_PATH/os-solaris.rules
--include $RULE_PATH/os-windows.rules
--include $RULE_PATH/other-ids.rules
--include $RULE_PATH/p2p.rules
--include $RULE_PATH/phishing-spam.rules
--include $RULE_PATH/policy-multimedia.rules
--include $RULE_PATH/policy-other.rules
--include $RULE_PATH/policy.rules
--include $RULE_PATH/policy-social.rules
--include $RULE_PATH/policy-spam.rules
--include $RULE_PATH/pop2.rules
--include $RULE_PATH/pop3.rules
--include $RULE_PATH/protocol-dns.rules
--include $RULE_PATH/protocol-finger.rules
--include $RULE_PATH/protocol-ftp.rules
--include $RULE_PATH/protocol-icmp.rules
--include $RULE_PATH/protocol-imap.rules
--include $RULE_PATH/protocol-nntp.rules
--include $RULE_PATH/protocol-pop.rules
--include $RULE_PATH/protocol-rpc.rules
--include $RULE_PATH/protocol-scada.rules
--include $RULE_PATH/protocol-services.rules
--include $RULE_PATH/protocol-snmp.rules
--include $RULE_PATH/protocol-telnet.rules
--include $RULE_PATH/protocol-tftp.rules
--include $RULE_PATH/protocol-voip.rules
--include $RULE_PATH/pua-adware.rules
--include $RULE_PATH/pua-other.rules
--include $RULE_PATH/pua-p2p.rules
--include $RULE_PATH/pua-toolbars.rules
--include $RULE_PATH/rpc.rules
--include $RULE_PATH/rservices.rules
--include $RULE_PATH/scada.rules
--include $RULE_PATH/scan.rules
--include $RULE_PATH/server-apache.rules
--include $RULE_PATH/server-iis.rules
--include $RULE_PATH/server-mail.rules
--include $RULE_PATH/server-mssql.rules
--include $RULE_PATH/server-mysql.rules
--include $RULE_PATH/server-oracle.rules
--include $RULE_PATH/server-other.rules
--include $RULE_PATH/server-samba.rules
--include $RULE_PATH/server-webapp.rules
--include $RULE_PATH/shellcode.rules
--include $RULE_PATH/smtp.rules
--include $RULE_PATH/snmp.rules
--include $RULE_PATH/specific-threats.rules
--include $RULE_PATH/spyware-put.rules
--include $RULE_PATH/sql.rules
--include $RULE_PATH/telnet.rules
--include $RULE_PATH/tftp.rules
--include $RULE_PATH/virus.rules
--include $RULE_PATH/voip.rules
--include $RULE_PATH/web-activex.rules
--include $RULE_PATH/web-attacks.rules
--include $RULE_PATH/web-cgi.rules
--include $RULE_PATH/web-client.rules
--include $RULE_PATH/web-coldfusion.rules
--include $RULE_PATH/web-frontpage.rules
--include $RULE_PATH/web-iis.rules
--include $RULE_PATH/web-misc.rules
--include $RULE_PATH/web-php.rules
--include $RULE_PATH/x11.rules
- 
- ###################################################
- # Step #8: Customize your preprocessor and decoder alerts
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ vi /etc/snort/rules/icmp.rules
-alert icmp any any -&gt; any any
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% service snortd start
-</pre></div>
-</div>
-<p>pingを送受信したときにアラートを掃くルールを書いて、/var/log/snort/alertにアラートが吐かれることを確認した。</p>
-<ul class="simple"><li><a class="reference external" href="http://www.snort.org">http://www.snort.org/</a></li>
-<li><a class="reference external" href="http://www.snort.org/doc">http://www.snort.org/doc</a></li>
-<li><a class="reference external" href="http://manual.snort.org">http://manual.snort.org/</a></li>
-<li><a class="reference external" href="http://manual.snort.org/node23.html">http://manual.snort.org/node23.html</a></li>
-<li><a class="reference external" href="http://manual.snort.org/node176.html">http://manual.snort.org/node176.html</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/snort.html">snort</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/centos.html">centos</a>, <a href="tags/snort.html">snort</a>, <a href="tags/rpmbuild.html">rpmbuild</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -670,6 +414,8 @@ alert icmp any any -&gt; any any
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/08/freebsd_nfsv4_server.html">FreeBSD 10 NFSv4 Server</a>
+        </li><li>
             <a href="2014/06/07/debian_wheezy_direnv_xbuild.html">direnv + xbuildで環境構築</a>
         </li><li>
             <a href="2014/05/05/centos_snort_pulledpork.html">snort ルールセット自動更新</a>
@@ -687,15 +433,13 @@ alert icmp any any -&gt; any any
             <a href="2014/03/25/debian_wheezy_vsftpd_serverspec.html">serverspecを使ってみる</a>
         </li><li>
             <a href="2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html">Chef Soloでvsftpdのインストールと設定</a>
-        </li><li>
-            <a href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html">Chef SoloでJenkinsをインストール</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (1)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (21), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (15), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (18), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (21), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (16), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nfs.html">nfs</a> (1), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (18), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

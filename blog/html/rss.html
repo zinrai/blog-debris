@@ -5,8 +5,45 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sat, 07 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Sun, 08 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/08/freebsd_nfsv4_server.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/08/freebsd_nfsv4_server.html</guid>
+            <title><![CDATA[FreeBSD 10 NFSv4 Server]]></title>
+            <description><![CDATA[<h1>FreeBSD 10 NFSv4 Server</h1>
+<p>FreeBSDでNFSv4サーバを構築してみる。nfsv4(4),exports(5)を眺めながら構築してみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+FreeBSD zinrai.localnet 10.0-RELEASE-p3 FreeBSD 10.0-RELEASE-p3 #0: Tue May 13 18:31:10 UTC 2014     root@amd64-builder.daemonology.net:/usr/obj/usr/src/sys/GENERIC  amd64
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
+nfs_server_enable="YES"
+nfsv4_server_enable="YES"
+nfsuserd_enable="YES"
+nfsd_enable="YES"
+rpcbind_enable="YES"
+mountd_enable="YES"
+# NFSv3
+rpc_statd_enable="YES"
+rpc_lockd_enable="YES"
+</pre></div>
+</div>
+<p>nfsv4(4)にはnfs_server_enable,nfsv4_server_enable,nfsuserd_enableをrc.conf(5)に設定するよう書かれている。/etc/rc.dディレクトリでnfs_server_enableをgrepしするとnfdsがマッチした。/etc/rc.d/nfsd(起動スクリプト)を眺めてみると、依存するmountd(8),rpcbind(8)を起動してくれている。ただrc.conf(5)に関係するものをすべて書いておいたほうがどのサービスが動いているのかがわかりやすいのでこうしている。exports(5)を書き換えて設定を反映させたいときはmountd(8)を再起動しなければいけないので、service(8)での明示的な起動と停止ができるこちらのほうが便利である。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
+V4: / -network 192.168.0.1 -mask 255.255.255.0
+/mnt/nfs -network 192.168.0.1 -mask 255.255.255.0
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% showmount -e
+Exports list on localhost:
+/mnt/nfs                   192.168.0.1
+</pre></div>
+</div>]]></description>
+            <category><![CDATA[ nfs ]]></category>
+             <pubDate>Sun, 08 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/07/debian_wheezy_direnv_xbuild.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/07/debian_wheezy_direnv_xbuild.html</guid>

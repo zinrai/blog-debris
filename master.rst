@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/08/freebsd_nfsv4_server
    2014/06/07/debian_wheezy_direnv_xbuild
    2014/05/05/centos_snort_pulledpork
    2014/05/04/centos_snort_install
