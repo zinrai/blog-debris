@@ -86,6 +86,101 @@
             <li class="left"> &laquo; <a href="page7.html">Newer</a></li>
             <li class="right"><a href="page9.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>November 22, 2013</span>
+        </div>
+        <h1><a href="2013/11/22/fabric_decorators_task.html">Fabric decorators task</a></h1>
+<ul class="simple"><li><a class="reference internal" href="2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a></li>
+<li><a class="reference internal" href="2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a></li>
+<li><a class="reference internal" href="2013/09/08/gentoo_install_script.html"><em>Gentoo Linux インストールスクリプト</em></a></li>
+<li><a class="reference internal" href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
+<li><a class="reference internal" href="2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
+<li><a class="reference internal" href="2013/11/01/freebsd_mfsbsd.html"><em>virtioを組み込んだmfsBSDイメージ作成</em></a></li>
+</ul><p>シェルスクリプトでLinuxをインストールする環境はできたが、サーバに接続してシェルスクリプトをコピー・編集するという状態である。Fabricを使いこの作業をホストから行えるようにしてみる。fabfile.pyひとつにタスクを書いていくのではなくディストリビューションやOSごとにファイルを分割してタスクを書いていく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python -V
+Python 2.7.3
+
+$ fab --version
+Fabric 1.8.0
+Paramiko 1.12.0
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir fabfile
+$ cd fabfile
+$ touch __init__.py centos.py debian.py freebsd.py gentoo.py
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi __init__.py
+
+from . import debian
+from . import centos
+from . import gentoo
+from . import freebsd
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi centos.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi debian.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi gentoo.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi freebsd.py
+
+from fabric.decorators import task
+
+@task
+def cmd():
+    pass
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ fab -l
+Available commands:
+
+    centos.cmd
+    debian.cmd
+    freebsd.cmd
+    gentoo.cmd
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://docs.fabfile.org/en/1.8">http://docs.fabfile.org/en/1.8/</a></li>
+<li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/core/decorators.html">http://docs.fabfile.org/en/1.8/api/core/decorators.html</a></li>
+<li><a class="reference external" href="https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes">https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes</a></li>
+</ul>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/fabric.html">fabric</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/python.html">python</a>, <a href="tags/fabric.html">fabric</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>November 01, 2013</span>
         </div>
         <h1><a href="2013/11/01/freebsd_mfsbsd.html">virtioを組み込んだmfsBSDイメージ作成</a></h1>
@@ -280,81 +375,6 @@ append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/v
                 Tags:
                 <a href="tags/centos.html">centos</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>October 25, 2013</span>
-        </div>
-        <h1><a href="2013/10/25/gentoo_emerge_sync_local_mirror.html">Gentoo Linux rsync ロカールミラー</a></h1>
-<p>Gentoo Linuxマシンを複数台動かしている場合、それぞれのGentooマシンからemerge –syncするとリモートのミラーサーバに負荷が掛かるのでローカルにミラーサーバを構築し参照するようにした。</p>
-<div class="section" id="id1">
-<h2>サーバ</h2>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/crontab
-0 23 * * * root emerge-webrsync
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rsyncd.conf
-# /etc/rsyncd.conf
-
-# Minimal configuration file for rsync daemon
-# See rsync(1) and rsyncd.conf(5) man pages for help
-
-# This line is required by the /etc/init.d/rsyncd script
-pid file = /var/run/rsyncd.pid
-use chroot = yes
-read only = yes
-hosts allow = 192.168.2.0/24
-
-# Simple example for enabling your own local rsync server
-[gentoo-portage]
-        path = /usr/portage
-        comment = Gentoo Portage tree
-        exclude = /distfiles /packages
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% /etc/init.d/rsyncd start
-% rc-update add rsyncd default
-</pre></div>
-</div>
-</div>
-<div class="section" id="id2">
-<h2>クライアント</h2>
-<div class="highlight-python"><div class="highlight"><pre>% rsync 192.168.2.1::
-gentoo-portage  Gentoo Portage tree
-
-% rsync 192.168.2.1::gentoo-portage | head
-drwxr-xr-x        4096 2013/10/25 10:30:12 .
--rw-r--r--         121 2013/01/01 09:31:01 header.txt
--rw-r--r--        3658 2013/01/01 09:31:01 skel.ChangeLog
--rw-r--r--        8147 2013/01/01 09:31:01 skel.ebuild
--rw-r--r--        1232 2013/03/06 06:31:01 skel.metadata.xml
-drwxr-xr-x        4096 2013/10/17 09:31:02 app-accessibility
-drwxr-xr-x       12288 2013/10/17 09:31:02 app-admin
-drwxr-xr-x        4096 2013/10/17 09:31:02 app-antivirus
-drwxr-xr-x        4096 2013/10/25 06:01:12 app-arch
-drwxr-xr-x        4096 2013/10/25 06:01:13 app-backup
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/portage/make.conf
-SYNC="rsync://192.168.2.1/gentoo-portage"
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% emerge --sync
-</pre></div>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/gentoo.html">gentoo</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/gentoo.html">gentoo</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -363,6 +383,8 @@ SYNC="rsync://192.168.2.1/gentoo-portage"
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/09/debian_wheezy_nfsv4_client.html">Debian wheezy NFSv4 Client</a>
+        </li><li>
             <a href="2014/06/08/freebsd_nfsv4_server.html">FreeBSD 10 NFSv4 Server</a>
         </li><li>
             <a href="2014/06/07/debian_wheezy_direnv_xbuild.html">direnv + xbuildで環境構築</a>
@@ -380,15 +402,13 @@ SYNC="rsync://192.168.2.1/gentoo-portage"
             <a href="2014/03/28/debian_wheezy_packer_vagrant_box_build.html">Packerを使ってVagrantのBOX作成</a>
         </li><li>
             <a href="2014/03/25/debian_wheezy_vsftpd_serverspec.html">serverspecを使ってみる</a>
-        </li><li>
-            <a href="2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html">Chef Soloでvsftpdのインストールと設定</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (1)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (21), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (16), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nfs.html">nfs</a> (1), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (18), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (22), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (16), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (2), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (19), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

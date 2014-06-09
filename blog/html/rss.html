@@ -5,8 +5,51 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sun, 08 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Mon, 09 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/09/debian_wheezy_nfsv4_client.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/09/debian_wheezy_nfsv4_client.html</guid>
+            <title><![CDATA[Debian wheezy NFSv4 Client]]></title>
+            <description><![CDATA[<h1>Debian wheezy NFSv4 Client</h1>
+<p><a class="reference internal" href="http://127.0.0.1/blog/html/2014/06/08/freebsd_nfsv4_server.html"><em>NFS Server</em></a>を構築したので、ClientからServerへ接続してみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% uname -a
+Linux zinrai 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2 x86_64 GNU/Linux
+
+% cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install nfs-common
+
+% service nfs-common status
+all daemons running
+
+% service nfs-common start
+% service nfs-common stop
+</pre></div>
+</div>
+<div class="section" id="mount-8">
+<h2>mount(8)</h2>
+<div class="highlight-python"><div class="highlight"><pre>% mount -t nfs4 192.168.0.1:/mnt/nfs /home/zinrai/nfs
+</pre></div>
+</div>
+</div>
+<div class="section" id="fstab-5">
+<h2>fstab(5)</h2>
+<p>nfs(5)を眺めながらfstab(5)を設定してみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/fstab
+192.168.0.1:/mnt/nfs /home/zinrai/nfs nfs4 rw 0 0
+
+% mount -a
+% umount /home/zinrai/nfs
+</pre></div>
+</div>
+</div>]]></description>
+            <category><![CDATA[ nfs ]]></category>
+             <pubDate>Mon, 09 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/08/freebsd_nfsv4_server.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/08/freebsd_nfsv4_server.html</guid>
