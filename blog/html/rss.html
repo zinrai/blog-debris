@@ -5,8 +5,39 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Mon, 09 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Tue, 10 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/10/debian_wheezy_virtualbox_apt_line.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/10/debian_wheezy_virtualbox_apt_line.html</guid>
+            <title><![CDATA[Debian wheezy VirtualBox apt-line 設定]]></title>
+            <description><![CDATA[<h1>Debian wheezy VirtualBox apt-line 設定</h1>
+<p>更新のたびにdebパッケージをダウンロードしてインストールするのは面倒なのでVirtualBoxが公開しているapt-lineを設定して、apt-get(8)できるようにした。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux zinrai 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2 x86_64 GNU/Linux
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/apt/sources.list
+# virtualbox
+deb http://download.virtualbox.org/virtualbox/debian wheezy contrib
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% wget -q http://download.virtualbox.org/virtualbox/debian/oracle_vbox.asc -O- | apt-key add -
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get update
+% apt-get install virtualbox4.3
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="https://www.virtualbox.org/wiki/Linux_Downloads">https://www.virtualbox.org/wiki/Linux_Downloads</a></li>
+</ul>]]></description>
+            <category><![CDATA[ virtualbox ]]></category>
+             <pubDate>Tue, 10 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/09/debian_wheezy_nfsv4_client.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/09/debian_wheezy_nfsv4_client.html</guid>

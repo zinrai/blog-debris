@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/10/debian_wheezy_virtualbox_apt_line
    2014/06/09/debian_wheezy_nfsv4_client
    2014/06/08/freebsd_nfsv4_server
    2014/06/07/debian_wheezy_direnv_xbuild
