@@ -5,8 +5,62 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 10 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Wed, 11 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/11/debian_wheezy_mysql_community_server.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/11/debian_wheezy_mysql_community_server.html</guid>
+            <title><![CDATA[Debian wheezy MySQL 5.6 インストール]]></title>
+            <description><![CDATA[<h1>Debian wheezy MySQL 5.6 インストール</h1>
+<p>MySQL5.6をapt-get(8)できるように設定する。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux zinrai 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2 x86_64 GNU/Linux
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% dpkg -i mysql-apt-config_0.1.5-1debian7_all.deb
+
+$ cat /etc/apt/sources.list.d/mysql.list
+### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+# You may comment out this entry, but any other modifications may be lost.
+deb http://repo.mysql.com/apt/ stable mysql-5.6
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get update
+% apt-get install mysql-community-server
+
+% service mysql start
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% mysql -u root -p
+
+mysql&gt; show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| test               |
++--------------------+
+4 rows in set (0.00 sec)
+
+mysql&gt; use test;
+Database changed
+
+mysql&gt; show tables;
+Empty set (0.00 sec)
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://dev.mysql.com/downloads/repo/apt">http://dev.mysql.com/downloads/repo/apt/</a></li>
+<li><a class="reference external" href="http://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en">http://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/</a></li>
+</ul>]]></description>
+            <category><![CDATA[ mysql ]]></category>
+             <pubDate>Wed, 11 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/10/debian_wheezy_virtualbox_apt_line.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/10/debian_wheezy_virtualbox_apt_line.html</guid>
