@@ -86,6 +86,73 @@
             <li class="left"> &laquo; <a href="page18.html">Newer</a></li>
             <li class="right"><a href="page20.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>June 08, 2013</span>
+        </div>
+        <h1><a href="2013/06/08/ubuntu_mongodb_rails3_setup.html">Rails3でMongoDBを使ってみる</a></h1>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 12.04.2 LTS
+Release:        12.04
+Codename:       precise
+
+$ uname -a
+Linux ubuntu1204-64-base 3.2.0-45-generic #70-Ubuntu SMP Wed May 29 20:12:06 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+
+$ rails -v
+Rails 3.2.12
+
+$ rails new mongodb_app --skip-active-record
+
+$ cd mongodb_app
+
+$ vi Gemfile
+gem 'mongoid'
+gem 'bson_ext'
+
+$ bundle install --path vendor/bundle --binstubs
+
+$ bin/rails g mongoid:config
+  create  config/mongoid.yml
+
+$ bin/rails g scaffold Post title:string subscription:text
+
+$ cat app/models/post.rb
+class Post
+  include Mongoid::Document
+  field :title, type: String
+  field :subscription, type: String
+end
+
+$ mongo
+&gt; show dbs
+mongodb_app_development 0.203125GB
+&gt; use mongodb_app_development
+&gt; show collections
+posts
+&gt; db.posts.find()
+{ "_id" : ObjectId("51b1ea5da64aef614e000001"), "title" : "sample", "subscription" : "text" }
+{ "_id" : ObjectId("51b2afb0a64aef0c3f000001"), "title" : "hogehoge", "subscription" : "fugafuga" }
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://mongoid.org/en/mongoid">http://mongoid.org/en/mongoid/</a></li>
+<li><a class="reference external" href="http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3">http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-ruby-on-rails-3/</a></li>
+</ul>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/mongodb.html">mongodb</a>, <a href="categories/rails.html">rails</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/ubuntu.html">ubuntu</a>, <a href="tags/mongodb.html">mongodb</a>, <a href="tags/rails.html">rails</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>June 05, 2013</span>
         </div>
         <h1><a href="2013/06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a></h1>
@@ -321,111 +388,6 @@ db.users.find({username: "hoge"})
                 Tags:
                 <a href="tags/ubuntu.html">ubuntu</a>, <a href="tags/mongodb.html">mongodb</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>May 20, 2013</span>
-        </div>
-        <h1><a href="2013/05/20/unbound_nsd.html">Unbound + NSD</a></h1>
-<p>Chef Serverと戯れるときにhostsをいちいち書き換えるのは</p>
-<p>面倒なので内部にDNSサーバを立ててみた。</p>
-<table border="1" class="docutils"><caption>Ubuntu 12.04 server amd64</caption>
-<colgroup><col width="33%"/><col width="33%"/><col width="33%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>コンテンツサーバ</td>
-<td>NSD(3.2.9)</td>
-<td>192.168.0.1</td>
-</tr><tr class="row-even"><td>キャッシュサーバ</td>
-<td>Unbound(1.4.16)</td>
-<td>192.168.0.2</td>
-</tr></tbody></table><div class="section" id="nsd">
-<h2>NSD</h2>
-<p>今回は正引きだけ設定した。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install nsd</span>
-<span class="c"># cd /etc/nsd3</span>
-<span class="c"># cp nsd.conf.sample nsd.conf</span>
-<span class="c"># vi nsd.conf</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>server:
-  ip-address: 192.168.0.1
-  hide-version: yes
-  ipv4-only: yes
-  database: "/etc/nsd3/nsd.conf"
-  pidfile: "/etc/nsd3/nsd.pid"
-  chroot: "/etc/nsd3"
-  username: nsd
-  zonedir: "/etc/nsd3"
-  difffile: "/etc/nsd3/ixfr.db"
-  xfrdfile: "/etc/nsd3/xfrd.state"
-
-zone:
-  name: chef.local
-  zonefile: chef.local.zone
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi chef.local.zone</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$TTL 3600
-@ IN SOA ns1.chef.local. postmaster.chef.local. (
-  2013052001  ;Serial
-  3600        ;Refresh
-  1800        ;Retry
-  57200       ;Expire
-  86400       ;Minimum TTL
-)
-
-@ IN  NS  ns1.chef.local.
-
-ns1   IN  A 192.168.0.1
-ns2   IN  A 192.168.0.2
-www   IN  A 192.168.0.3
-hoge  IN  A 192.168.0.4
-fuga  IN  A 192.168.0.5
-moge  IN  A 192.168.0.6
-</pre></div>
-</div>
-</div>
-<div class="section" id="unbound">
-<h2>Unbound</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install unbound</span>
-<span class="c"># cd /etc/unbound</span>
-<span class="c"># zcat `locate unbound.conf | sed -n 2p` &gt; unbound.conf</span>
-<span class="c"># vi unbound.conf</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>server:
-  verbosity: 1
-  interface 192.168.0.2
-  do-ip6: no
-  access-control: 127.0.0.0/8 allow
-  access-control: 192.168.0.0/24 allow
-  chroot: "etc/unbound"
-  username: "unbound"
-  directory: "/etc/unbound"
-  use-syslog: yes
-  pidfile: "/etc/unbound/unbound.pid"
-
-stub-zone:
-  name: "chef.local"
-  stub-addr: 192.168.0.1
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://unbound.jp">http://unbound.jp/</a></li>
-<li><a class="reference external" href="http://unbound.jp/news20110624">http://unbound.jp/news20110624/</a></li>
-<li><a class="reference external" href="http://gihyo.jp/admin/feature/01/unbound">http://gihyo.jp/admin/feature/01/unbound</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/nsd.html">nsd</a>, <a href="categories/unbound.html">unbound</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/unbound.html">unbound</a>, <a href="tags/nsd.html">nsd</a>, <a href="tags/dns.html">dns</a>, <a href="tags/ubuntu.html">ubuntu</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -434,6 +396,8 @@ stub-zone:
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/12/centos65_forward_proxy_squid.html">squidでForward Proxy Server</a>
+        </li><li>
             <a href="2014/06/11/debian_wheezy_mysql_community_server.html">Debian wheezy MySQL 5.6 インストール</a>
         </li><li>
             <a href="2014/06/10/debian_wheezy_virtualbox_apt_line.html">Debian wheezy VirtualBox apt-line 設定</a>
@@ -451,15 +415,13 @@ stub-zone:
             <a href="2014/05/03/debian_wheezy_ntp_server.html">NTPサーバ 構築</a>
         </li><li>
             <a href="2014/04/22/freebsd_92_jail_rc_conf.html">FreeBSD 9.2 jail構築</a>
-        </li><li>
-            <a href="2014/03/29/debian_wheezy_ruby_build_rbenv.html">rbenv + ruby-build</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/mysql.html">mysql</a> (1)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/mysql.html">mysql</a> (1)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (6), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (16), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/mysql.html">mysql</a> (1), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (7), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (16), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/mysql.html">mysql</a> (1), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (2), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (2), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

@@ -5,8 +5,115 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 11 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 12 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/12/centos65_forward_proxy_squid.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/12/centos65_forward_proxy_squid.html</guid>
+            <title><![CDATA[squidでForward Proxy Server]]></title>
+            <description><![CDATA[<h1>squidでForward Proxy Server</h1>
+<p>yum(8)で取得するrpmをキャッシュさせたくて、squidでForward Proxy Serverを構築してみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>% uname -a
+Linux proxy-server 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+
+% cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<div class="section" id="squid">
+<h2>squid</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ yum info squid
+Available Packages
+Name        : squid
+Arch        : x86_64
+Epoch       : 7
+Version     : 3.1.10
+Release     : 20.el6_5.3
+Size        : 1.7 M
+Repo        : updates
+Summary     : The Squid proxy caching server
+URL         : http://www.squid-cache.org
+License     : GPLv2 and (LGPLv2+ and Public Domain)
+Description : Squid is a high-performance proxy caching server for Web clients,
+            : supporting FTP, gopher, and HTTP data objects. Unlike traditional
+            : caching software, Squid handles all requests in a single,
+            : non-blocking, I/O-driven process. Squid keeps meta data and especially
+            : hot objects cached in RAM, caches DNS lookups, supports non-blocking
+            : DNS lookups, and implements negative caching of failed requests.
+            :
+            : Squid consists of a main server program squid, a Domain Name System
+            : lookup program (dnsserver), a program for retrieving FTP data
+            : (ftpget), and some management and client tools.
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install squid
+</pre></div>
+</div>
+<p>yum(8)で取得するrpmをキャッシュさせたいのでキャッシュするファイルの最大サイズを大きめに設定する。</p>
+<div class="highlight-python"><div class="highlight"><pre>% diff -u squid.conf.org squid.conf
+--- squid.conf.org      2014-06-12 13:55:43.444802617 +0000
++++ squid.conf  2014-06-13 01:35:22.999614814 +0000
+@@ -65,7 +65,11 @@
+ hierarchy_stoplist cgi-bin ?
+
+ # Uncomment and adjust the following to add a disk cache directory.
+-#cache_dir ufs /var/spool/squid 100 16 256
++cache_mem 1024 MB
++cache_dir ufs /var/spool/squid 4192 16 256
++
++maximum_object_size 128 MB
++maximum_object_size_in_memory 10 MB
+
+ # Leave coredumps in the first cache dir
+ coredump_dir /var/spool/squid
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ service squid start
+</pre></div>
+</div>
+<p>squidclient(1)を使って、どれくれいキャッシュがヒットしているか調べてみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>% squidclient -p 3128 mgr:client_list
+Cache Clients:
+Address: 192.168.0.2
+Currently established connections: 0
+    ICP  Requests 0
+    HTTP Requests 180
+        TCP_HIT                  106  59%
+        TCP_MISS                  70  39%
+        TCP_REFRESH_UNMODIFI       4   2%
+
+Address: ::1
+Name:    localhost
+Currently established connections: 1
+    ICP  Requests 0
+    HTTP Requests 2
+        TCP_MISS                   2 100%
+
+TOTALS
+ICP : 0 Queries, 0 Hits (  0%)
+HTTP: 182 Requests, 110 Hits ( 60%)
+</pre></div>
+</div>
+</div>
+<div class="section" id="client">
+<h2>client</h2>
+<p>yum(8)をProxy経由させるためにyum.conf(5)に設定する。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/yum.conf
+proxy=http://192.168.0.1:3128/
+
+% yum update
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://www.squid-cache.org/Doc/config">http://www.squid-cache.org/Doc/config/</a></li>
+<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/cache_mem">http://www.squid-cache.org/Doc/config/cache_mem/</a></li>
+<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/cache_dir">http://www.squid-cache.org/Doc/config/cache_dir/</a></li>
+<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/maximum_object_size">http://www.squid-cache.org/Doc/config/maximum_object_size/</a></li>
+<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/maximum_object_size_in_memory">http://www.squid-cache.org/Doc/config/maximum_object_size_in_memory/</a></li>
+</ul></div>]]></description>
+            <category><![CDATA[ squid ]]></category>
+             <pubDate>Thu, 12 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/11/debian_wheezy_mysql_community_server.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/11/debian_wheezy_mysql_community_server.html</guid>
