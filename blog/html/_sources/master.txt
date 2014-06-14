@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/14/freebsd_10_poudriere
    2014/06/13/centos65_socks_proxy_dante
    2014/06/12/centos65_forward_proxy_squid
    2014/06/11/debian_wheezy_mysql_community_server
