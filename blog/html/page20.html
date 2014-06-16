@@ -86,6 +86,395 @@
             <li class="left"> &laquo; <a href="page19.html">Newer</a></li>
             <li class="right"><a href="page21.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>June 22, 2013</span>
+        </div>
+        <h1><a href="2013/06/22/centos_cobbler_puppet_install.html">Cobbler + Puppet</a></h1>
+<p>前回はCobblerでとりあえずOSインストールが出来るところまでやったので、今回はkickstartファイルの編集、Puppet(Puppet client)のインストールとセットアップを自動化してみる。</p>
+<div class="section" id="dnsmasq">
+<h2>dnsmasq</h2>
+<p>DHCP,DNSサーバにdnsmasqを使用する。ISC DHCPよりもdnsmasqを使ったほうがPuppetと連携させやすいことに気が付いた。</p>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/settings
+
+manage_dns: 1
+manage_dhcp: 1
+server: 192.168.0.1
+next_server: 192.168.0.254 &lt;- Gateway
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/cobbler/modules.conf</span>
+
+<span class="p">[</span><span class="n">dns</span><span class="p">]</span>
+<span class="n">module</span> <span class="o">=</span> <span class="n">manage_dnsmasq</span>
+
+<span class="p">[</span><span class="n">dhcp</span><span class="p">]</span>
+<span class="n">module</span> <span class="o">=</span> <span class="n">manage_dnsmasq</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># yum install dnsmasq</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/dnsmasq.template
+
+# Cobbler generated configuration file for dnsmasq
+# $date
+#
+
+# resolve.conf .. ?
+#no-poll
+#enable-dbus
+read-ethers
+addn-hosts = /var/lib/cobbler/cobbler_hosts
+
+dhcp-range=192.168.0.220,192.168.0.250
+dhcp-option=3,$next_server
+dhcp-lease-max=1000
+dhcp-authoritative
+dhcp-boot=pxelinux.0
+dhcp-boot=net:normalarch,pxelinux.0
+dhcp-boot=net:ia64,$elilo
+
+$insert_cobbler_system_definitions
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/hosts
+192.168.0.1 cobbler.localnet
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># chkconfig dnsmasq on</span>
+<span class="c"># service dnsmasq start</span>
+<span class="c"># service cobblerd restart</span>
+<span class="c"># cobbler sync</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cobbler">
+<h2>Cobbler</h2>
+<div class="highlight-python"><div class="highlight"><pre># cobbler profile report
+Name                           : CentOS6.4-x86_64
+TFTP Boot Files                : {}
+Comment                        :
+DHCP Tag                       : default
+Distribution                   : CentOS6.4-x86_64
+Enable gPXE?                   : 0
+Enable PXE Menu?               : 1
+Fetchable Files                : {}
+Kernel Options                 : {}
+Kernel Options (Post Install)  : {}
+Kickstart                      : /var/lib/cobbler/kickstarts/sample.ks
+Kickstart Metadata             : {}
+Management Classes             : []
+Management Parameters          : &lt;&lt;inherit&gt;&gt;
+Name Servers                   : []
+Name Servers Search Path       : []
+Owners                         : ['admin']
+Parent Profile                 :
+Proxy                          :
+Red Hat Management Key         : &lt;&lt;inherit&gt;&gt;
+Red Hat Management Server      : &lt;&lt;inherit&gt;&gt;
+Repos                          : []
+Server Override                : &lt;&lt;inherit&gt;&gt;
+Template Files                 : {}
+Virt Auto Boot                 : 1
+Virt Bridge                    : xenbr0
+Virt CPUs                      : 1
+Virt Disk Driver Type          : raw
+Virt File Size(GB)             : 5
+Virt Path                      :
+Virt RAM (MB)                  : 512
+Virt Type                      : qemu
+</pre></div>
+</div>
+<p>登録しているprofileからPuppet Server,Puppet Clientのprofileを作成する。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile copy --name=CentOS6.4-x86_64 --newname=CentOS6.4-puppet_server</span>
+<span class="c"># cobbler profile copy --name=CentOS6.4-x86_64 --newname=CentOS6.4-puppet_client</span>
+</pre></div>
+</div>
+<p>EPELにあるPuppetを使用する。</p>
+<div class="highlight-python"><div class="highlight"><pre># yum -y install wget
+
+# cobbler repo add --name=CentOS6.4-epel --mirror=http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64 --mirror-locally=no
+# cobbler reposync
+# mkdir /var/www/cobbler/repo_mirror/CentOS6.4-epel/.origin
+# cobbler reposync
+
+# cobbler repo report
+Name                           : CentOS6.4-epel
+Arch                           : x86_64
+Breed                          : yum
+Comment                        :
+Createrepo Flags               : &lt;&lt;inherit&gt;&gt;
+Environment Variables          : {}
+Keep Updated                   : True
+Mirror                         : http://ftp.jaist.ac.jp/pub/Linux/Fedora/epel/6/x86_64
+Mirror locally                 : False
+Owners                         : ['admin']
+Priority                       : 99
+RPM List                       : []
+Yum Options                    : {}
+</pre></div>
+</div>
+<p>profileにリポジトリの情報を追加</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --repos="CentOS6.4-epel"</span>
+<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_client --repos="CentOS6.4-epel"</span>
+</pre></div>
+</div>
+<p>profileをコピーしたままの状態ではsample.ksファイルが読み込まれるので、ksファイルをコピーしてPuppetをインストールするよう書き換える。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /var/lib/cobbler/kickstarts</span>
+<span class="c"># cp sample.ks puppet_server.ks</span>
+<span class="c"># cp sample.ks puppet_client.ks</span>
+
+<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_server --kickstart=/var/lib/cobbler/kickstarts/puppet_server.ks</span>
+<span class="c"># cobbler profile edit --name=CentOS6.4-puppet_client --kickstart=/var/lib/cobbler/kickstarts/puppet_client.ks</span>
+</pre></div>
+</div>
+<p>固定IPを割り振るためにsystemに登録する。</p>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/cobbler/settings
+pxe_just_once: 1
+
+# service cobblerd restart
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># cobbler system add  \
+--name=puppet-server-2 \
+--hostname=puppetserver.localnet \
+--dns-name=puppetserver.localnet \
+--profile=CentOS6.4-puppet_server \
+--interface=eth0 \
+--mac=XX:XX:XX:XX:XX:XX \
+--static=1 \
+--ip-address=192.168.0.2 \
+--subnet=255.255.255.0 \
+--gateway=192.168.0.254 \
+--name-servers=192.168.0.1
+
+# cobbler system add  \
+--name=puppet-client-003 \
+--hostname=puppetclient003.localnet \
+--dns-name=puppetclient003.localnet \
+--profile=CentOS6.4-puppet_client \
+--interface=eth0 \
+--mac=XX:XX:XX:XX:XX:XX \
+--static=1 \
+--ip-address=192.168.0.3 \
+--subnet=255.255.255.0 \
+--gateway=192.168.0.254 \
+--name-servers=192.168.0.1
+</pre></div>
+</div>
+<p>pxe_just_onceを有効にすると登録したsystemは1度しかpxe bootしないので、OSインストール後に、もう1度pxe bootさせたくなったら下記を実行する。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cobbler system edit --name=puppet-client-003 --netboot-enabled=1</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="puppet">
+<h2>Puppet</h2>
+<p>PuppetにはPUSHモードとPULLモードがある。</p>
+<table border="1" class="docutils"><colgroup><col width="14%"/><col width="86%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>PULL</td>
+<td>クライアントからサーバへ定期的にマニュフェストを取得し適用する。</td>
+</tr><tr class="row-even"><td>PUSH</td>
+<td>サーバからクライアントへマニュフェストを取得し適用するよう指示する。</td>
+</tr></tbody></table><p>今回はPUSHモードのPuppet環境を構築する。</p>
+<div class="section" id="puppet-server">
+<h3>Puppet server</h3>
+<p>Puppet clientを自動構築するためにPuppet serverを作り込む。</p>
+<p>Puppet serverのほうはOSインストール後にPuppet serverをインストールするなり、Cobblerサーバのkickstartファイルのpackageセクションに記述するなり好きにすればいいと思う。</p>
+<div class="highlight-python"><div class="highlight"><pre># puppet --version
+2.6.18
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/sysconfig/puppet
+
+# The puppetmaster server
+#PUPPET_SERVER=puppet
+
+# If you wish to specify the port to connect to do so here
+PUPPET_PORT=8139
+
+# Where to log to. Specify syslog to send log messages to the system log.
+PUPPET_LOG=/var/log/puppet/puppet.log
+
+# You may specify other parameters to the puppet client here
+#PUPPET_EXTRA_OPTS=--waitforcert=500
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/autosign.conf
+
+*.localnet
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/fileserver.conf
+
+[files]
+ path /etc/puppet/manifests/files
+ allow *
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/manifests/site.pp
+
+package { 'zsh' :
+        ensure =&gt; present;
+}
+
+file { '/etc/sysconfig/puppet' :
+        owner =&gt; 'root',
+        group =&gt; 'root',
+        mode =&gt; 644,
+        source =&gt; 'puppet://puppetserver.localnet/files/puppet',
+}
+
+file { '/etc/puppet/auth.conf' :
+        owner =&gt; 'root',
+        group =&gt; 'root',
+        mode =&gt; 644,
+        source =&gt; 'puppet://puppetserver.localnet/files/auth.conf',
+}
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/manifests/files/puppet
+
+# The puppetmaster server
+PUPPET_SERVER=puppetsrv.localnet
+
+# If you wish to specify the port to connect to do so here
+#PUPPET_PORT=8140
+
+# Where to log to. Specify syslog to send log messages to the system log.
+PUPPET_LOG=/var/log/puppet/puppet.log
+
+# You may specify other parameters to the puppet client here
+#PUPPET_EXTRA_OPTS=--waitforcert=500
+PUPPET_EXTRA_OPTS="--listen --no-client"
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/puppet/manifests/files/auth.conf
+
+path /run
+method save
+allow *
+
+path /
+auth any
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># service puppetmaster start</span>
+</pre></div>
+</div>
+<p>これで以下のコマンドを実行すればPuppet clientにマニュフェストが適用される。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># puppet kick --host puppetclient002.localnet</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="kickstart">
+<h2>Kickstart</h2>
+<p>Puppet client用のkickstartファイルは下記のようになっている。</p>
+<p>postセクションに</p>
+<div class="highlight-python"><div class="highlight"><pre>/sbin/chkconfig puppet on
+puppet agent --server=puppetserver.localnet --no-daemonize --onetime
+</pre></div>
+</div>
+<p>を記述することで、Puppetの自動起動、Puppet serverからマニュフェストを取得する処理が1度だけ実行される。これでPuppet clientはOSインストールからPuppetインストール,セットアップまで自動化することが出来た。しかし、今回の設定では各clientの細かい制御(client1にはapache,client2にはmysqlなど)が出来ていないのでそれについては、またの機会に書きたいと思う。</p>
+<div class="highlight-python"><div class="highlight"><pre># vi /var/lib/cobbler/kickstarts/puppet_client.ks
+
+#platform=x86, AMD64, or Intel EM64T
+# System authorization information
+auth  --useshadow  --enablemd5
+# System bootloader configuration
+bootloader --location=mbr
+# Partition clearing information
+clearpart --all --initlabel
+# Use text mode install
+text
+# Firewall configuration
+#firewall --enabled
+firewall --disabled
+# Run the Setup Agent on first boot
+firstboot --disable
+# Timezone
+timezone Asia/Tokyo
+# System keyboard
+keyboard us
+# System language
+lang en_US
+# Use network installation
+url --url=$tree
+# If any cobbler repo definitions were referenced in the kickstart profile, include them here.
+$yum_repo_stanza
+# Network information
+$SNIPPET('network_config')
+# Reboot after installation
+reboot
+
+#Root password
+rootpw --iscrypted $default_password_crypted
+# SELinux configuration
+selinux --disabled
+# Do not configure the X Window System
+skipx
+# System timezone
+timezone  America/New_York
+# Install OS instead of upgrade
+install
+# Clear the Master Boot Record
+zerombr
+# Allow anaconda to partition the system as needed
+autopart
+
+
+%pre
+$SNIPPET('log_ks_pre')
+$SNIPPET('kickstart_start')
+$SNIPPET('pre_install_network_config')
+# Enable installation monitoring
+$SNIPPET('pre_anamon')
+
+%packages
+$SNIPPET('func_install_if_enabled')
+$SNIPPET('puppet_install_if_enabled')
+puppet
+
+%post
+$SNIPPET('log_ks_post')
+# Start yum configuration
+$yum_config_stanza
+# End yum configuration
+$SNIPPET('post_install_kernel_options')
+$SNIPPET('post_install_network_config')
+$SNIPPET('func_register_if_enabled')
+$SNIPPET('puppet_register_if_enabled')
+$SNIPPET('download_config_files')
+$SNIPPET('koan_environment')
+$SNIPPET('redhat_register')
+$SNIPPET('cobbler_register')
+/sbin/chkconfig puppet on
+puppet agent --server=puppetserver.localnet --no-daemonize --onetime
+# Enable post-install boot notification
+$SNIPPET('post_anamon')
+# Start final steps
+$SNIPPET('kickstart_done')
+# End final steps
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://www.cobblerd.org/manuals/2.4.0/4/4/2_-_Managing_DNS.html">Managing DNS</a></li>
+<li><a class="reference external" href="http://www.cobblerd.org/manuals/2.2.3/4/3/1_-_Managing_DHCP.html">Managing DHCP</a></li>
+<li><a class="reference external" href="http://d.hatena.ne.jp/int128/20120226/1330247800">http://d.hatena.ne.jp/int128/20120226/1330247800</a></li>
+<li><a class="reference external" href="http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add">http://blog.glidenote.com/blog/2012/03/16/cobbler-system-add/</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/puppet.html">puppet</a>, <a href="categories/cobbler.html">cobbler</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/centos.html">centos</a>, <a href="tags/puppet.html">puppet</a>, <a href="tags/cobbler.html">cobbler</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>June 18, 2013</span>
         </div>
         <h1><a href="2013/06/18/centos_cobbler_setup.html">CentOS6.4にCobblerサーバ構築</a></h1>
@@ -278,164 +667,6 @@ posts
                 Tags:
                 <a href="tags/ubuntu.html">ubuntu</a>, <a href="tags/mongodb.html">mongodb</a>, <a href="tags/rails.html">rails</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>June 05, 2013</span>
-        </div>
-        <h1><a href="2013/06/05/debian_wheezy_nested_kvm.html">Debian wheezyでNested KVMを試してみる</a></h1>
-<p><a class="reference external" href="https://code.google.com/p/ganeti">ganeti</a>のbetaを触るのに実機を2,3台用意しないといけないことから開放されそう。</p>
-<div class="section" id="kvm">
-<h2>KVM インストール</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install install qemu-kvm libvirt-bin virtinst bridge-utils</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="nested-kvm">
-<h2>Nested KVM</h2>
-<p>Nested KVMを有効にするための設定を行う。</p>
-<div class="highlight-python"><div class="highlight"><pre># modinfo kvm_intel
-filename:       /lib/modules/3.2.0-4-amd64/kernel/arch/x86/kvm/kvm-intel.ko
-license:        GPL
-author:         Qumranet
-depends:        kvm
-intree:         Y
-vermagic:       3.2.0-4-amd64 SMP mod_unload modversions
-parm:           vpid:bool
-parm:           flexpriority:bool
-parm:           ept:bool
-parm:           unrestricted_guest:bool
-parm:           emulate_invalid_guest_state:bool
-parm:           vmm_exclusive:bool
-parm:           yield_on_hlt:bool
-parm:           fasteoi:bool
-parm:           nested:bool
-parm:           ple_gap:int
-parm:           ple_window:int
-
-# cat /sys/module/kvm_intel/parameters/nested
-N
-
-# vi /etc/modprobe.d/kvm-nested.conf
-options kvm_intel nested=1
-
-# modprobe -r kvm_intel
-# modprobe kvm_intel
-
-# cat /sys/module/kvm_intel/parameters/nested
-Y
-</pre></div>
-</div>
-</div>
-<div class="section" id="id1">
-<h2>仮想マシンの作成</h2>
-<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
-
-<span class="nv">VM_NAME</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">MEM</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">SIZE</span><span class="o">=</span><span class="nv">$3</span>
-<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$4</span>
-<span class="nv">OS</span><span class="o">=</span><span class="nv">$5</span>
-
-<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">"/var/lib/libvirt/images/$VM_NAME"</span>
-
-<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"centos"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># CentOS 6.4 amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"precise"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># Ubuntu 12.04 amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"squeeze"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># Debian Squeeze amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"wheezy"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># Debian Wheezy amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
-<span class="k">fi</span>
-
-virt-install --hvm --accelerate --nographics <span class="se">\</span>
-  --name <span class="nv">$VM_NAME</span> <span class="se">\</span>
-  --network <span class="nv">bridge</span><span class="o">=</span><span class="nv">$IFACE</span>,model<span class="o">=</span>virtio <span class="se">\</span>
-  --ram <span class="nv">$MEM</span> <span class="se">\</span>
-  --vcpus 1 <span class="se">\</span>
-  --cpu core2duo <span class="se">\</span>
-  --os-type linux <span class="se">\</span>
-  --location <span class="nv">$DIST</span> <span class="se">\</span>
-  --disk <span class="nv">path</span><span class="o">=</span><span class="nv">$DISKIMAGE</span>.qcow2,format<span class="o">=</span>qcow2,size<span class="o">=</span><span class="nv">$SIZE</span>,bus<span class="o">=</span>virtio,cache<span class="o">=</span>writethrough <span class="se">\</span>
-  --extra-args<span class="o">=</span><span class="s1">'console=tty0 console=ttyS0,115200n8'</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vm-install.sh debian7_vm 1500 100 br1 wheezy</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="os">
-<h2>ゲストOSでの仮想マシン作成</h2>
-<p>ゲストOSでKVMのインストールと仮想マシンの作成を行う。</p>
-<p>スクリプトは–cpuオプションを取っただけであとは同じ。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install install qemu-kvm libvirt-bin virtinst bridge-utils</span>
-</pre></div>
-</div>
-<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash</span>
-
-<span class="nv">VM_NAME</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">MEM</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">SIZE</span><span class="o">=</span><span class="nv">$3</span>
-<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$4</span>
-<span class="nv">OS</span><span class="o">=</span><span class="nv">$5</span>
-
-<span class="nv">DISKIMAGE</span><span class="o">=</span><span class="s2">"/var/lib/libvirt/images/$VM_NAME"</span>
-
-<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"centos"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># CentOS 6.4 amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.4/os/x86_64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"precise"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># Ubuntu 12.04 amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.riken.jp/Linux/ubuntu/dists/precise/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"squeeze"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># Debian Squeeze amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/squeeze/main/installer-amd64/'</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"wheezy"</span> <span class="o">]</span>; <span class="k">then</span>
-  <span class="c"># Debian Wheezy amd64</span>
-  <span class="nv">DIST</span><span class="o">=</span><span class="s1">'http://ftp.jp.debian.org/debian/dists/wheezy/main/installer-amd64/'</span>
-<span class="k">fi</span>
-
-virt-install --hvm --accelerate --nographics <span class="se">\</span>
-  --name <span class="nv">$VM_NAME</span> <span class="se">\</span>
-  --network <span class="nv">bridge</span><span class="o">=</span><span class="nv">$IFACE</span>,model<span class="o">=</span>virtio <span class="se">\</span>
-  --ram <span class="nv">$MEM</span> <span class="se">\</span>
-  --vcpus 1 <span class="se">\</span>
-  --os-type linux <span class="se">\</span>
-  --location <span class="nv">$DIST</span> <span class="se">\</span>
-  --disk <span class="nv">path</span><span class="o">=</span><span class="nv">$DISKIMAGE</span>.qcow2,format<span class="o">=</span>qcow2,size<span class="o">=</span><span class="nv">$SIZE</span>,bus<span class="o">=</span>virtio,cache<span class="o">=</span>writethrough <span class="se">\</span>
-  --extra-args<span class="o">=</span><span class="s1">'console=tty0 console=ttyS0,115200n8'</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre># virsh net-list --all
-Name                 State      Autostart
------------------------------------------
-default              inactive   no
-
-# virsh net-start default
-# vm-install.sh debian7_nested 500 50 virbr0 wheezy
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://www.debian.org/releases/wheezy">http://www.debian.org/releases/wheezy/</a></li>
-<li><a class="reference external" href="http://wiki.debian.org/KVM">http://wiki.debian.org/KVM</a></li>
-<li><a class="reference external" href="http://aikotobaha.blogspot.jp/2012/02/kvm-on-kvmnested-kvm.html">http://aikotobaha.blogspot.jp/2012/02/kvm-on-kvmnested-kvm.html</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/kvm.html">kvm</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/kvm.html">kvm</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -444,6 +675,8 @@ default              inactive   no
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/17/centos_65_nginx_install.html">CentOS 6.5 に nginx をインストール</a>
+        </li><li>
             <a href="2014/06/16/centos_65_aide.html">AIDEを使ってみた</a>
         </li><li>
             <a href="2014/06/15/centos_65_mysql_community_server.html">CentOS 6.5 MySQL 5.6 インストール</a>
@@ -461,15 +694,13 @@ default              inactive   no
             <a href="2014/06/09/debian_wheezy_nfsv4_client.html">Debian wheezy NFSv4 Client</a>
         </li><li>
             <a href="2014/06/08/freebsd_nfsv4_server.html">FreeBSD 10 NFSv4 Server</a>
-        </li><li>
-            <a href="2014/06/07/debian_wheezy_direnv_xbuild.html">direnv + xbuildで環境構築</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (10), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (11), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

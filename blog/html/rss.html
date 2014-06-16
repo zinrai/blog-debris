@@ -5,8 +5,58 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Mon, 16 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Tue, 17 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/17/centos_65_nginx_install.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/17/centos_65_nginx_install.html</guid>
+            <title><![CDATA[CentOS 6.5 に nginx をインストール]]></title>
+            <description><![CDATA[<h1>CentOS 6.5 に nginx をインストール</h1>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux proxy-client01 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+% rpm --import http://nginx.org/keys/nginx_signing.key
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/yum.repos.d/nginx.repo
+# nginx.repo
+
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/6/$basearch/
+gpgcheck=1
+enabled=0
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ yum info --enablerepo=nginx nginx
+Available Packages
+Name        : nginx
+Arch        : x86_64
+Version     : 1.6.0
+Release     : 1.el6.ngx
+Size        : 335 k
+Repo        : nginx
+Summary     : High performance web server
+URL         : http://nginx.org/
+License     : 2-clause BSD-like license
+Description : nginx [engine x] is an HTTP and reverse proxy server, as well as
+            : a mail proxy server.
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install --enablerepo=nginx nginx
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://nginx.org/en/linux_packages.html">http://nginx.org/en/linux_packages.html</a></li>
+</ul>]]></description>
+            <category><![CDATA[ nginx ]]></category>
+             <pubDate>Tue, 17 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/16/centos_65_aide.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/16/centos_65_aide.html</guid>
