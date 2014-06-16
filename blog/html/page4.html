@@ -86,6 +86,98 @@
             <li class="left"> &laquo; <a href="page3.html">Newer</a></li>
             <li class="right"><a href="page5.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>June 07, 2014</span>
+        </div>
+        <h1><a href="2014/06/07/debian_wheezy_direnv_xbuild.html">direnv + xbuildで環境構築</a></h1>
+<p>direnvを使うと、ディレクトリに環境変数を設定したファイルを置いておけば、そのディレクトリがカレントになったときに設定した環境変数を有効することができる。AWSのACCESS_KEYやSECRET_KEYなどの切り替えが捗りそう。*envでPATHを.zshrcなどに設定しなければいけないことに抵抗があったので、いい感じ。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux zinrai 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2 x86_64 GNU/Linux
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="section" id="xbuild">
+<h2>xbuild</h2>
+<p>Pythonを入れてみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl
+
+$ git clone https://github.com/tagomoris/xbuild.git
+$ xbuild/python-install 2.7.6 $HOME/opt/python-2.7.6
+</pre></div>
+</div>
+</div>
+<div class="section" id="direnv">
+<h2>direnv</h2>
+<p>direnvのMakefileを眺めてみるとデフォルトは/usr/local/binにdirenvを配置するようになっている。削除については特に書かれていない。dpkg(1),apt(8)管理外のソフトに勝手にこういう場所に配置して欲しくないので<a class="reference external" href="http://www.gnu.org/software/stow">Stow</a>を使うことにする。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install -y golang
+
+$ git clone https://github.com/zimbatm/direnv.git
+$ cd direnv
+$ make
+% make install DESTDIR=/usr/local/stow/direnv
+$ cd /usr/local/stow
+% stow -v direnv
+$ type direnv
+direnv is /usr/local/bin/direnv
+</pre></div>
+</div>
+<p>zshの場合は.zshrcに以下の設定をしておく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vi $HOME/.zshrc
+type direnv &gt; /dev/null
+if [ $? -eq 0 ]; then
+  eval "$(direnv hook zsh)"
+fi
+
+$ source $HOME/.zshrc
+</pre></div>
+</div>
+<p>インストールと設定は完了したので実際に使ってみる。環境変数の設定は.envrcファイルに書く。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir -p lang/python-2.7.6
+$ cd lang/python-2.7.6
+
+$ vi .envrc
+PATH=$HOME/opt/python-2.7.6/bin:$PATH
+
+$ direnv allow .
+$  type python
+python is /home/zinrai/opt/python-2.7.6/bin/python
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-1.11.6.tar.gz
+$ tar zvxf virtualenv-1.11.6.tar.gz
+$ python virtualenv-1.11.6/virtualenv.py venv
+$ source venv/bin/activate
+$ type python
+python is /home/zinrai/lang/python2.7.6/venv/bin/python
+</pre></div>
+</div>
+<p>試しに<a class="reference external" href="http://tinkerer.me">Tinkerer</a>でも入れてみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install libxml2-dev libxslt-dev
+
+$ pip install tinkerer
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="https://github.com/zimbatm/direnv">https://github.com/zimbatm/direnv</a></li>
+<li><a class="reference external" href="https://github.com/tagomoris/xbuild">https://github.com/tagomoris/xbuild</a></li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/virtualenv">https://pypi.python.org/pypi/virtualenv</a></li>
+<li><a class="reference external" href="https://github.com/yyuu/pyenv/wiki/Common-build-problems">https://github.com/yyuu/pyenv/wiki/Common-build-problems</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/direnv.html">direnv</a>, <a href="categories/xbuild.html">xbuild</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/direnv.html">direnv</a>, <a href="tags/xbuild.html">xbuild</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>May 05, 2014</span>
         </div>
         <h1><a href="2014/05/05/centos_snort_pulledpork.html">snort ルールセット自動更新</a></h1>
@@ -570,127 +662,6 @@ alert icmp any any -&gt; any any
                 Tags:
                 <a href="tags/centos.html">centos</a>, <a href="tags/snort.html">snort</a>, <a href="tags/rpmbuild.html">rpmbuild</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>May 03, 2014</span>
-        </div>
-        <h1><a href="2014/05/03/debian_wheezy_ntp_server.html">NTPサーバ 構築</a></h1>
-<p>stratum1のNTPサーバを探してNTPサーバを構築してみた。</p>
-<ul class="simple"><li><a class="reference external" href="http://www.shoshin.co.jp/c/endrun/cdma.html">SHOSHIN</a><ul><li>ntp.shoshin.co.jp</li>
-</ul></li>
-<li><a class="reference external" href="http://www2.nict.go.jp/aeri/sts/tsp/PubNtp">日本標準時プロジェクト</a><ul><li>ntp.nict.jp</li>
-</ul></li>
-<li><a class="reference external" href="http://www.e-timing.ne.jp">アマノ ビジネスソリューションズ株式会社</a><ul><li>ats1.e-timing.ne.jp</li>
-</ul></li>
-</ul><div class="highlight-python"><div class="highlight"><pre>$ cat /etc/debian_version
-7.5
-
-$ uname -a
-Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% apt-cache show ntp
-Package: ntp
-Version: 1:4.2.6.p5+dfsg-2
-Installed-Size: 1238
-Maintainer: Debian NTP Team &lt;pkg-ntp-maintainers@lists.alioth.debian.org&gt;
-Architecture: amd64
-Depends: adduser, lsb-base (&gt;= 3.2-13), netbase, libc6 (&gt;= 2.12), libcap2 (&gt;= 2.10), libedit2 (&gt;= 2.11-20080614-1), libopts25 (&gt;= 1:5.12), libssl1.0.0 (&gt;= 1.0.0)
-Pre-Depends: dpkg (&gt;= 1.15.7.2)
-Recommends: perl
-Suggests: ntp-doc
-Breaks: dhcp3-client (&lt;&lt; 4.1.0-1)
-Description-en: Network Time Protocol daemon and utility programs
- NTP, the Network Time Protocol, is used to keep computer clocks
- accurate by synchronizing them over the Internet or a local network,
- or by following an accurate hardware receiver that interprets GPS,
- DCF-77, NIST or similar time signals.
- .
- This package contains the NTP daemon and utility programs.  An NTP
- daemon needs to be running on each host that is to have its clock
- accuracy controlled by NTP.  The same NTP daemon is also used to
- provide NTP service to other hosts.
- .
- For more information about the NTP protocol and NTP server
- configuration and operation, install the package "ntp-doc".
-Homepage: http://support.ntp.org/
-Description-md5: 220487bd9eceed70fec6b929cb922fd3
-Tag: admin::benchmarking, admin::configuring, implemented-in::c,
- interface::commandline, interface::daemon, network::server,
- network::service, protocol::TODO, role::program, scope::utility,
- use::monitor, use::timekeeping
-Section: net
-Priority: optional
-Filename: pool/main/n/ntp/ntp_4.2.6.p5+dfsg-2_amd64.deb
-Size: 561700
-MD5sum: 508a6082b9aa647949a4f6aab81f51c4
-SHA1: f41ab7b089503b2d4a4a67f289b5d8222f0e8912
-SHA256: bd2d31f80e7dd070228664f8b48496505395ead795e4ef190cf7bff9931af332
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install ntp
-</pre></div>
-</div>
-<p>ntp.nict.jpがIPv6のほうを見に行ってしまっていたのでntp.conf(5),ntpd(8)を眺めてみてIPv4を見に行くように設定した。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ diff -u /etc/ntp.conf.org /etc/ntp.conf
---- /etc/ntp.conf.org   2014-05-04 06:58:03.118951714 +0900
-+++ /etc/ntp.conf       2014-05-04 06:59:49.198747483 +0900
-@@ -18,10 +18,13 @@
- # pool.ntp.org maps to about 1000 low-stratum NTP servers.  Your server will
- # pick a different set every time it starts up.  Please consider joining the
- # pool: &lt;http://www.pool.ntp.org/join.html&gt;
--server 0.debian.pool.ntp.org iburst
--server 1.debian.pool.ntp.org iburst
--server 2.debian.pool.ntp.org iburst
--server 3.debian.pool.ntp.org iburst
-+#server 0.debian.pool.ntp.org iburst
-+#server 1.debian.pool.ntp.org iburst
-+#server 2.debian.pool.ntp.org iburst
-+#server 3.debian.pool.ntp.org iburst
-+server -4 ntp.nict.jp
-+server -4 ats1.e-timing.ne.jp
-+server -4 ntp.shoshin.co.jp
-
- # Access control configuration; see /usr/share/doc/ntp-doc/html/accopt.html for
- # details.  The web page &lt;http://support.ntp.org/bin/view/Support/AccessRestrictions&gt;
-@@ -42,6 +45,7 @@
- # Clients from this (example!) subnet have unlimited access, but only if
- # cryptographically authenticated.
- #restrict 192.168.123.0 mask 255.255.255.0 notrust
-+restrict 192.168.0.0 mask 255.255.255.0
-
-
- # If you want to provide time to your local subnet, change the next line.
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% service ntp restart
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ ntpq -pn
-     remote           refid      st t when poll reach   delay   offset  jitter
-==============================================================================
- 133.243.238.243 .NICT.           1 u   22   64    1   10.702   -3.196   0.000
- 61.114.187.55   .PPS.            1 u   21   64    1   10.119   -2.076   0.000
- 210.168.211.231 .CDMA.           1 u   20   64    1   12.140   -0.344   0.000
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://ja.wikipedia.org/wiki/Network_Time_Protocol">http://ja.wikipedia.org/wiki/Network_Time_Protocol</a></li>
-<li><a class="reference external" href="http://support.ntp.org/bin/view/Main/WebHome">http://support.ntp.org/bin/view/Main/WebHome</a></li>
-<li><a class="reference external" href="http://www.eecis.udel.edu/~mills/ntp/html/comdex.html">http://www.eecis.udel.edu/~mills/ntp/html/comdex.html</a></li>
-</ul>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/ntp.html">ntp</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/ntp.html">ntp</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -699,6 +670,8 @@ SHA256: bd2d31f80e7dd070228664f8b48496505395ead795e4ef190cf7bff9931af332
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/16/centos_65_aide.html">AIDEを使ってみた</a>
+        </li><li>
             <a href="2014/06/15/centos_65_mysql_community_server.html">CentOS 6.5 MySQL 5.6 インストール</a>
         </li><li>
             <a href="2014/06/14/freebsd_10_poudriere.html">poudriereで自前のpkgリポジトリを作る</a>
@@ -716,15 +689,13 @@ SHA256: bd2d31f80e7dd070228664f8b48496505395ead795e4ef190cf7bff9931af332
             <a href="2014/06/08/freebsd_nfsv4_server.html">FreeBSD 10 NFSv4 Server</a>
         </li><li>
             <a href="2014/06/07/debian_wheezy_direnv_xbuild.html">direnv + xbuildで環境構築</a>
-        </li><li>
-            <a href="2014/05/05/centos_snort_pulledpork.html">snort ルールセット自動更新</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (3)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (9), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (10), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (3), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

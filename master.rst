@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/16/centos_65_aide
    2014/06/15/centos_65_mysql_community_server
    2014/06/14/freebsd_10_poudriere
    2014/06/13/centos65_socks_proxy_dante
