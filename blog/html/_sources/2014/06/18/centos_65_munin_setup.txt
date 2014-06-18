@@ -8,7 +8,9 @@ CentOS 6.5 で Munin を使ってみる
 .. tags:: centos, munin
 .. comments::
 
-まずは1台にserverとnodeをインストールして動く環境を構築する。
+* :doc:`../17/centos_65_nginx_install`
+
+nginxのインストールは完了したので、1台にMunin-serverとMunin-nodeをインストールしてモニタリングする環境を構築する。
 
 ::
 

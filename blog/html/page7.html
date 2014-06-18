@@ -86,6 +86,139 @@
             <li class="left"> &laquo; <a href="page6.html">Newer</a></li>
             <li class="right"><a href="page8.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>March 28, 2014</span>
+        </div>
+        <h1><a href="2014/03/28/debian_wheezy_packer_vagrant_box_build.html">Packerを使ってVagrantのBOX作成</a></h1>
+<ul class="simple"><li><a class="reference internal" href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html"><em>Chef SoloでJenkinsをインストール</em></a></li>
+<li><a class="reference internal" href="2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html"><em>Chef Soloでvsftpdのインストールと設定</em></a></li>
+</ul><p>ではOpscodeが配布しているBOXを使用していたが、今回はPackerを使い自前のBOXを作成してみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="section" id="packer">
+<h2>Packer</h2>
+<div class="section" id="id1">
+<h3>インストール</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://dl.bintray.com/mitchellh/packer/0.5.2_linux_amd64.zip
+$ mkdir -p $HOME/opt/local/bin
+$ unzip 0.5.2_linux_amd64.zip -d 0.5.2_linux_amd64
+$ cd 0.5.2_linux_amd64
+$ mv `ls` $HOME/opt/local/bin
+$ vi .bashrc
+PATH=$HOME/opt/local/bin:$PATH
+$ . .bashrc
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ packer -v
+Packer v0.5.2
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>テンプレート作成</h3>
+<p><a class="reference external" href="https://github.com/ryuzee/sandbox-devops">ryuzee / sandbox-devops</a>にPackerのテンプレートがあったのでForkしてCentOS 6.5のテンプレートを弄ってBOXを作成してみた。BOXの作り方は「<a class="reference external" href="http://docs.vagrantup.com/v2/boxes/base.html">Creating a Base Box</a>」を参考にした。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone https://github.com/zinrai/sandbox-devops.git
+$ cd sandbox-devops/packer-vagrantbox/CentOS-6.5-x86_64
+$ git diff master packer_vagrantbox
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ diff --git a/packer-vagrantbox/CentOS-6.5-x86_64/Vagrantfile b/packer-vagrantbox/CentOS-6.5-x86_64/Vagrantfile
+index f0c350c..d15ec59 100644
+--- a/packer-vagrantbox/CentOS-6.5-x86_64/Vagrantfile
++++ b/packer-vagrantbox/CentOS-6.5-x86_64/Vagrantfile
+@@ -1,3 +1,3 @@
+ Vagrant.configure("2") do |config|
+-    config.vm.base_mac = "{{ .BaseMacAddress }}"
++    #config.vm.base_mac = "{{ .BaseMacAddress }}"
+ end
+</pre></div>
+</div>
+<p><a class="reference external" href="https://github.com/mitchellh/packer/commit/0f82c01b98567fbea4436fb142d5c1f21fba30ed">古い設定</a>が残っていたのでコメントアウトした。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ diff --git a/packer-vagrantbox/CentOS-6.5-x86_64/machine.json b/packer-vagrantbox/CentOS-6.5-x86_64/machine.json
+index b9418c1..76d6013 100644
+--- a/packer-vagrantbox/CentOS-6.5-x86_64/machine.json
++++ b/packer-vagrantbox/CentOS-6.5-x86_64/machine.json
+@@ -2,7 +2,7 @@
+   "builders":[{
+     "type": "virtualbox-iso",
+     "guest_os_type": "RedHat_64",
+-    "iso_url": "http://mozilla.ftp.iij.ad.jp/pub/linux/centos/6/isos/x86_64/CentOS-6.5-x86_64-minimal.iso",
++    "iso_url": "http://ftp.jaist.ac.jp/pub/Linux/CentOS/6.5/isos/x86_64/CentOS-6.5-x86_64-minimal.iso",
+     "iso_checksum": "0d9dc37b5dd4befa1c440d2174e88a87",
+     "iso_checksum_type": "md5",
+     "ssh_username": "vagrant",
+</pre></div>
+</div>
+<p>iso_urlに書かれていたURLにアクセスしてみるとForbiddenだったので、変更した。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ diff --git a/packer-vagrantbox/CentOS-6.5-x86_64/virtualbox.sh b/packer-vagrantbox/CentOS-6.5-x86_64/virtualbox.sh
+index 2b6cd8c..d4dc928 100644
+--- a/packer-vagrantbox/CentOS-6.5-x86_64/virtualbox.sh
++++ b/packer-vagrantbox/CentOS-6.5-x86_64/virtualbox.sh
+@@ -29,7 +29,3 @@ sudo sh /mnt/VBoxLinuxAdditions.run
+ sudo umount /mnt
+ #rm -rf /home/vagrant/VBoxGuestAdditions*.iso
+ sudo /etc/rc.d/init.d/vboxadd setup
+-
+-sudo su -c "curl -L https://www.opscode.com/chef/install.sh | bash"
+-which chef-solo
+-sleep 5
+</pre></div>
+</div>
+<p>Chef Soloインストールの部分は削除した。</p>
+</div>
+<div class="section" id="box">
+<h3>BOX作成</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ packer validate machine.json
+Template validated successfully.
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ packer build machine.json
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ ls
+CentOS-6.5-x86_64-ja.box  Vagrantfile  ks.cfg  machine.json  packer_cache  virtualbox.sh
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant box add CentOS-6.5-x86_64-ja CentOS-6.5-x86_64-ja.box
+$ vagrant box list
+CentOS-6.5-x86_64-ja (virtualbox)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir centos65
+$ cd centos65
+$ vagrant init CentOS-6.5-x86_64-ja
+$ vagrant up
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://www.packer.io">http://www.packer.io/</a></li>
+<li><a class="reference external" href="https://github.com/ryuzee/sandbox-devops">https://github.com/ryuzee/sandbox-devops</a></li>
+<li><a class="reference external" href="http://docs.vagrantup.com/v2/boxes/base.html">http://docs.vagrantup.com/v2/boxes/base.html</a></li>
+</ul></div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/packer.html">packer</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/packer.html">packer</a>, <a href="tags/vagrant.html">vagrant</a>, <a href="tags/virtualbox.html">virtualbox</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>March 25, 2014</span>
         </div>
         <h1><a href="2014/03/25/debian_wheezy_vsftpd_serverspec.html">serverspecを使ってみる</a></h1>
@@ -397,375 +530,6 @@ $ bundle exec knife solo cook vsftpd nodes/vsftpd.json
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/chef.html">chef</a>, <a href="tags/vsftpd.html">vsftpd</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>March 21, 2014</span>
-        </div>
-        <h1><a href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html">Chef SoloでJenkinsをインストール</a></h1>
-<p>社内で詳しい人の助けを借りてChef SoloでJenkinsをインストールしてみた。</p>
-<div class="section" id="vagrant">
-<h2>Vagrant</h2>
-<p>今回は「<a class="reference internal" href="2014/03/20/debian_wheezy_virtualbox_vagrant.html"><em>Debian wheezyでVagrantを使てみた</em></a>」で追加したBOXを使う。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ vi Vagrantfile
-
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
-
-Vagrant.configure("2") do |config|
-  config.vm.hostname = "jenkins"
-  config.vm.box = "opscode_centos-6.4"
-
-  config.vm.network :private_network, ip: "192.168.11.11"
-  config.vm.network :forwarded_port, guest: 8080, host: 8080
-
-  config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--memory", "1024"]
-  end
-
-  #config.omnibus.chef_version = "11.10.4"
-end
-</pre></div>
-</div>
-<p>vagrant-omnibusプラグイン使えば、Vagrantの管理下にある仮想マシンに指定したversionのChef Soloをインストールすることができるが、ここではvagrant-omnibusは使わず別の方法でChef Soloを仮想マシンにインストールする。</p>
-<p>下記のコマンドを実行するとssh jenkinsでVagrant管理下のマシンに接続できるようになる設定を掃き出してくれるので.ssh/configにリダイレクトしておく。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ vagrant ssh-config --host jenkins &gt;&gt; ~/.ssh/config
-</pre></div>
-</div>
-</div>
-<div class="section" id="chef-solo">
-<h2>Chef Solo</h2>
-<p>Chef SoloはDebianで動かした。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ uname -a
-Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.4 (wheezy)
-Release:        7.4
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install libxml2-dev libxslt1-dev build-essential openssh-client rsync
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ ruby -v
-ruby 2.0.0p353 (2013-11-22 revision 43784) [x86_64-linux]
-</pre></div>
-</div>
-<div class="section" id="gemfile">
-<h3>Gemfile</h3>
-<div class="highlight-python"><div class="highlight"><pre>$ bundle install --path vendor/bundle
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ vi Gemfile
-source 'https://rubygems.org'
-
-gem 'berkshelf'
-gem 'chef'
-gem 'knife-solo'
-gem 'rake'
-</pre></div>
-</div>
-<table border="1" class="docutils"><colgroup><col width="17%"/><col width="83%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>berkshelf</td>
-<td>cookbooksの依存関係を管理してくれるツール</td>
-</tr><tr class="row-even"><td>knife-solo</td>
-<td>ホストのrecipeをサーバへrsyncしChef Soloを実行。結果をホストに出力してくれるknifeプラグイン</td>
-</tr></tbody></table></div>
-<div class="section" id="gemfile-lock">
-<h3>Gemfile.lock</h3>
-<p>2014/03/20の時点でのGemfile.lockは以下のようになっている。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ cat Gemfile.lock
-GEM
-  remote: https://rubygems.org/
-  specs:
-    activesupport (3.2.17)
-      i18n (~&gt; 0.6, &gt;= 0.6.4)
-      multi_json (~&gt; 1.0)
-    addressable (2.3.5)
-    akami (1.2.1)
-      gyoku (&gt;= 0.4.0)
-      nokogiri
-    berkshelf (2.0.14)
-      activesupport (~&gt; 3.2.0)
-      addressable (~&gt; 2.3.4)
-      buff-shell_out (~&gt; 0.1)
-      chozo (&gt;= 0.6.1)
-      faraday (~&gt; 0.8.0)
-      faraday (~&gt; 0.8.5)
-      hashie (&gt;= 2.0.2)
-      minitar (~&gt; 0.5.4)
-      rbzip2 (~&gt; 0.2.0)
-      retryable (~&gt; 1.3.3)
-      ridley (~&gt; 1.5.0)
-      solve (&gt;= 0.5.0)
-      thor (~&gt; 0.18.0)
-    buff-config (0.4.0)
-      buff-extensions (~&gt; 0.3)
-      varia_model (~&gt; 0.1)
-    buff-extensions (0.5.0)
-    buff-ignore (1.1.1)
-    buff-ruby_engine (0.1.0)
-    buff-shell_out (0.1.1)
-      buff-ruby_engine (~&gt; 0.1.0)
-    builder (3.2.2)
-    celluloid (0.14.1)
-      timers (&gt;= 1.0.0)
-    celluloid-io (0.14.1)
-      celluloid (&gt;= 0.14.1)
-      nio4r (&gt;= 0.4.5)
-    chef (11.10.4)
-      chef-zero (~&gt; 1.7, &gt;= 1.7.2)
-      diff-lcs (~&gt; 1.2, &gt;= 1.2.4)
-      erubis (~&gt; 2.7)
-      highline (~&gt; 1.6, &gt;= 1.6.9)
-      json (&gt;= 1.4.4, &lt;= 1.8.1)
-      mime-types (~&gt; 1.16)
-      mixlib-authentication (~&gt; 1.3)
-      mixlib-cli (~&gt; 1.4)
-      mixlib-config (~&gt; 2.0)
-      mixlib-log (~&gt; 1.3)
-      mixlib-shellout (~&gt; 1.3)
-      net-ssh (~&gt; 2.6)
-      net-ssh-multi (~&gt; 1.1)
-      ohai (~&gt; 6.0)
-      pry (~&gt; 0.9)
-      puma (~&gt; 1.6)
-      rest-client (&gt;= 1.0.4, &lt; 1.7.0)
-      yajl-ruby (~&gt; 1.1)
-    chef-zero (1.7.3)
-      hashie (~&gt; 2.0)
-      json
-      mixlib-log (~&gt; 1.3)
-      moneta (&lt; 0.7.0)
-      rack
-    chozo (0.6.1)
-      activesupport (&gt;= 3.2.0)
-      hashie (&gt;= 2.0.2)
-      multi_json (&gt;= 1.3.0)
-    coderay (1.1.0)
-    diff-lcs (1.2.5)
-    erubis (2.7.0)
-    faraday (0.8.9)
-      multipart-post (~&gt; 1.2.0)
-    ffi (1.9.3)
-    gssapi (1.0.3)
-      ffi (&gt;= 1.0.1)
-    gyoku (1.1.1)
-      builder (&gt;= 2.1.2)
-    hashie (2.0.5)
-    highline (1.6.21)
-    hitimes (1.2.1)
-    httpclient (2.3.4.1)
-    httpi (0.9.7)
-      rack
-    i18n (0.6.9)
-    ipaddress (0.8.0)
-    json (1.8.1)
-    knife-solo (0.4.1)
-      chef (&gt;= 10.12)
-      erubis (~&gt; 2.7.0)
-      net-ssh (&gt;= 2.2.2, &lt; 3.0)
-    little-plugger (1.1.3)
-    logging (1.8.2)
-      little-plugger (&gt;= 1.1.3)
-      multi_json (&gt;= 1.8.4)
-    method_source (0.8.2)
-    mime-types (1.25.1)
-    mini_portile (0.5.2)
-    minitar (0.5.4)
-    mixlib-authentication (1.3.0)
-      mixlib-log
-    mixlib-cli (1.4.0)
-    mixlib-config (2.1.0)
-    mixlib-log (1.6.0)
-    mixlib-shellout (1.3.0)
-    moneta (0.6.0)
-    multi_json (1.9.2)
-    multipart-post (1.2.0)
-    net-http-persistent (2.9.4)
-    net-ssh (2.8.0)
-    net-ssh-gateway (1.2.0)
-      net-ssh (&gt;= 2.6.5)
-    net-ssh-multi (1.2.0)
-      net-ssh (&gt;= 2.6.5)
-      net-ssh-gateway (&gt;= 1.2.0)
-    nio4r (1.0.0)
-    nokogiri (1.6.1)
-      mini_portile (~&gt; 0.5.0)
-    nori (1.1.5)
-    ohai (6.20.0)
-      ipaddress
-      mixlib-cli
-      mixlib-config
-      mixlib-log
-      mixlib-shellout
-      systemu (~&gt; 2.5.2)
-      yajl-ruby
-    pry (0.9.12.6)
-      coderay (~&gt; 1.0)
-      method_source (~&gt; 0.8)
-      slop (~&gt; 3.4)
-    puma (1.6.3)
-      rack (~&gt; 1.2)
-    rack (1.5.2)
-    rake (10.1.1)
-    rbzip2 (0.2.0)
-    rest-client (1.6.7)
-      mime-types (&gt;= 1.16)
-    retryable (1.3.5)
-    ridley (1.5.3)
-      addressable
-      buff-config (~&gt; 0.2)
-      buff-extensions (~&gt; 0.3)
-      buff-ignore (~&gt; 1.1)
-      buff-shell_out (~&gt; 0.1)
-      celluloid (~&gt; 0.14.0)
-      celluloid-io (~&gt; 0.14.0)
-      erubis
-      faraday (&gt;= 0.8.4)
-      hashie (&gt;= 2.0.2)
-      json (&gt;= 1.7.7)
-      mixlib-authentication (&gt;= 1.3.0)
-      net-http-persistent (&gt;= 2.8)
-      net-ssh
-      nio4r (&gt;= 0.5.0)
-      retryable
-      solve (&gt;= 0.4.4)
-      varia_model (~&gt; 0.1)
-      winrm (~&gt; 1.1.0)
-    rubyntlm (0.1.1)
-    savon (0.9.5)
-      akami (~&gt; 1.0)
-      builder (&gt;= 2.1.2)
-      gyoku (&gt;= 0.4.0)
-      httpi (~&gt; 0.9)
-      nokogiri (&gt;= 1.4.0)
-      nori (~&gt; 1.0)
-      wasabi (~&gt; 1.0)
-    slop (3.5.0)
-    solve (0.8.2)
-    systemu (2.5.2)
-    thor (0.18.1)
-    timers (2.0.0)
-      hitimes
-    uuidtools (2.1.4)
-    varia_model (0.3.2)
-      buff-extensions (~&gt; 0.2)
-      hashie (&gt;= 2.0.2)
-    wasabi (1.0.0)
-      nokogiri (&gt;= 1.4.0)
-    winrm (1.1.3)
-      gssapi (~&gt; 1.0.0)
-      httpclient (~&gt; 2.2, &gt;= 2.2.0.2)
-      logging (~&gt; 1.6, &gt;= 1.6.1)
-      nokogiri (~&gt; 1.5)
-      rubyntlm (~&gt; 0.1.1)
-      savon (= 0.9.5)
-      uuidtools (~&gt; 2.1.2)
-    yajl-ruby (1.2.0)
-
-PLATFORMS
-  ruby
-
-DEPENDENCIES
-  berkshelf
-  chef
-  knife-solo
-  rake
-</pre></div>
-</div>
-<p>cookbookの作成にはいっていくが、その前にサーバにChef Soloをインストールしておく。vagrant-omnibusではVagrantの管理下にあるマシンにしかChef Soloをインストールできないが、knife solo prepareを使えば指定したサーバにChef Soloをインストールすることができる。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ bundle exec knife solo prepare jenkins
-</pre></div>
-</div>
-<p>ディレクトリの構成は</p>
-<table border="1" class="docutils"><colgroup><col width="17%"/><col width="83%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>cookbooks</td>
-<td>サードパーティのcookbooksを格納</td>
-</tr><tr class="row-even"><td>site-cookbooks</td>
-<td>自分で作成したcookbooksを格納</td>
-</tr></tbody></table><p>と使い分けるのがモダンなやり方のようだ。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ vi Berksfile
-
-site :opscode
-
-cookbook "yum", "3.0.6"
-cookbook "jenkins", path: "./site-cookbooks/jenkins"
-</pre></div>
-</div>
-<p>Berksfileとsite-cookbooksは必ず一致させておく。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ bundle exec knife cookbook create jenkins -o ./site-cookbooks/
-$ bundle exec berks install --path ./cookbooks
-</pre></div>
-</div>
-<p>berkshelfでcookbookを管理している場合は、site-cookbooks以下に変更を加えたら必ずberks installを実行する。</p>
-<ul class="simple"><li><strong>Node</strong>: Chefで管理するサーバ/マシン</li>
-<li><strong>Cookbook</strong>: Node対して行うオペレーションをまとめた単位<ul><li><strong>Recipe</strong>: Nodeに対して行うオペレーション</li>
-<li><strong>Attribute</strong>: cookbook内にあるパラメータ</li>
-<li><strong>Resource</strong>: オペレーションを抽象化したAPI</li>
-</ul></li>
-</ul><p>今回だと、RecipeにはJenkinsのrpmパッケージを取得してインストールして起動するまでをResourceを使って書き、Attributeには取得先のURLとパッケージバーションをパラメータとして設定して、これらがCookbookになっているという感じである。attributeにパラメータを設定して、recipeにオペレーションを書いて、nodes/jenkins.jsonに適用したいrecipeを書いて、Chef Soloを実行するまでが一連の流れになる。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ vi site-cookbooks/jenkins/attributes/default.rb
-default['jenkins']['rpm'] = "jenkins-1.555-1.1.noarch.rpm"
-default['jenkins']['rpm_url'] = "http://pkg.jenkins-ci.org/redhat/#{node['jenkins']['rpm']}"
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ vi sites-cookbooks/jenkins/recipe/default.rb
-%w(java-1.7.0-openjdk).each do |pkg|
-  package pkg do
-    action :install
-  end
-end
-
-remote_file "/tmp/" + node["jenkins"]["rpm"] do
-  source node["jenkins"]["rpm_url"]
-  owner "root"
-  group "root"
-  mode "0755"
-end
-
-package "jenkins" do
-  action :install
-  source "/tmp/" + node["jenkins"]["rpm"]
-end
-
-service "jenkins" do
-  action [:enable, :start]
-end
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ vi nodes/jenkins.json
-{"run_list":[
-    "recipe[jenkins]"
-  ]
-}
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ bundle exec berks install --path ./cookbooks
-$ bundle exec knife solo cook jenkins nodes/jenkins.json
-</pre></div>
-</div>
-<p>最後のコマンドはjenkinsというサーバに対してnodes/jenkins.jsonに書かれた情報をもとにrecipeを適用するという意味である。</p>
-<ul class="simple"><li><a class="reference external" href="http://berkshelf.com">http://berkshelf.com/</a></li>
-<li><a class="reference external" href="http://docs.opscode.com/chef/resources.html">http://docs.opscode.com/chef/resources.html</a></li>
-<li><a class="reference external" href="http://docs.opscode.com/chef_overview_attributes.html">http://docs.opscode.com/chef_overview_attributes.html</a></li>
-<li><a class="reference external" href="http://pkg.jenkins-ci.org/redhat">http://pkg.jenkins-ci.org/redhat/</a></li>
-</ul></div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/chef.html">chef</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/chef.html">chef</a>, <a href="tags/jenkins.html">jenkins</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -774,6 +538,8 @@ $ bundle exec knife solo cook jenkins nodes/jenkins.json
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/19/centos_65_munin_node_setup.html">Munin 監視対象nodeの追加</a>
+        </li><li>
             <a href="2014/06/18/centos_65_munin_setup.html">CentOS 6.5 で Munin を使ってみる</a>
         </li><li>
             <a href="2014/06/17/centos_65_nginx_install.html">CentOS 6.5 に nginx をインストール</a>
@@ -791,15 +557,13 @@ $ bundle exec knife solo cook jenkins nodes/jenkins.json
             <a href="2014/06/11/debian_wheezy_mysql_community_server.html">Debian wheezy MySQL 5.6 インストール</a>
         </li><li>
             <a href="2014/06/10/debian_wheezy_virtualbox_apt_line.html">Debian wheezy VirtualBox apt-line 設定</a>
-        </li><li>
-            <a href="2014/06/09/debian_wheezy_nfsv4_client.html">Debian wheezy NFSv4 Client</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (1)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (2)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (12), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (1), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (13), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (2), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

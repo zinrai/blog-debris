@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/19/centos_65_munin_node_setup
    2014/06/18/centos_65_munin_setup
    2014/06/17/centos_65_nginx_install
    2014/06/16/centos_65_aide
