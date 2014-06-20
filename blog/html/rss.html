@@ -5,8 +5,62 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 19 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 20 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/20/centos_65_munin_node_plugin_enable.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/20/centos_65_munin_node_plugin_enable.html</guid>
+            <title><![CDATA[Munin node のプラグイン有効化]]></title>
+            <description><![CDATA[<h1>Munin node のプラグイン有効化</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/06/12/centos65_forward_proxy_squid.html"><em>squidでForward Proxy Server</em></a></li>
+<li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/06/19/centos_65_munin_node_setup.html"><em>Munin 監視対象nodeの追加</em></a></li>
+</ul><p>Forward Proxy Server(Squid)にmunin-nodeをインストールして監視下に置いた。今回はSquid用のプラグインを有効にしてみる。といってもコマンドを1回叩いてmunin-nodeを再起動するだけ。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% munin-node-configure
+</pre></div>
+</div>
+<p>プラグインが有効になっているか無効になっているかを調べられる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% munin-node-configure --suggest
+</pre></div>
+</div>
+<p>プラグインが有効にできるかを教えてくれる。(MySQLはインストールされていないからMySQLのプラグインは有効にできないよとか)</p>
+<div class="highlight-python"><div class="highlight"><pre>% munin-node-configure --shell squid_
+ln -s '/usr/share/munin/plugins/squid_cache' '/etc/munin/plugins/squid_cache'
+ln -s '/usr/share/munin/plugins/squid_objectsize' '/etc/munin/plugins/squid_objectsize'
+ln -s '/usr/share/munin/plugins/squid_requests' '/etc/munin/plugins/squid_requests'
+ln -s '/usr/share/munin/plugins/squid_traffic' '/etc/munin/plugins/squid_traffic'
+</pre></div>
+</div>
+<p>/usr/share/munin/pluginsにある各種プラグインを/etc/munin/pluginsにシンボリックリンクしてmunin-nodeを再起動すればプラグインは有効になる。–shellオプションを使うと/etc/munin/pluginsにシンボリックリンクするためのコマンドが標準出力される。ここではsquidに関係するものだけ出力するように、squid_を指定している。引数をなにも指定しなければ有効にできるプラグインが全て標準出力される。あとはパイプしてshに流すだけ。</p>
+<div class="highlight-python"><div class="highlight"><pre>% munin-node-configure --shell squid_ | sh
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service munin-node restart
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ munin-run squid_cache
+Maximum.value 4292608
+Current.value 951580
+
+$ munin-run squid_objectsize
+objectsize.value 179087.36
+</pre></div>
+</div>
+<p>munin-runコマンドで有効にしたプラグインが値を取得できているか確認できる。</p>
+<ul class="simple"><li><a class="reference external" href="http://munin-monitoring.org/wiki/FAQ_no_graphs">http://munin-monitoring.org/wiki/FAQ_no_graphs</a></li>
+<li><a class="reference external" href="http://munin-monitoring.org/wiki/munin-node-configure">http://munin-monitoring.org/wiki/munin-node-configure</a></li>
+<li><a class="reference external" href="http://munin-monitoring.org/wiki/munin-run">http://munin-monitoring.org/wiki/munin-run</a></li>
+</ul>]]></description>
+            <category><![CDATA[ munin ]]></category>
+             <pubDate>Fri, 20 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/19/centos_65_munin_node_setup.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/19/centos_65_munin_node_setup.html</guid>
@@ -18,7 +72,14 @@
 <td>192.168.0.1</td>
 </tr><tr class="row-even"><td>munin-node</td>
 <td>192.168.0.2</td>
-</tr></tbody></table><div class="section" id="munin-server">
+</tr></tbody></table><div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<div class="section" id="munin-server">
 <h2>munin-server</h2>
 <div class="highlight-python"><div class="highlight"><pre>$ diff -u munin.conf.orig munin.conf
 --- munin.conf.orig     2014-06-16 15:57:47.764255564 +0000

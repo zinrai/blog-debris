@@ -18,6 +18,14 @@ Munin 監視対象nodeの追加
   munin-server, 192.168.0.1
   munin-node, 192.168.0.2
 
+::
+
+  $ uname -srv
+  Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
+
+  $ cat /etc/redhat-release
+  CentOS release 6.5 (Final)
+
 munin-server
 --------------------
 
