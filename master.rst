@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/21/debian_wheezy_wpasupplicant
    2014/06/20/centos_65_munin_node_plugin_enable
    2014/06/19/centos_65_munin_node_setup
    2014/06/18/centos_65_munin_setup

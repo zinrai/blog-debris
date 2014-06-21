@@ -86,6 +86,115 @@
             <li class="left"> &laquo; <a href="page13.html">Newer</a></li>
             <li class="right"><a href="page15.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>October 17, 2013</span>
+        </div>
+        <h1><a href="2013/10/17/freebsd_supervisor_uwsgi.html">Supervisorを使ってuWSGIを管理</a></h1>
+<p>uWSGIのプロセスをSupervisorを使って管理してみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% uname -a
+FreeBSD uwsgi.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013
+
+% python -V
+Python 2.7.5
+
+% supervisord -v
+3.0b1
+
+% uwsgi --version
+1.9.18.1
+</pre></div>
+</div>
+<div class="section" id="uwsgi">
+<h2>uWSGI</h2>
+<div class="highlight-python"><div class="highlight"><pre>% vi /path/app/dev.ini
+
+[uwsgi]
+http = :9090
+workers = 3
+virtualenv = /path/test
+python-path = /path/app
+wsgi = sample
+callable = app
+uid = www
+gid = www
+pidfile = /path/app/uwsgi.pid
+logto = /path/app/uwsgi.log
+log-format = %(addr) - %(user) [%(ltime)] "%(method) %(uri) %(proto)" %(status) %(size)`` "%(referer)" "%(uagent)"
+</pre></div>
+</div>
+</div>
+<div class="section" id="supervisor">
+<h2>Supervisor</h2>
+<div class="highlight-python"><div class="highlight"><pre>% cd /usr/local/etc
+% grep -v "^;" supervisord.conf.sample &gt; supervisord.conf
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/supervisord.conf
+
+[unix_http_server]
+file=/var/run/supervisor/supervisor.sock   ; (the path to the socket file)
+
+[supervisord]
+logfile=/var/log/supervisord.log ; (main log file;default $CWD/supervisord.log)
+logfile_maxbytes=50MB       ; (max main logfile bytes b4 rotation;default 50MB)
+logfile_backups=10          ; (num of main logfile rotation backups;default 10)
+loglevel=info               ; (log level;default info; others: debug,warn,trace)
+pidfile=/var/run/supervisor/supervisord.pid ; (supervisord pidfile;default supervisord.pid)
+nodaemon=false              ; (start in foreground if true;default false)
+minfds=1024                 ; (min. avail startup file descriptors;default 1024)
+minprocs=200                ; (min. avail process descriptors;default 200)
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///var/run/supervisor/supervisor.sock ; use a unix:// URL  for a unix socket
+
+[include]
+files = /usr/local/etc/supervisord.d/*.ini
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/supervisord.d/uwsgi.ini
+
+[program:uwsgi]
+command = /path/bin/uwsgi /path/app/dev.ini
+stopasgroup = true
+</pre></div>
+</div>
+<p>子プロセスまでkillするにはstopasgroupオプションが必要</p>
+<p>stopasgroupオプションを有効にしなければ、Supervisor経由でuWSGIを止められない。(stopasgroupオプションなしでは、Supervisorのstopを実行したときにuWSGIの親プロセスしかkillされず、子プロセスが残ったままになってしまう。)</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
+supervisord_enable="YES"
+supervisord_flags="-c /usr/local/etc/supervisord.conf"
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service supervisord start
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% supervisorctl status
+uwsgi                            RUNNING    pid 58014, uptime 0:15:23
+
+% supervisorctl stop uwsgi
+% supervisorctl start uwsgi
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://supervisord.org/configuration.html">http://supervisord.org/configuration.html</a></li>
+<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/Options.html">http://uwsgi-docs.readthedocs.org/en/latest/Options.html</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/supervisor.html">supervisor</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/supervisor.html">supervisor</a>, <a href="tags/uwsgi.html">uwsgi</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>October 02, 2013</span>
         </div>
         <h1><a href="2013/10/02/xdm_setting.html">XDM 設定</a></h1>
@@ -303,166 +412,6 @@ Host server1
                 Tags:
                 <a href="tags/ssh.html">ssh</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>September 19, 2013</span>
-        </div>
-        <h1><a href="2013/09/19/debian_wheezy_schroot_chroot.html">schrootを使って一般ユーザでchroot</a></h1>
-<p>schrootはroot権限を持たない一般ユーザでもchrootできるようにするwrapperである。オプションや設定ひとつでホストの環境,環境変数を引き継ぐことができとても便利なツールだ。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.1 (wheezy)
-Release:        7.1
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install schroot
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% schroot --version
-schroot (Debian sbuild) 1.6.4 (26 Oct 2012)
-Written by Roger Leigh
-
-Copyright © 2004–2012 Roger Leigh
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-Configured features:
-  DEVLOCK      Device locking
-  PAM          Pluggable Authentication Modules
-  PERSONALITY  Linux kernel Application Binary Interface switching
-  UNION        Support for filesystem unioning
-
-Available chroot types:
-  BLOCKDEV     Support for ‘block-device’ chroots
-  BTRFSSNAP    Support for ‘btrfs-snapshot’ chroots
-  CUSTOM       Support for ‘custom’ chroots
-  DIRECTORY    Support for ‘directory’ chroots
-  FILE         Support for ‘file’ chroots
-  LOOPBACK     Support for ‘loopback’ chroots
-  LVMSNAP      Support for ‘lvm-snapshot’ chroots
-  PLAIN        Support for ‘plain’ chroots
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ mkdir -p /var/chroot/wheezy
-% debootstrap stable /var/chroot/wheezy http://ftp.jp.debian.org/debian
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% find /etc/schroot
-/etc/schroot
-/etc/schroot/buildd
-/etc/schroot/buildd/nssdatabases
-/etc/schroot/buildd/copyfiles
-/etc/schroot/buildd/fstab
-/etc/schroot/desktop
-/etc/schroot/desktop/nssdatabases
-/etc/schroot/desktop/copyfiles
-/etc/schroot/desktop/fstab
-/etc/schroot/default
-/etc/schroot/default/nssdatabases
-/etc/schroot/default/copyfiles
-/etc/schroot/default/fstab
-/etc/schroot/setup.d
-/etc/schroot/setup.d/05file
-/etc/schroot/setup.d/00check
-/etc/schroot/setup.d/70services
-/etc/schroot/setup.d/50chrootname
-/etc/schroot/setup.d/15killprocs
-/etc/schroot/setup.d/99check
-/etc/schroot/setup.d/15binfmt
-/etc/schroot/setup.d/05lvm
-/etc/schroot/setup.d/05btrfs
-/etc/schroot/setup.d/05union
-/etc/schroot/setup.d/10mount
-/etc/schroot/setup.d/20copyfiles
-/etc/schroot/setup.d/20nssdatabases
-/etc/schroot/minimal
-/etc/schroot/minimal/nssdatabases
-/etc/schroot/minimal/copyfiles
-/etc/schroot/minimal/fstab
-/etc/schroot/sbuild
-/etc/schroot/sbuild/nssdatabases
-/etc/schroot/sbuild/copyfiles
-/etc/schroot/sbuild/fstab
-/etc/schroot/chroot.d
-/etc/schroot/schroot.conf
-</pre></div>
-</div>
-<p>ホストのfstabにschroot用の設定を書いていたり、ホストのfstabに設定を書くのがイケてないと言っている記事を見掛けるが、schroot(1),schroot.conf(5)を眺めたのだろうか。/etc/schroot以下の構成は上記のようになっている。ホストからchroot環境へコピーするファイル(passwd,resolv.confなど)やマウントするディレクトリの設定などは/etc/schroot以下にディレクトリを切り設定ファイルを書いていく(このディレクトリをプロファイルと呼ぶことにする)。下記はdefaultプロファイルの設定ファイルである。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/schroot/default/copyfiles
-# Files to copy into the chroot from the host system.
-#
-# &lt;source and destination&gt;
-/etc/resolv.conf
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/schroot/default/nssdatabases
-# System databases to copy into the chroot from the host system.
-#
-# &lt;database name&gt;
-passwd
-shadow
-group
-gshadow
-services
-protocols
-networks
-hosts
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/schroot/default/fstab
-# fstab: static file system information for chroots.
-# Note that the mount point will be prefixed by the chroot path
-# (CHROOT_PATH)
-#
-# &lt;file system&gt; &lt;mount point&gt;   &lt;type&gt;  &lt;options&gt;       &lt;dump&gt;  &lt;pass&gt;
-/proc           /proc           none    rw,bind        0       0
-/sys            /sys            none    rw,bind        0       0
-/dev            /dev            none    rw,bind         0       0
-/dev/pts        /dev/pts        none    rw,bind         0       0
-/home           /home           none    rw,bind         0       0
-/tmp            /tmp            none    rw,bind         0       0
-
-# It may be desirable to have access to /run, especially if you wish
-# to run additional services in the chroot.  However, note that this
-# may potentially cause undesirable behaviour on upgrades, such as
-# killing services on the host.
-#/run           /run            none    rw,bind         0       0
-#/run/lock      /run/lock       none    rw,bind         0       0
-#/dev/shm       /dev/shm        none    rw,bind         0       0
-#/run/shm       /run/shm        none    rw,bind         0       0
-</pre></div>
-</div>
-<p>プロファイルはprofileオプションを使い呼び出す。デフォルトではdefaultプロファイルが呼び出される。</p>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/schroot/chroot.d/wheezy.conf
-[wheezy]
-type=directory
-directory=/var/chroot/wheezy
-profile=desktop
-users=zinrai
-root-groups=root
-</pre></div>
-</div>
-<p>環境変数を引き継ぐ場合は「-p」オプションを付ける。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ schroot -c wheezy -p bash
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="https://wiki.debian.org/Schroot">https://wiki.debian.org/Schroot</a></li>
-</ul>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/schroot.html">schroot</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/schroot.html">schroot</a>, <a href="tags/chroot.html">chroot</a>, <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -471,6 +420,8 @@ root-groups=root
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/21/debian_wheezy_wpasupplicant.html">Debian wheezy で wpasupplicant を使う</a>
+        </li><li>
             <a href="2014/06/20/centos_65_munin_node_plugin_enable.html">Munin node のプラグイン有効化</a>
         </li><li>
             <a href="2014/06/19/centos_65_munin_node_setup.html">Munin 監視対象nodeの追加</a>
@@ -488,15 +439,13 @@ root-groups=root
             <a href="2014/06/13/centos65_socks_proxy_dante.html">danteでSocks Proxy</a>
         </li><li>
             <a href="2014/06/12/centos65_forward_proxy_squid.html">squidでForward Proxy Server</a>
-        </li><li>
-            <a href="2014/06/11/debian_wheezy_mysql_community_server.html">Debian wheezy MySQL 5.6 インストール</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (24), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (25), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (21), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
