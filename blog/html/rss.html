@@ -5,8 +5,81 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sat, 21 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Sun, 22 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/22/debian_wheezy_qemu_img_create_rebase.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/22/debian_wheezy_qemu_img_create_rebase.html</guid>
+            <title><![CDATA[qemu-img の使い方]]></title>
+            <description><![CDATA[<h1>qemu-img の使い方</h1>
+<p>KVMを使うときにqemu-img(8)でよく使うサブコマンドをメモしておく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="section" id="id1">
+<h2>ディスクイメージ作成</h2>
+<p>「GuestOSのディスク容量が足りない!!」とならないようにディスクイメージは多めに設定するようにしている。</p>
+<div class="highlight-python"><div class="highlight"><pre>% qemu-img create -f qcow2 debian_wheezy.qcow2 200G
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>差分ディスクイメージ作成</h2>
+<p>snapshotではなく差分をディスクイメージとして書き出すようにしている。差分ディスクイメージをGuestOSのディスクイメージに指定すればベースイメージの状態にいつでも戻すことができる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% qemu-img create -b debian_wheezy.qcow2 -f qcow2 debian_wheezy.diff.qcow2
+</pre></div>
+</div>
+</div>
+<div class="section" id="rebase">
+<h2>rebase</h2>
+<p>差分ディスクイメージをinfoすると、どのディスクイメージから作成された差分ディスクイメージなのかを示すbacking fileという項目が追加される。rebaseはbacking fileを変更することができる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% qemu-img info debian_wheezy.qcow2
+image: debian_wheezy.qcow2
+file format: qcow2
+virtual size: 200G (214748364800 bytes)
+disk size: 1.4G
+cluster_size: 65536
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% qemu-img info debian_wheezy.diff.qcow2
+image: debian_wheezy.diff.qcow2
+file format: qcow2
+virtual size: 200G (214748364800 bytes)
+disk size: 13G
+cluster_size: 65536
+backing file: debian_wheezy.qcow2
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% cp debian_wheezy.qcow2 debian_wheezy.rebase.qcow2
+% qemu-img rebase -b debian_wheezy.rebase.qcow2 debian_wheezy.diff.qcow2
+</pre></div>
+</div>
+</div>
+<div class="section" id="commit">
+<h2>commit</h2>
+<p>commitを使うと差分ディスクイメージをbacking fileへマージすることがきる。backing fileに指定されているディスクイメージをコピーして、コピーしたディスクイメージをrebaseしてcommitすれば元のbacking fileを汚すことなく差分のマージされたディスクイメージを作ることができたりする。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ qemu-img info debian_wheezy.diff.qcow2
+image: debian_wheezy.diff.qcow2
+file format: qcow2
+virtual size: 200G (214748364800 bytes)
+disk size: 1.0G
+cluster_size: 65536
+backing file: debian_wheezy.rebase.qcow2
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>qemu-img commit -f qcow2 debian_wheezy.diff.qcow2
+</pre></div>
+</div>
+<p>思っていたより書き起こすのに時間が掛かってしまった。info時の情報がおかしいのは途中でディスクイメージを作り直したため。</p>
+</div>]]></description>
+            <category><![CDATA[ qemu ]]></category>
+             <pubDate>Sun, 22 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/21/debian_wheezy_wpasupplicant.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/21/debian_wheezy_wpasupplicant.html</guid>
