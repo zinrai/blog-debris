@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix
    2014/06/23/debian_wheezy_qemu_nbd
    2014/06/22/debian_wheezy_qemu_img_create_rebase
    2014/06/21/debian_wheezy_wpasupplicant

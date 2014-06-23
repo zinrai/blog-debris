@@ -86,6 +86,137 @@
             <li class="left"> &laquo; <a href="page3.html">Newer</a></li>
             <li class="right"><a href="page5.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>June 15, 2014</span>
+        </div>
+        <h1><a href="2014/06/15/centos_65_mysql_community_server.html">CentOS 6.5 MySQL 5.6 インストール</a></h1>
+<p>MySQL5.6をyum(8)できるようにした。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux proxy-client02 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<div class="section" id="id1">
+<h2>インストール</h2>
+<div class="highlight-python"><div class="highlight"><pre>% yum install http://dev.mysql.com/get/mysql-community-release-el6-5.noarch.rpm
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ yum info mysql-community-server
+Available Packages
+Name        : mysql-community-server
+Arch        : x86_64
+Version     : 5.6.19
+Release     : 2.el6
+Size        : 52 M
+Repo        : mysql56-community
+Summary     : A very fast and reliable SQL database server
+URL         : http://www.mysql.com/
+License     : Copyright (c) 2000, 2014, Oracle and/or its affiliates. All
+            : rights reserved. Under GPLv2 license as shown in the Description
+            : field.
+Description : The MySQL(TM) software delivers a very fast, multi-threaded,
+            : multi-user, and robust SQL (Structured Query Language) database
+            : server. MySQL Server is intended for mission-critical, heavy-load
+            : production systems as well as for embedding into mass-deployed
+            : software. MySQL is a trademark of Oracle and/or its affiliates
+            :
+            : The MySQL software has Dual Licensing, which means you can use
+            : the MySQL software free of charge under the GNU General Public
+            : License (http://www.gnu.org/licenses/). You can also purchase
+            : commercial MySQL licenses from Oracle and/or its affiliates if
+            : you do not wish to be bound by the terms of the GPL. See the
+            : chapter "Licensing and Support" in the manual for further info.
+            :
+            : The MySQL web site (http://www.mysql.com/) provides the latest
+            : news and information about the MySQL software.  Also please see
+            : the documentation and the manual for more information.
+            :
+            : This package includes the MySQL server binary as well as related
+            : utilities to run and administer a MySQL server.
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install mysql-community-server
+</pre></div>
+</div>
+</div>
+<div class="section" id="my-cnf">
+<h2>my.cnf</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ diff -u my.cnf.org my.cnf
+--- my.cnf.org  2014-06-14 16:26:43.920377328 +0000
++++ my.cnf      2014-06-15 06:04:20.169191216 +0000
+@@ -26,6 +26,8 @@
+ # Recommended in standard MySQL setup
+ sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
+
++character-set-server = utf8
++
+ [mysqld_safe]
+ log-error=/var/log/mysqld.log
+ pid-file=/var/run/mysqld/mysqld.pid
+</pre></div>
+</div>
+<p>起動してcharacter_setやstatusを見てみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ mysql -u root -p
+
+mysql&gt; show variables like 'char%';
++--------------------------+----------------------------+
+| Variable_name            | Value                      |
++--------------------------+----------------------------+
+| character_set_client     | utf8                       |
+| character_set_connection | utf8                       |
+| character_set_database   | utf8                       |
+| character_set_filesystem | binary                     |
+| character_set_results    | utf8                       |
+| character_set_server     | utf8                       |
+| character_set_system     | utf8                       |
+| character_sets_dir       | /usr/share/mysql/charsets/ |
++--------------------------+----------------------------+
+8 rows in set (0.00 sec)
+
+mysql&gt; status;
+--------------
+mysql  Ver 14.14 Distrib 5.6.19, for Linux (x86_64) using  EditLine wrapper
+
+Connection id:          3
+Current database:
+Current user:           root@localhost
+SSL:                    Not in use
+Current pager:          stdout
+Using outfile:          ''
+Using delimiter:        ;
+Server version:         5.6.19 MySQL Community Server (GPL)
+Protocol version:       10
+Connection:             Localhost via UNIX socket
+Server characterset:    utf8
+Db     characterset:    utf8
+Client characterset:    utf8
+Conn.  characterset:    utf8
+UNIX socket:            /var/lib/mysql/mysql.sock
+Uptime:                 1 hour 40 min 43 sec
+
+Threads: 1  Questions: 10  Slow queries: 0  Opens: 67  Flush tables: 1  Open tables: 60  Queries per second avg: 0.001
+--------------
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://dev.mysql.com/downloads/repo/yum">http://dev.mysql.com/downloads/repo/yum/</a></li>
+<li><a class="reference external" href="http://dev.mysql.com/doc/refman/5.6/en/server-options.html">http://dev.mysql.com/doc/refman/5.6/en/server-options.html</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/mysql.html">mysql</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/centos.html">centos</a>, <a href="tags/mysql.html">mysql</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>June 14, 2014</span>
         </div>
         <h1><a href="2014/06/14/freebsd_10_poudriere.html">poudriereで自前のpkgリポジトリを作る</a></h1>
@@ -383,122 +514,6 @@ $ export SOCKS_DEBUG=1
                 Tags:
                 <a href="tags/centos.html">centos</a>, <a href="tags/socks.html">socks</a>, <a href="tags/dante.html">dante</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>June 12, 2014</span>
-        </div>
-        <h1><a href="2014/06/12/centos65_forward_proxy_squid.html">squidでForward Proxy Server</a></h1>
-<p>yum(8)で取得するrpmをキャッシュさせたくて、squidでForward Proxy Serverを構築してみた。</p>
-<div class="highlight-python"><div class="highlight"><pre>% uname -a
-Linux proxy-server 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
-
-% cat /etc/redhat-release
-CentOS release 6.5 (Final)
-</pre></div>
-</div>
-<div class="section" id="squid">
-<h2>squid</h2>
-<div class="highlight-python"><div class="highlight"><pre>$ yum info squid
-Available Packages
-Name        : squid
-Arch        : x86_64
-Epoch       : 7
-Version     : 3.1.10
-Release     : 20.el6_5.3
-Size        : 1.7 M
-Repo        : updates
-Summary     : The Squid proxy caching server
-URL         : http://www.squid-cache.org
-License     : GPLv2 and (LGPLv2+ and Public Domain)
-Description : Squid is a high-performance proxy caching server for Web clients,
-            : supporting FTP, gopher, and HTTP data objects. Unlike traditional
-            : caching software, Squid handles all requests in a single,
-            : non-blocking, I/O-driven process. Squid keeps meta data and especially
-            : hot objects cached in RAM, caches DNS lookups, supports non-blocking
-            : DNS lookups, and implements negative caching of failed requests.
-            :
-            : Squid consists of a main server program squid, a Domain Name System
-            : lookup program (dnsserver), a program for retrieving FTP data
-            : (ftpget), and some management and client tools.
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% yum install squid
-</pre></div>
-</div>
-<p>yum(8)で取得するrpmをキャッシュさせたいのでキャッシュするファイルの最大サイズを大きめに設定する。</p>
-<div class="highlight-python"><div class="highlight"><pre>% diff -u squid.conf.org squid.conf
---- squid.conf.org      2014-06-12 13:55:43.444802617 +0000
-+++ squid.conf  2014-06-13 01:35:22.999614814 +0000
-@@ -65,7 +65,11 @@
- hierarchy_stoplist cgi-bin ?
-
- # Uncomment and adjust the following to add a disk cache directory.
--#cache_dir ufs /var/spool/squid 100 16 256
-+cache_mem 1024 MB
-+cache_dir ufs /var/spool/squid 4192 16 256
-+
-+maximum_object_size 128 MB
-+maximum_object_size_in_memory 10 MB
-
- # Leave coredumps in the first cache dir
- coredump_dir /var/spool/squid
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ service squid start
-</pre></div>
-</div>
-<p>squidclient(1)を使って、どれくれいキャッシュがヒットしているか調べてみた。</p>
-<div class="highlight-python"><div class="highlight"><pre>% squidclient -p 3128 mgr:client_list
-Cache Clients:
-Address: 192.168.0.2
-Currently established connections: 0
-    ICP  Requests 0
-    HTTP Requests 180
-        TCP_HIT                  106  59%
-        TCP_MISS                  70  39%
-        TCP_REFRESH_UNMODIFI       4   2%
-
-Address: ::1
-Name:    localhost
-Currently established connections: 1
-    ICP  Requests 0
-    HTTP Requests 2
-        TCP_MISS                   2 100%
-
-TOTALS
-ICP : 0 Queries, 0 Hits (  0%)
-HTTP: 182 Requests, 110 Hits ( 60%)
-</pre></div>
-</div>
-</div>
-<div class="section" id="client">
-<h2>client</h2>
-<p>yum(8)をProxy経由させるためにyum.conf(5)に設定する。</p>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/yum.conf
-proxy=http://192.168.0.1:3128/
-
-% yum update
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://www.squid-cache.org/Doc/config">http://www.squid-cache.org/Doc/config/</a></li>
-<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/cache_mem">http://www.squid-cache.org/Doc/config/cache_mem/</a></li>
-<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/cache_dir">http://www.squid-cache.org/Doc/config/cache_dir/</a></li>
-<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/maximum_object_size">http://www.squid-cache.org/Doc/config/maximum_object_size/</a></li>
-<li><a class="reference external" href="http://www.squid-cache.org/Doc/config/maximum_object_size_in_memory">http://www.squid-cache.org/Doc/config/maximum_object_size_in_memory/</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/squid.html">squid</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/centos.html">centos</a>, <a href="tags/squid.html">squid</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -507,6 +522,8 @@ proxy=http://192.168.0.1:3128/
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
+        </li><li>
             <a href="2014/06/23/debian_wheezy_qemu_nbd.html">qemu-nbd を使ってディスクイメージをマウントする</a>
         </li><li>
             <a href="2014/06/22/debian_wheezy_qemu_img_create_rebase.html">qemu-img の使い方</a>
@@ -524,15 +541,13 @@ proxy=http://192.168.0.1:3128/
             <a href="2014/06/16/centos_65_aide.html">AIDEを使ってみた</a>
         </li><li>
             <a href="2014/06/15/centos_65_mysql_community_server.html">CentOS 6.5 MySQL 5.6 インストール</a>
-        </li><li>
-            <a href="2014/06/14/freebsd_10_poudriere.html">poudriereで自前のpkgリポジトリを作る</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (27), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (23), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (28), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

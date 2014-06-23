@@ -86,6 +86,89 @@
             <li class="left"> &laquo; <a href="page20.html">Newer</a></li>
             <li class="right"><a href="page22.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>August 28, 2013</span>
+        </div>
+        <h1><a href="2013/08/28/freebsd_jail_ports_packages.html">portsのパッケージをビルドする環境を構築する</a></h1>
+<p>FreeBSDを複数台動かす場合、パッケージをどのような手段でインストールするか考えることになると思う。</p>
+<p>FreeBSDでのパッケージのインストールは</p>
+<ul class="simple"><li><strong>ports</strong>: ソースコードをコンパイルしてインストール</li>
+<li><strong>packages</strong>:  コンパイル済みのバイナリをインストール</li>
+</ul><p>の2種類が用意されている。</p>
+<p>それぞれのFreeBSDにあるportsからパッケージをインストールするのは面倒だし、コンパイルオプションの指定ミスなどが発生したとき原因調査に時間を取られて泣きをみることは間違いない。</p>
+<p>というわけでpackagesを使いFreeBSDマシンにパッケージをインストールする。packagesはFreeBSDから提供されているが、portsからも作成できる。portsからだとコンパイルオプションを自分の好きなようにカスタマイズしたpackagesを作ることが出来る。ただし、portsからpackagesを作成するにはパッケージをインストールしなければならない。</p>
+<p>FreeBSDでは自前のpackagesを作成するツールとして「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」が存在する。「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」は様々なユーザーランド,portsを組み合わせビルド環境を作り、packagesを作成してくれる。WebUIも供えておりpackagesにしたいパッケージを登録すれば勝手にビルドしていく。4.0.0からDBにSQLiteが使えるようになり導入のハードルがグッと下っているので気になったら触ってみて欲しい。</p>
+<p>今回は「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」は使わず、「<a class="reference external" href="http://ftp.marcuscom.com">Tinderbox</a>」の動きを真似たビルド環境を自分で構築することにした。下記の記事のような環境がすでに出来ているものとする。</p>
+<ul class="simple"><li><a class="reference internal" href="2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<li><a class="reference internal" href="2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
+</ul><div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs create jails/pkg</span>
+<span class="c"># zfs create jails/buildbox</span>
+
+<span class="c"># cd /usr/src/9.1.0</span>
+<span class="c"># make buildworld</span>
+<span class="c"># make installworld DESTDIR=/jails/buildbox</span>
+<span class="c"># make distribution DESTDIR=/jails/buildbox</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir /jails/buildbox/usr/ports</span>
+<span class="c"># mkdir /jails/buildbox/var/ports</span>
+<span class="c"># cd /jails/pkg</span>
+<span class="c"># mkdir distfiles packages coptions</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /jails/buildbox//etc/resolv.conf
+nameserver 8.8.8.8
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /jails/buildbox/etc/make.conf
+WRKDIRPREFIX = /var/ports/
+DISTDIR = /var/ports/distfiles/
+PACKAGES = /var/ports/packages/
+PORT_DBDIR = /var/ports/coptions/
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/jail.conf
+buildbox {
+        exec.prestart += "mount -t nullfs /jails/pkg /jails/${name}/var/ports";
+        exec.poststop += "umount /jails/${name}/var/ports";
+        $if = 4;
+        $ipaddr = 192.168.0.4;
+}
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># zfs snapshot jails/pkg@base</span>
+<span class="c"># zfs snapshot jails/buildbox@base</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># jail -c buildbox</span>
+</pre></div>
+</div>
+<p>書いてある設定でピンときたでしょうが、ビルド作業用ディレクトリを別にマウントしてbuildboxのほうはzfs rollbackでいつでも初期状態に戻せるようにしているだけである。</p>
+<p>あとはjail環境で</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># cd /usr/ports/ftp/wget</span>
+<span class="c"># make config-recursive</span>
+<span class="c"># make install</span>
+<span class="c"># make package-recursive</span>
+</pre></div>
+</div>
+<p>すれば/jails/pkg/packagesにpackagesが作られる。</p>
+<p>packagesをどう配布するかは次の機会に。(調べればすぐに見付かるけど...)</p>
+<ul class="simple"><li><a class="reference external" href="http://ftp.marcuscom.com">http://ftp.marcuscom.com/</a></li>
+</ul>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/freebsd.html">freebsd</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/ports.html">ports</a>, <a href="tags/packages.html">packages</a>, <a href="tags/nullfs.html">nullfs</a>, <a href="tags/zfs.html">zfs</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>August 23, 2013</span>
         </div>
         <h1><a href="2013/08/23/freebsd_jail_nullfs_ports.html">nullfsを使いjailのportsを共有する</a></h1>
@@ -301,222 +384,6 @@ test02 {
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/jail.html">jail</a>, <a href="tags/zfs.html">zfs</a>, <a href="tags/vimage.html">vimage</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>July 20, 2013</span>
-        </div>
-        <h1><a href="2013/07/20/freebsd_pxeboot.html">シェルスクリプトでFreeBSD 9.1のインストール自動化</a></h1>
-<p>OSインストールをするだけでお金が貰えるならば喜んでやるが、趣味の時間をOSインストールに奪われるのはつらいので、自動化してみた。</p>
-<div class="section" id="pxe-boot">
-<h2>PXE boot サーバ構築</h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># mdconfig -a -t vnode -f FreeBSD-9.1-RELEASE-amd64-disc1.iso</span>
-<span class="n">md0</span>
-<span class="c"># mount_cd9660 /dev/md0 /mnt</span>
-<span class="c"># mkdir /var/pxeboot</span>
-<span class="c"># cp -Rv /mnt/ /var/pxeboot</span>
-<span class="c"># umount /mnt</span>
-<span class="c"># mdconfig -d -u 0</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/etc/fstab</span>
-<span class="c"># /dev/iso9660/FREEBSD_INSTALL / cd9660 ro 0 0 &lt;- コメントアウト</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre># vi /etc/inetd.conf
-tftp    dgram   udp     wait    root    /usr/libexec/tftpd      tftpd -l -s /var/pxeboot/boot
-
-# /etc/rc.d/inetd onestart
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre># cd /usr/ports/net/isc-dhcp42-server
-# make install
-
-# vi /usr/local/etc/dhcpd.conf
-ddns-update-style none;
-server-name "pxeboot";            # name of the tftp-server
-server-identifier 192.168.0.253;  # address of the tftp-server
-next-server 192.168.0.253;        # address of the NFS-server
-
-subnet 192.168.0.0 netmask 255.255.255.0 {
-    range 192.168.0.220 192.168.0.250;
-    option routers 192.168.0.254;
-    option root-path "/var/pxeboot"; # root-path for NFS
-    filename "pxeboot";              # filename of NBP (network bootstrap program)
-}
-
-# /usr/local/etc/rc.d/isc-dhcpd onestart
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre># vi /etc/exports
-/var/pxeboot -alldirs -maproot=root
-
-# /etc/rc.d/nfsd onestart
-</pre></div>
-</div>
-<p>再起動後もデーモンを起動させておきたければrc.confに書いておく。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">inetd_enable</span><span class="o">=</span><span class="s">"YES"</span>
-<span class="n">dhcpd_enable</span><span class="o">=</span><span class="s">"YES"</span>
-<span class="n">dhcpd_ifaces</span><span class="o">=</span><span class="s">"em0"</span>
-<span class="n">nfs_server_enable</span><span class="o">=</span><span class="s">"YES"</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="freebsd">
-<h2>FreeBSDインストールスクリプト</h2>
-<p>PXE BootしたマシンのMACアドレスが書かれたシェルスクリプトを探し、実行するようになっている。</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir /var/scripts/freebsd91</span>
-<span class="c"># cd /usr/freebsd-dist</span>
-<span class="c"># cp *.txz /var/scripts/freebsd91</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/os_install.sh</span>
-</pre></div>
-</div>
-<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
-
-get_conf<span class="o">()</span> <span class="o">{</span>
-  <span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/ether/ {print $NF}'`"</span>
-  <span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/HWaddr/ {print $NF}'`"</span>
-  <span class="k">fi</span>
-
-<span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
-<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">'{print $1}'</span>
-  <span class="k">done</span>
-<span class="o">}</span>
-
-<span class="nv">CWD</span><span class="o">=</span><span class="sb">`</span>dirname <span class="nv">$0</span><span class="sb">`</span>
-
-<span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
-<span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
-
-<span class="k">if</span> <span class="o">[</span> -z <span class="s2">"$CONFFILE"</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">  </span><span class="nb">printf</span> <span class="s1">'Script Not Found\n'</span>
-  <span class="nb">exit </span>1
-<span class="k">fi</span>
-
-<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($1 ~ /^default$/) print $6}'</span><span class="sb">`</span>
-  <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
-<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
-<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
-  <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
-<span class="k">fi</span>
-
-<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/pxeboot/var/scripts/freebsd_install.conf</span>
-</pre></div>
-</div>
-<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
-
-<span class="c"># 01:23:45:67:89:ab</span>
-
-<span class="nv">DISK</span><span class="o">=</span>ada0
-<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">CHROOT_FREEBSD</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
-<span class="nv">DIST_TXZ</span><span class="o">=</span><span class="sb">`</span>ls <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/freebsd91/*.txz<span class="sb">`</span>
-
-gpart destroy -F <span class="nv">$DISK</span>
-gpart create -s gpt <span class="nv">$DISK</span>
-gpart add -s 64K -t freebsd-boot <span class="nv">$DISK</span>
-gpart add -s 8G -t freebsd-swap -l swap0 <span class="nv">$DISK</span>
-gpart add -t freebsd-ufs <span class="nv">$DISK</span>
-gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 <span class="nv">$DISK</span>
-
-newfs -U /dev/<span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>p3
-
-mkdir <span class="nv">$CHROOT_FREEBSD</span>
-
-mount /dev/<span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>p3 <span class="nv">$CHROOT_FREEBSD</span>
-
-<span class="nb">cd</span> <span class="nv">$CHROOT_FREEBSD</span>
-
-<span class="k">for </span>FILE in <span class="nv">$DIST_TXZ</span>; <span class="k">do</span>
-<span class="k">  </span>tar xfzp <span class="nv">$FILE</span>
-<span class="k">done</span>
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/rc.conf</span>
-<span class="s">hostname="freebsd.local"</span>
-<span class="s">keymap="us.iso.kbd"</span>
-<span class="s">ifconfig_${IFACE}=" inet 192.168.0.252 netmask 255.255.255.0"</span>
-<span class="s">defaultrouter="192.168.0.254"</span>
-<span class="s">sshd_enable="YES"</span>
-<span class="s"># Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable</span>
-<span class="s">dumpdev="AUTO"</span>
-<span class="s">EOF</span>
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/resolv.conf</span>
-<span class="s">nameserver 8.8.8.8</span>
-<span class="s">EOF</span>
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/fstab</span>
-<span class="s"># Device        Mountpoint      FStype  Options Dump    Pass#</span>
-<span class="s">/dev/${DISK}p3     /               ufs     rw      1       1</span>
-<span class="s">/dev/${DISK}p2     none            swap    sw      0       0</span>
-<span class="s">EOF</span>
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/tmp/freebsd_setup.sh</span>
-<span class="s">newaliases</span>
-<span class="s">touch /etc/wall_cmos_clock</span>
-<span class="s">tzsetup Asia/Tokyo</span>
-
-<span class="s">dumpon /dev/${DISK}p2</span>
-<span class="s">ln -sf /dev/${DISK}p2 /dev/dumpdev</span>
-<span class="s">EOF</span>
-
-cat <span class="s">&lt;&lt; 'EOF' &gt; ${CHROOT_FREEBSD}/tmp/user_acount.sh</span>
-<span class="s">printf "$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs." | pw usermod -n root -H 0</span>
-
-<span class="s">pw useradd -n nanashi -s /bin/tcsh -G wheel -m</span>
-<span class="s">printf "$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1" | pw usermod -n nanashi -H 0</span>
-<span class="s">EOF</span>
-
-mount -t devfs dev <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/dev
-
-chroot <span class="nv">$CHROOT_FREEBSD</span> /bin/sh /tmp/freebsd_setup.sh
-chroot <span class="nv">$CHROOT_FREEBSD</span> /bin/sh /tmp/user_acount.sh
-
-rm <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/tmp/freebsd_setup.sh
-rm <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/tmp/user_acount.sh
-
-<span class="nb">cd</span> /
-umount <span class="k">${</span><span class="nv">CHROOT_FREEBSD</span><span class="k">}</span>/dev
-umount <span class="nv">$CHROOT_FREEBSD</span>
-
-rmdir <span class="nv">$CHROOT_FREEBSD</span>
-reboot
-</pre></div>
-</div>
-<p>PXE boot時に指定のスクリプトを実行するようにrc.localに書いておく。</p>
-<div class="highlight-python"><div class="highlight"><pre># vi /var/pxeboot/etc/rc.local
-
-#!/bin/sh
-# $FreeBSD: release/9.1.0/release/rc.local 232427 2012-03-03 02:13:53Z nwhitehorn $
-
-/var/script/os_install.sh
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201">https://www.bsdconsulting.co.jp/CGI/BSDC.CGI?CNT=FREEBSDSTUDY_2013022201</a></li>
-<li><a class="reference external" href="http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren">http://stefankonarski.de/content/freebsd-9-pxe-boot-und-bsdinstall-installieren</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/freebsd.html">freebsd</a>, <a href="categories/pxeboot.html">pxeboot</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/pxeboot.html">pxeboot</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -525,6 +392,8 @@ reboot
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
+        </li><li>
             <a href="2014/06/23/debian_wheezy_qemu_nbd.html">qemu-nbd を使ってディスクイメージをマウントする</a>
         </li><li>
             <a href="2014/06/22/debian_wheezy_qemu_img_create_rebase.html">qemu-img の使い方</a>
@@ -542,15 +411,13 @@ reboot
             <a href="2014/06/16/centos_65_aide.html">AIDEを使ってみた</a>
         </li><li>
             <a href="2014/06/15/centos_65_mysql_community_server.html">CentOS 6.5 MySQL 5.6 インストール</a>
-        </li><li>
-            <a href="2014/06/14/freebsd_10_poudriere.html">poudriereで自前のpkgリポジトリを作る</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (4)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (27), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (23), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (28), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
