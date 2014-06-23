@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/23/debian_wheezy_qemu_nbd
    2014/06/22/debian_wheezy_qemu_img_create_rebase
    2014/06/21/debian_wheezy_wpasupplicant
    2014/06/20/centos_65_munin_node_plugin_enable
