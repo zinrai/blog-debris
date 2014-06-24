@@ -5,8 +5,68 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 24 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Wed, 25 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/25/debian_sid_install.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/25/debian_sid_install.html</guid>
+            <title><![CDATA[Debian sid インストール]]></title>
+            <description><![CDATA[<h1>Debian sid インストール</h1>
+<p>wheezyからsidにdist-upgradeする。</p>
+<div class="section" id="wheezy">
+<h2>wheezy</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ diff -u sources.list.orig sources.list
+--- sources.list.orig   2014-06-23 21:52:33.706037290 +0900
++++ sources.list        2014-06-23 21:53:03.154059993 +0900
+@@ -4,12 +4,12 @@
+
+ # deb cdrom:[Debian GNU/Linux 7.5.0 _Wheezy_ - Official amd64 CD Binary-1 20140426-13:37]/ wheezy main
+
+-deb http://ftp.jp.debian.org/debian/ wheezy main
+-deb-src http://ftp.jp.debian.org/debian/ wheezy main
++deb http://ftp.jp.debian.org/debian/ sid main
++deb-src http://ftp.jp.debian.org/debian/ sid main
+
+-deb http://security.debian.org/ wheezy/updates main
+-deb-src http://security.debian.org/ wheezy/updates main
++#deb http://security.debian.org/ wheezy/updates main
++#deb-src http://security.debian.org/ wheezy/updates main
+
+ # wheezy-updates, previously known as 'volatile'
+-deb http://ftp.jp.debian.org/debian/ wheezy-updates main
+-deb-src http://ftp.jp.debian.org/debian/ wheezy-updates main
++#deb http://ftp.jp.debian.org/debian/ wheezy-updates main
++#deb-src http://ftp.jp.debian.org/debian/ wheezy-updates main
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get update
+% apt-get upgrade
+% apt-get dist-upgrade
+% reboot
+</pre></div>
+</div>
+</div>
+<div class="section" id="sid">
+<h2>sid</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.14-1-amd64 #1 SMP Debian 3.14.7-1 (2014-06-16)
+
+$ cat /etc/debian_version
+jessie/sid
+</pre></div>
+</div>
+</div>]]></description>
+            <category><![CDATA[ debian ]]></category>
+             <pubDate>Wed, 25 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html</guid>
