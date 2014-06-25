@@ -86,6 +86,199 @@
             <li class="left"> &laquo; <a href="page9.html">Newer</a></li>
             <li class="right"><a href="page11.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>March 22, 2014</span>
+        </div>
+        <h1><a href="2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html">Chef Soloでvsftpdのインストールと設定</a></h1>
+<ul class="simple"><li>某スイッチのアップグレードのためにFTPサーバを立てなければいけなくて、vsftpdでanonymous FTPのディレクトリを設定するのに手間取ったのでメモしておきたい。</li>
+<li><a class="reference internal" href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html"><em>前回</em></a>はTemplate Resourceを使わなかったので使ってみたい。</li>
+</ul><p>ということでChef Soloでvsftpdをインストール、Template Resource使った設定ファイルの設置まで行う。</p>
+<p><a class="reference internal" href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html"><em>前回</em></a>と同じくVagrantを使う。作ったCookbookは<a class="reference external" href="https://github.com/zinrai/chef-repo/tree/vsftpd">Github</a>に置くようにした。</p>
+<div class="section" id="vagrant">
+<h2>Vagrant</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant -v
+Vagrant 1.4.3
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi Vagrantfile
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.hostname = "vsftpd"
+  config.vm.box = "opscode_centos-6.4"
+
+  config.vm.network :public_network, :ip =&gt; "192.168.0.1", :netmask =&gt; "255.255.255.0", :bridge =&gt; "eth0"
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
+  end
+end
+</pre></div>
+</div>
+<p>今回はforward portではなくbridgeするようにした。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant up
+$ vagrant ssh-config --host vsftpd &gt;&gt; ~/.ssh/config
+</pre></div>
+</div>
+</div>
+<div class="section" id="vsftpd">
+<h2>vsftpd</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/centos-release
+CentOS release 6.4 (Final)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ man -k vsftpd
+vsftpd               (8)  - Very Secure FTP Daemon
+vsftpd.conf [vsftpd] (5)  - config file for vsftpd
+
+$ man vsftpd.conf
+
+anon_root
+              This option represents a directory which vsftpd will try to change into after  an
+              anonymous login. Failure is silently ignored.
+
+              Default: (none)
+</pre></div>
+</div>
+<p>anonymous FTPは有効になっているけれどディレクトリは設定されていないのでanon_rootを設定する。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vsftpd -v
+vsftpd: version 2.2.2
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/vsftpd.conf.org
+anonymous_enable=YES
+local_enable=YES
+write_enable=YES
+local_umask=022
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+xferlog_std_format=YES
+listen=YES
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ diff -u vsftpd.conf vsftpd.conf.org
+--- vsftpd.conf 2014-03-22 09:37:23.935013981 +0000
++++ vsftpd.conf.org     2014-03-22 09:10:03.970016338 +0000
+@@ -1,5 +1,4 @@
+ anonymous_enable=YES
+-anon_root=/var/vsftpd
+ local_enable=YES
+ write_enable=YES
+ local_umask=022
+</pre></div>
+</div>
+</div>
+<div class="section" id="chef-solo">
+<h2>Chef Solo</h2>
+<p>anon_rootの設定を追加してanonymous FTP用のディレクトリを作成すればいいということがわかったのでCookbookに落し込んでいく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ bundle exec knife solo prepare vsftpd
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi Berksfile
+
+site :opscode
+
+cookbook "yum", "3.0.6"
+cookbook "vsftpd", path: "./site-cookbooks/vsftpd"
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ bundle exec knife cookbook create vsftpd -o ./site-cookbooks
+$ bundle exec berks install --path ./cookbooks
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi site-cookbooks/vsftpd/recipes/default.rb
+%w(vsftpd).each do |pkg|
+  package pkg do
+    action :install
+  end
+end
+
+directory '/var/vsftpd' do
+  owner 'root'
+  group 'root'
+  mode '0755'
+  action :create
+end
+
+template "vsftpd.conf" do
+  path "/etc/vsftpd/vsftpd.conf"
+  source "vsftpd.conf.erb"
+  owner "root"
+  group "root"
+  mode "600"
+end
+
+service "vsftpd" do
+  action [:enable, :start]
+end
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi site-cookbooks/vsftpd/templates/default/vsftpd.conf.erb
+anonymous_enable=YES
+anon_root=/var/vsftpd
+local_enable=YES
+write_enable=YES
+local_umask=022
+dirmessage_enable=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+xferlog_std_format=YES
+listen=YES
+pam_service_name=vsftpd
+userlist_enable=YES
+tcp_wrappers=YES
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi nodes/vsftpd.json
+{"run_list":[
+    "recipe[vsftpd]"
+  ]
+}
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ bundle exec berks install --path ./cookbooks
+$ bundle exec knife solo cook vsftpd nodes/vsftpd.json
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ ftp 192.168.0.1
+</pre></div>
+</div>
+<p>などしてFTPサーバにアクセスできれば成功している。</p>
+<ul class="simple"><li><a class="reference external" href="http://docs.opscode.com/resource_directory.html">http://docs.opscode.com/resource_directory.html</a></li>
+<li><a class="reference external" href="http://docs.opscode.com/resource_template.html">http://docs.opscode.com/resource_template.html</a></li>
+<li><a class="reference external" href="http://docs.vagrantup.com/v2/networking/public_network.html">http://docs.vagrantup.com/v2/networking/public_network.html</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/chef.html">chef</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/chef.html">chef</a>, <a href="tags/vsftpd.html">vsftpd</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>March 21, 2014</span>
         </div>
         <h1><a href="2014/03/21/debian_wheezy_chef_solo_jenkins_install.html">Chef SoloでJenkinsをインストール</a></h1>
@@ -593,45 +786,6 @@ $ vagrant sandbox rollback
                 Tags:
                 <a href="tags/deiban.html">deiban</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/vagrant.html">vagrant</a>, <a href="tags/virtualbox.html">virtualbox</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>February 26, 2014</span>
-        </div>
-        <h1><a href="2014/02/26/debian_wheezy_schroot_aufs.html">schrootでaufsを使う</a></h1>
-<p>schroot(1)でaufsを使いたいなと思いschroot.conf(5)を眺めてみたところunion-type,union-mount-optionsというオプションを見付けた。union-typeにaufsを指定し、union-mount-optionsにunion mountするときのオプションを書けばオプションをパースしてくれる。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.4 (wheezy)
-Release:        7.4
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/schroot/chroot.d/fuga.conf
-
-[fuga]
-type=directory
-directory=/var/chroot/fuga
-union-type=aufs
-union-mount-options=br:/var/chroot/fuga:/var/chroot/wheezy=ro none /var/chroot/fuga
-profile=fuga
-users=hoge
-root-groups=root
-</pre></div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/schroot.html">schroot</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/schroot.html">schroot</a>, <a href="tags/aufs.html">aufs</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -640,6 +794,8 @@ root-groups=root
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/26/debian_sid_vagrant_kvm.html">Debian sid で vagrant-kvm を使ってみた</a>
+        </li><li>
             <a href="2014/06/25/debian_sid_install.html">Debian sid インストール</a>
         </li><li>
             <a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
@@ -657,15 +813,13 @@ root-groups=root
             <a href="2014/06/18/centos_65_munin_setup.html">CentOS 6.5 で Munin を使ってみる</a>
         </li><li>
             <a href="2014/06/17/centos_65_nginx_install.html">CentOS 6.5 に nginx をインストール</a>
-        </li><li>
-            <a href="2014/06/16/centos_65_aide.html">AIDEを使ってみた</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (1)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (29), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (2), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (1), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (2), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (30), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

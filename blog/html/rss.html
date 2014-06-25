@@ -5,8 +5,63 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Wed, 25 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Thu, 26 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/26/debian_sid_vagrant_kvm.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/26/debian_sid_vagrant_kvm.html</guid>
+            <title><![CDATA[Debian sid で vagrant-kvm を使ってみた]]></title>
+            <description><![CDATA[<h1>Debian sid で vagrant-kvm を使ってみた</h1>
+<p>Vagrant KVM Providerであるvagrant-kvmを使ってみた。ruby-libvirt(gem)をビルドするのにruby2.0-devが必要になる。ruby2.0-devはtesting,unstableにしか存在しなかったのでsidを使った。vagrant-kvm用に作られたboxを使ってvagrant upするところまではやってみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.14-1-amd64 #1 SMP Debian 3.14.7-1 (2014-06-16)
+
+$ cat /etc/debian_version
+jessie/sid
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install -y qemu qemu-kvm libvirt-bin
+% apt-get install -y nfs-kernel-server nfs-common rpcbind
+% apt-get install -y redir dnsmasq-base bridge-utils
+% apt-get install -y build-essential libxml2-dev libxslt1-dev libvirt-dev ruby2.0-dev
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% gpasswd -a zinrai libvirt
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.6.3_x86_64.deb
+% dpkg -i vagrant_1.6.3_x86_64.deb
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% wget https://vagrant-kvm-boxes.s3.amazonaws.com/precise64-kvm.box
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant plugin install vagrant-kvm
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://vagrant-kvm-boxes.s3.amazonaws.com/precise64-kvm.box
+$ vagrant box add precise64 precise64-kvm.box
+
+$ vagrant box list
+precise64 (kvm, 0)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir precise64
+$ cd precise64
+$ vagrant init precise64
+$ vagrant up
+</pre></div>
+</div>
+<p>特にハマることなく動いた。Vagrantfileについてはまた後日。</p>
+<ul class="simple"><li><a class="reference external" href="http://www.vagrantup.com">http://www.vagrantup.com/</a></li>
+<li><a class="reference external" href="https://github.com/adrahon/vagrant-kvm">https://github.com/adrahon/vagrant-kvm</a></li>
+<li><a class="reference external" href="https://github.com/adrahon/vagrant-kvm/wiki/List-boxes">https://github.com/adrahon/vagrant-kvm/wiki/List-boxes</a></li>
+<li><a class="reference external" href="https://github.com/adrahon/vagrant-kvm/blob/master/INSTALL.md">https://github.com/adrahon/vagrant-kvm/blob/master/INSTALL.md</a></li>
+</ul>]]></description>
+            <category><![CDATA[ vagrant ]]></category>
+             <pubDate>Thu, 26 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/25/debian_sid_install.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/25/debian_sid_install.html</guid>
