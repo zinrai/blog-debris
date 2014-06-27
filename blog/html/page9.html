@@ -22,7 +22,7 @@
             <link rel="stylesheet" href="_static/dark.css" type="text/css">
             <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
             <link rel="stylesheet" href="_static/font-awesome.min.css" type="text/css">
-        <link rel="shortcut icon" href="_static/tinkerer.ico" /><!-- Load modernizr and JQuery -->
+        <!-- Load modernizr and JQuery -->
         <script src="_static/vendor/modernizr-2.6.2.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
@@ -86,6 +86,156 @@
             <li class="left"> &laquo; <a href="page8.html">Newer</a></li>
             <li class="right"><a href="page10.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>April 22, 2014</span>
+        </div>
+        <h1><a href="2014/04/22/freebsd_92_jail_rc_conf.html">FreeBSD 9.2 jail構築</a></h1>
+<p>ezjail,qjailなどjailを管理するツールはあるけれどrc.conf(5)にjailの設定を書いて管理する方法を考えてみた。</p>
+<p>rc.conf(5)はsh(1)によって読み込まれているので、指定したディレクトリに個々のjailの設定を置いてrc.conf(5)にsourceすればいい感じではないかと思ったのでやってみた。jail.conf(5)あるけどついカッとなってやってみた。後悔はしていない。</p>
+<ul class="simple"><li><a class="reference internal" href="2013/08/22/freebsd_jail_vimage_zfs.html"><em>FreeBSD 9.1 VIMAGE + ZFS で Jail環境構築</em></a></li>
+<li><a class="reference internal" href="2013/08/23/freebsd_jail_nullfs_ports.html"><em>nullfsを使いjailのportsを共有する</em></a></li>
+</ul><p>が出来上がっている前提で話を進めていく。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+FreeBSD hoge.localnet 9.2-RELEASE FreeBSD 9.2-RELEASE #0 r256370: Sat Oct 12 22:47:21 JST 2013     root@hoge.localnet:/usr/obj/usr/src/9.2.0/sys/VIMAGE  amd64
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% mkdir /usr/local/etc/rc.jail
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/rc.conf
+jail_enable="YES"
+
+for JAIL in /usr/local/etc/rc.jail/*.conf; do
+  . $JAIL
+done
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/rc.jail/testjail.conf
+. /usr/local/etc/rc.jail/jail_install.sh
+
+NAME="testjail"
+IFACE="6"
+IPADDR="192.168.0.6"
+NETMASK="255.255.255.0"
+GATEWAY="192.168.0.254"
+
+JAILROOT="/jails/${NAME}"
+
+if [ ! -d ${JAILROOT} ]; then
+  zfs create jails/${NAME}
+  jail_install ${JAILROOT}
+fi
+
+export jail_${NAME}_devfs_enable="YES"
+export jail_${NAME}_devfs_ruleset="devfsrules_jail2"
+export jail_${NAME}_nama="${NAME}"
+export jail_${NAME}_hostname="${NAME}.localnet"
+export jail_${NAME}_rootdir="${JAILROOT}"
+export jail_${NAME}_parameters="vnet"
+
+export jail_${NAME}_exec_prestart0="ifconfig epair${IFACE} create up"
+export jail_${NAME}_exec_prestart1="ifconfig vswitch0 addm epair${IFACE}a"
+export jail_${NAME}_exec_prestart2="mount -t nullfs -o ro /jails/ports /jails/${NAME}/usr/ports"
+
+export jail_${NAME}_exec_poststart0="ifconfig epair${IFACE}b vnet ${NAME}"
+export jail_${NAME}_exec_poststart1="jexec ${NAME} ifconfig lo0 127.0.0.1 up"
+export jail_${NAME}_exec_poststart2="jexec ${NAME} ifconfig epair${IFACE}b ${IPADDR} netmask ${NETMASK} up"
+export jail_${NAME}_exec_poststart3="jexec ${NAME} route add default ${GATEWAY}"
+
+export jail_${NAME}_exec_start0="sh /etc/rc"
+
+export jail_${NAME}_exec_stop0="sh /etc/rc.shutdown"
+
+export jail_${NAME}_exec_poststop0="ifconfig vswitch0 deletem epair${IFACE}a"
+export jail_${NAME}_exec_poststop1="ifconfig epair${IFACE}a destroy"
+export jail_${NAME}_exec_poststop2="umount /jails/${NAME}/usr/ports"
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/devfs.rules
+[devfsrules_jail2=5]
+add include $devfsrules_jail
+
+add path mem unhide
+add path kmem unhide
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /usr/local/etc/rc.jail/jail_install.sh
+jail_install() {
+  local JAILROOT=$1
+
+  for FILE in /usr/local/etc/rc.jail/*.txz; do
+    tar xfzp $FILE -C $JAILROOT
+  done
+
+  cp /etc/resolv.conf $JAILROOT/etc
+  cp /etc/localtime $JAILROOT/etc
+  mkdir $JAILROOT/usr/ports
+}
+</pre></div>
+</div>
+<p>bsdinstall(8)にjailというサブコマンドが用意されていてkernelを含まない環境を指定したディレクトリに展開してくれるけど、毎回ファイルをネットから取りに行くのと、インタラクティブなのがつらかったので、ファイルを取得するところだけ眺めてみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cat `which bsdinstall`
+exec "/usr/libexec/bsdinstall/$VERB" "$@" 2&gt;&gt; "$BSDINSTALL_LOG"
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cd /usr/libexec/bsdinstall
+$ file `ls` | grep -v "ELF"
+adduser:        POSIX shell script, ASCII text executable
+auto:           POSIX shell script, ASCII text executable
+checksum:       POSIX shell script, ASCII text executable
+config:         POSIX shell script, ASCII text executable
+docsinstall:    POSIX shell script, ASCII text executable
+hostname:       POSIX shell script, ASCII text executable
+jail:           POSIX shell script, ASCII text executable
+keymap:         POSIX shell script, ASCII text executable
+mirrorselect:   POSIX shell script, ASCII text executable, with very long lines
+mount:          POSIX shell script, ASCII text executable
+netconfig:      POSIX shell script, ASCII text executable
+netconfig_ipv4: POSIX shell script, ASCII text executable
+netconfig_ipv6: POSIX shell script, ASCII text executable
+rootpass:       POSIX shell script, ASCII text executable
+script:         POSIX shell script, ASCII text executable
+services:       POSIX shell script, ASCII text executable
+time:           POSIX shell script, ASCII text executable
+umount:         POSIX shell script, ASCII text executable
+wlanconfig:     POSIX shell script, ASCII text executable
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cat mirrorselect
+_UNAME_R=`uname -r`
+
+case ${_UNAME_R} in
+        *-CURRENT|*-STABLE|*-PRERELEASE)
+                RELDIR="snapshots"
+                ;;
+        *)
+                RELDIR="releases"
+                ;;
+esac
+
+BSDINSTALL_DISTSITE="$MIRROR/pub/FreeBSD/${RELDIR}/`uname -m`/`uname -p`/${_UNAME_R}"
+</pre></div>
+</div>
+<p>mirrorselectで展開される<a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">アドレス</a>アクセスしてbase.txzと必要なファイルをダウンロードする。</p>
+<ul class="simple"><li><a class="reference external" href="http://qjail.sourceforge.net">http://qjail.sourceforge.net/</a></li>
+<li><a class="reference external" href="http://erdgeist.org/arts/software/ezjail">http://erdgeist.org/arts/software/ezjail/</a></li>
+<li><a class="reference external" href="http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html">http://www.freebsd.org/doc/ja/books/handbook/configtuning-core-configuration.html</a></li>
+<li><a class="reference external" href="ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE">ftp://ftp.jp.freebsd.org/pub/FreeBSD/releases/amd64/9.2-RELEASE/</a></li>
+</ul>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/freebsd.html">freebsd</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/jail.html">jail</a>, <a href="tags/vimage.html">vimage</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>March 29, 2014</span>
         </div>
         <h1><a href="2014/03/29/debian_wheezy_ruby_build_rbenv.html">rbenv + ruby-build</a></h1>
@@ -324,125 +474,6 @@ $ vagrant up
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/packer.html">packer</a>, <a href="tags/vagrant.html">vagrant</a>, <a href="tags/virtualbox.html">virtualbox</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>March 25, 2014</span>
-        </div>
-        <h1><a href="2014/03/25/debian_wheezy_vsftpd_serverspec.html">serverspecを使ってみる</a></h1>
-<ul class="simple"><li><a class="reference internal" href="2014/03/22/debian_wheezy_chef_solo_vsftpd_install.html"><em>Chef Soloでvsftpdのインストールと設定</em></a></li>
-</ul><p>で構築した環境をserverspecを使ってテストしてみる。</p>
-<div class="section" id="vsftpd">
-<h2>vsftpdのテスト項目</h2>
-<ul class="simple"><li>インストールされているか</li>
-<li>自動起動は設定されているか</li>
-<li>起動しているか</li>
-<li>ポート21番でListenしているか</li>
-<li>vsftpd.confファイルは存在するか</li>
-<li>vsftpd.confファイルはChefに書いてあるpermissionになっているか(600)</li>
-<li>vsftpd.confファイルはChefに書いてあるownerになっているか(root)</li>
-<li>vsftpd.confファイルはChefに書いてあるgroupになっているか(root)</li>
-<li>vsftpd.confにanon_root=/var/vsftpdは設定されているか</li>
-<li>anon_rootで指定しているディレクトリは存在するか(/var/vsftpd)</li>
-<li>anon_rootで指定しているディレクトリはChefに書いてあるpermissionになっているか(755)</li>
-<li>anon_rootで指定しているディレクトリはChefに書いてあるownerになっているか(root)</li>
-<li>anon_rootで指定しているディレクトリはChefに書いてあるgroupになっているか(root)</li>
-</ul><p>の13項目をテストする。</p>
-</div>
-<div class="section" id="id1">
-<h2>serverspec</h2>
-<div class="highlight-python"><div class="highlight"><pre>$ uname -a
-Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.4 (wheezy)
-Release:        7.4
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ vi Gemfile
-source 'https://rubygems.org'
-
-gem 'serverspec'
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ bundle install --path vendor/bundle
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ cat Gemfile.lock
-GEM
-  remote: https://rubygems.org/
-  specs:
-    serverspec (0.16.0)
-      highline
-      net-ssh
-      rspec (~&gt; 2.13)
-      specinfra (&gt;= 0.7.1)
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ bundle exec serverspec-init
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ vi spec/vsftpd/vsftpd_spec.rb
-require 'spec_helper'
-
-describe package('vsftpd') do
-  it { should be_installed }
-end
-
-describe service('vsftpd') do
-  it { should be_enabled }
-  it { should be_running }
-end
-
-describe port(21) do
-  it { should be_listening }
-end
-
-describe file('/etc/vsftpd/vsftpd.conf') do
-  it { should be_file }
-  it { should be_mode 600 }
-  it { should be_owned_by 'root' }
-  it { should be_grouped_into 'root' }
-  its(:content) { should match /anon_root=\/var\/vsftpd/ }
-end
-
-describe file('/var/vsftpd') do
-  it { should be_directory }
-  it { should be_mode 755 }
-  it { should be_owned_by 'root' }
-  it { should be_grouped_into 'root' }
-end
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ bundle exec rake spec
-/home/hoge/.rbenv/versions/2.0.0-p353/bin/ruby -S rspec spec/vsftpd/vsftpd_spec.rb
-.............
-
-Finished in 1.17 seconds
-13 examples, 0 failures
-</pre></div>
-</div>
-<p>日本語で長々と書いていたものが、Resourceを指定してResourceが持っているマッチャーを使いshould be_hogehoge argと書けば表現できていい感じ。</p>
-<ul class="simple"><li><a class="reference external" href="http://serverspec.org">http://serverspec.org/</a></li>
-<li><a class="reference external" href="http://serverspec.org/tutorial.html">http://serverspec.org/tutorial.html</a></li>
-<li><a class="reference external" href="http://serverspec.org/resource_types.html">http://serverspec.org/resource_types.html</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/serverspec.html">serverspec</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/serverspec.html">serverspec</a>, <a href="tags/chef.html">chef</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -451,6 +482,8 @@ Finished in 1.17 seconds
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/27/centos_65_clamav.html">CentOS 6.5 で ClamAV を使ってみた</a>
+        </li><li>
             <a href="2014/06/26/debian_sid_vagrant_kvm.html">Debian sid で vagrant-kvm を使ってみた</a>
         </li><li>
             <a href="2014/06/25/debian_sid_install.html">Debian sid インストール</a>
@@ -468,15 +501,13 @@ Finished in 1.17 seconds
             <a href="2014/06/19/centos_65_munin_node_setup.html">Munin 監視対象nodeの追加</a>
         </li><li>
             <a href="2014/06/18/centos_65_munin_setup.html">CentOS 6.5 で Munin を使ってみる</a>
-        </li><li>
-            <a href="2014/06/17/centos_65_nginx_install.html">CentOS 6.5 に nginx をインストール</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (14), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (30), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (15), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (30), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

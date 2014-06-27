@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/27/centos_65_clamav
    2014/06/26/debian_sid_vagrant_kvm
    2014/06/25/debian_sid_install
    2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix
