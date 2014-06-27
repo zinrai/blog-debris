@@ -5,8 +5,92 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Fri, 27 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Sat, 28 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/28/debian_wheezy_apt_cacher_ng.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/28/debian_wheezy_apt_cacher_ng.html</guid>
+            <title><![CDATA[apt-cacher-ng でapt用のキャッシュプロキシを構築する]]></title>
+            <description><![CDATA[<h1>apt-cacher-ng でapt用のキャッシュプロキシを構築する</h1>
+<p>squidではなくapt-cacher-ngを使ってapt用のキャッシュプロキシを構築してみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="section" id="server">
+<h2>server</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ apt-cache show apt-cacher-ng
+Package: apt-cacher-ng
+Version: 0.7.11-1
+Installed-Size: 1175
+Maintainer: Eduard Bloch &lt;blade@debian.org&gt;
+Architecture: amd64
+Depends: libbz2-1.0, libc6 (&gt;= 2.10), libgcc1 (&gt;= 1:4.1.1), liblzma5 (&gt;= 5.1.1alpha+20120614), libstdc++6 (&gt;= 4.6), libwrap0 (&gt;= 7.6-4~), zlib1g (&gt;= 1:1.1.4), debconf (&gt;= 0.5) | debconf-2.0, adduser
+Pre-Depends: dpkg (&gt;= 1.15.6)
+Recommends: perl (&gt;&gt; 5.8), ed
+Suggests: doc-base, libfuse2 (&gt;= 2.5)
+Conflicts: logrotate (&lt;&lt; 3.8.0)
+Description-en: caching proxy server for software repositories
+ Apt-Cacher NG is a caching proxy for downloading packages from Debian-style
+ software repositories (or possibly from other types).
+ .
+ The main principle is that a central machine hosts the proxy for a local
+ network, and clients configure their APT setup to download through it.
+ Apt-Cacher NG keeps a copy of all useful data that passes through it, and when
+ a similar request is made, the cached copy of the data is delivered without
+ being re-downloaded.
+ .
+ Apt-Cacher NG has been designed from scratch as a replacement for
+ apt-cacher, but with a focus on maximizing throughput with low system
+ resource requirements. It can also be used as replacement for apt-proxy and
+ approx with no need to modify clients' sources.list files.
+Homepage: http://www.unix-ag.uni-kl.de/~bloch/acng/
+Description-md5: b88e5e2d04c76e8d4500fb60880c7d76
+Tag: admin::package-management, implemented-in::c, interface::daemon,
+ network::server, network::service, protocol::http, role::program,
+ suite::debian, use::downloading, use::proxying,
+ works-with::software:package, works-with::software:source
+Section: net
+Priority: optional
+Filename: pool/main/a/apt-cacher-ng/apt-cacher-ng_0.7.11-1_amd64.deb
+Size: 419640
+MD5sum: 85463208862ad21c4bbf7b7dc740bf4a
+SHA1: 3218bf36939cefedb87f286961719fc8128b9e5a
+SHA256: 5cb620e0c45509a68f3499a52c2810afac4893c851ffc34b4f31711cbe3c045c
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install apt-cacher-ng
+</pre></div>
+</div>
+<p>/etc/init.d/apt-cacher-ngを眺めてみると/etc/defautl/apt-cacher-ngファイルを読み込んでいて、/etc/apt-cacher-ngディレクトリにある設定ファイルを読み込んでいた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ ls /etc/apt-cacher-ng/
+acng.conf                backends_debvol          security.conf
+backends_debian          backends_ubuntu
+backends_debian.default  backends_ubuntu.default
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ service apt-cacher-ng start
+</pre></div>
+</div>
+<p>特になにも設定せずに起動すると3142でListenする。(3142でListenするようにacng.confに書かれている。)「<strong>http://${IP_ADDRESS}:3142/</strong>」にアクセスすると、キャッシュのヒット率などを確認できる。</p>
+</div>
+<div class="section" id="client">
+<h2>client</h2>
+<p>/etc/apt/apt.confか/etc/apt/apt.conf.dにプロキシの設定をする。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/apt/apt.conf.d/02proxy
+Acquire::http::Proxy "http://192.168.0.10:3142";
+Acquire::ftp::Proxy "ftp://192.168.0.10:3142";
+</pre></div>
+</div>
+<p>これでパッケージ配布サーバから同じパッケージを何度も取ってこなくてよくなり、配布サーバに優しい環境ができた。</p>
+</div>]]></description>
+            <category><![CDATA[ apt ]]></category>
+             <pubDate>Sat, 28 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/27/centos_65_clamav.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/27/centos_65_clamav.html</guid>

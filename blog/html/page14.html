@@ -86,6 +86,186 @@
             <li class="left"> &laquo; <a href="page13.html">Newer</a></li>
             <li class="right"><a href="page15.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>November 25, 2013</span>
+        </div>
+        <h1><a href="2013/11/25/fabric_template_upload.html">Fabric テンプレート アップロード</a></h1>
+<p>「<a class="reference internal" href="2013/11/22/fabric_decorators_task.html"><em>Fabric decorators task</em></a>」でディストリビューションやOSごとにファイルを分割してタスクを書けるようにした。今回はインストールスルクリプトをテンプレート化してアップロードするタスクを書いてみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vi __init__.py
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">fabric.api</span> <span class="kn">import</span> <span class="n">env</span>
+<span class="kn">from</span> <span class="nn">fabric.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">debian</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">centos</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">gentoo</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">freebsd</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">server</span><span class="p">():</span>
+  <span class="n">env</span><span class="o">.</span><span class="n">hosts</span> <span class="o">=</span> <span class="p">[</span><span class="s">'192.168.0.1'</span><span class="p">]</span>
+  <span class="n">env</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="mi">22</span>
+  <span class="n">env</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="s">'root'</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vi debian.py
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">fabric.decorators</span> <span class="kn">import</span> <span class="n">task</span>
+<span class="kn">from</span> <span class="nn">fabric.contrib.files</span> <span class="kn">import</span> <span class="n">upload_template</span>
+
+<span class="nd">@task</span>
+<span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="n">macaddress</span><span class="p">,</span> <span class="n">disk</span><span class="p">,</span> <span class="n">hostname</span><span class="p">,</span> <span class="n">ipaddress</span><span class="p">,</span> <span class="n">netmask</span><span class="p">,</span> <span class="n">gateway</span><span class="p">,</span>
+    <span class="n">source_template</span><span class="p">,</span> <span class="n">dest_template</span><span class="p">):</span>
+
+    <span class="n">upload_template</span><span class="p">(</span>
+      <span class="n">source_template</span><span class="p">,</span>
+      <span class="n">dest_template</span><span class="p">,</span>
+      <span class="n">context</span><span class="o">=</span><span class="p">{</span>
+        <span class="s">'macaddress'</span><span class="p">:</span> <span class="n">macaddress</span><span class="p">,</span>
+        <span class="s">'disk'</span><span class="p">:</span> <span class="n">disk</span><span class="p">,</span>
+        <span class="s">'hostname'</span><span class="p">:</span> <span class="n">hostname</span><span class="p">,</span>
+        <span class="s">'ipaddress'</span><span class="p">:</span> <span class="n">ipaddress</span><span class="p">,</span>
+        <span class="s">'netmask'</span><span class="p">:</span> <span class="n">netmask</span><span class="p">,</span>
+        <span class="s">'gateway'</span><span class="p">:</span> <span class="n">gateway</span><span class="p">,</span>
+      <span class="p">},</span>
+      <span class="n">use_jinja</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ mkdir templates
+$ vi templates/debian_template.conf
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash -x</span>
+
+<span class="c"># {{ macaddress }}</span>
+
+<span class="nv">DISK</span><span class="o">=</span>/dev/<span class="o">{{</span> disk <span class="o">}}</span>
+<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
+
+dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
+
+parted <span class="nv">$DISK</span> -s <span class="s1">'mklabel msdos'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 1 500'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 501 35000'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart extended 35001 -0'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 35001 38000'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 38001 -0'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'set 1 boot on'</span>
+
+mkswap <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
+swapon <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
+mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1
+mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
+mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
+
+mkdir <span class="nv">$CHROOT_DEBIAN</span>
+
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>
+
+cp -Rp <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/wheezy/* <span class="nv">$CHROOT_DEBIAN</span>
+
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/boot
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/home
+
+mount --rbind /dev <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/dev
+mount -t proc none <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/proc
+mount --rbind /sys <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/sys
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/hostname</span>
+<span class="s">{{ hostname }}</span>
+<span class="s">EOF</span>
+
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/resolv.conf</span>
+<span class="s">nameserver 8.8.8.8</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/network/interfaces</span>
+<span class="s">auto lo</span>
+<span class="s">iface lo inet loopback</span>
+
+<span class="s">auto eth0</span>
+<span class="s">iface eth0 inet static</span>
+<span class="s">address {{ ipaddress }}</span>
+<span class="s">netmask {{ netmask }}</span>
+<span class="s">gateway {{ gateway }}</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/fstab</span>
+<span class="s">${DISK}1               /boot           ext2            defaults        0 2</span>
+<span class="s">${DISK}2               /               ext4            defaults        0 1</span>
+<span class="s">${DISK}6               /home           ext4            defaults        0 2</span>
+<span class="s">${DISK}5               none            swap            sw              0 0</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/tmp/debian_setup.sh</span>
+<span class="s">export DEBIAN_FRONTEND=noninteractive</span>
+<span class="s">cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime</span>
+<span class="s">grep -v rootfs /proc/mounts &gt; /etc/mtab</span>
+
+<span class="s">apt-get install -y linux-image-`uname -r` grub2 openssh-server</span>
+
+<span class="s">grub-mkconfig -o /boot/grub/grub.cfg</span>
+<span class="s">grub-install --no-floppy --root-directory=/ $DISK</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; 'EOF' &gt; ${CHROOT_DEBIAN}/tmp/user_acount.sh</span>
+<span class="s">useradd -m -G sudo nanashi</span>
+<span class="s">printf 'nanashi:$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs.' | chpasswd -e</span>
+<span class="s">printf 'root:$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1' | chpasswd -e</span>
+<span class="s">EOF</span>
+
+chroot <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span> /bin/bash /tmp/debian_setup.sh
+chroot <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span> /bin/bash /tmp/user_acount.sh
+
+rm <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/tmp/debian_setup.sh
+rm <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/tmp/user_acount.sh
+
+<span class="nb">cd</span> /
+umount -l <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/<span class="o">{</span>boot,home,proc,dev,sys<span class="o">}</span>
+umount -l <span class="nv">$CHROOT_DEBIAN</span>
+sleep 2
+rmdir <span class="nv">$CHROOT_DEBIAN</span>
+reboot
+</pre></div>
+</div>
+<p>Pythonのweb frameworkのひとつ<a class="reference external" href="http://flask.pocoo.org">Flask</a>に使用されているテンプレートエンジン<a class="reference external" href="http://jinja.pocoo.org">Jinja</a>が、Fabricでも使えるようなのでuse_jinja=Trueして使うことにする。{{ hoge }}で囲まれた部分が変数展開される。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ fab -l
+Available commands:
+
+    server
+    centos.cmd
+    debian.upload
+    freebsd.cmd
+    gentoo.cmd
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ fab server debian.upload:macaddress="01:23:45:67:89:ab",disk="vda",hostname="hoge.localnet",ipaddress="192.168.0.50",netmask="255.255.255.0",gateway="192.168.0.254",source_template="templates/debian_template.conf",dest_template="/var/diskless/scripts/debian_template.conf"
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://docs.fabfile.org/en/1.8/api/contrib/files.html">http://docs.fabfile.org/en/1.8/api/contrib/files.html</a></li>
+<li><a class="reference external" href="http://docs.fabfile.org/en/1.8/usage/fab.html#task-arguments">http://docs.fabfile.org/en/1.8/usage/fab.html#task-arguments</a></li>
+<li><a class="reference external" href="https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes">https://speakerdeck.com/drillbits/fabric-python-developers-festa-2013-dot-03-number-pyfes</a></li>
+</ul>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/fabric.html">fabric</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/fabric.html">fabric</a>, <a href="tags/python.html">python</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>November 22, 2013</span>
         </div>
         <h1><a href="2013/11/22/fabric_decorators_task.html">Fabric decorators task</a></h1>
@@ -303,78 +483,6 @@ append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/mfsbsd.html">mfsbsd</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>October 26, 2013</span>
-        </div>
-        <h1><a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a></h1>
-<p>「<a class="reference internal" href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a>」にCentOSのディスクレスブート環境を追加してみる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% cat /etc/centos-release
-CentOS release 6.4 (Final)
-
-% uname -a
-Linux localhost.localdomain 2.6.32-358.23.2.el6.x86_64 #1 SMP Wed Oct 16 18:37:12 UTC 2013 x86_64 x86_64 x86_64 GNU/Linux
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% yum groupinstall --releasever=6 --installroot=/var/diskless/centos6  Base -y
-% yum upgrade --releasever=6 --installroot=/var/diskless/centos6 -y
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% mount --rbind /dev /var/diskless/centos6/dev
-% cd /var/diskless/centos6
-% cp usr/share/zoneinfo/Asia/Tokyo etc/localtime
-% chroot /var/diskless/centos6 passwd
-% chroot /var/diskless/centos6 yum -y install kernel
-
-% vi /var/diskless/centos6/etc/fstab
-none    /tmp        tmpfs   defaults   0 0
-tmpfs   /dev/shm    tmpfs   defaults   0 0
-sysfs   /sys        sysfs   defaults   0 0
-proc    /proc       proc    defaults   0 0
-
-% vi /var/diskless/centos6/etc/resolv.conf
-nameserver 8.8.8.8
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% yum -y install dracut-network
-% dracut initramfs-`uname -r`.img
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
-/var/diskless/centos6 192.168.2.0/24(rw,sync,no_root_squash,no_all_squash)
-
-% service rpcbind start
-% service nfslock start
-% service nfs start
-</pre></div>
-</div>
-<p>あとはブートメニューにCentOSを追加するだけ。</p>
-<div class="highlight-python"><div class="highlight"><pre>% vi /var/diskless/pxelinux.cfg/default
-default menu.c32
-label Debian wheezy
-kernel vmlinuz-3.2.0-4-amd64
-append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw
-
-label CentOS 6.4
-kernel vmlinuz-2.6.32-358.23.2.el6.x86_64
-append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/var/diskless/centos6 rw
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4">http://www.server-world.info/query?os=CentOS_6&amp;p=pxe&amp;f=4</a></li>
-</ul>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/centos.html">centos</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/centos.html">centos</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -383,6 +491,8 @@ append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/v
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/28/debian_wheezy_apt_cacher_ng.html">apt-cacher-ng でapt用のキャッシュプロキシを構築する</a>
+        </li><li>
             <a href="2014/06/27/centos_65_clamav.html">CentOS 6.5 で ClamAV を使ってみた</a>
         </li><li>
             <a href="2014/06/26/debian_sid_vagrant_kvm.html">Debian sid で vagrant-kvm を使ってみた</a>
@@ -400,15 +510,13 @@ append initrd=initramfs-2.6.32-358.23.2.el6.x86_64.img root=nfs:192.168.2.101:/v
             <a href="2014/06/20/centos_65_munin_node_plugin_enable.html">Munin node のプラグイン有効化</a>
         </li><li>
             <a href="2014/06/19/centos_65_munin_node_setup.html">Munin 監視対象nodeの追加</a>
-        </li><li>
-            <a href="2014/06/18/centos_65_munin_setup.html">CentOS 6.5 で Munin を使ってみる</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (15), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (30), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (15), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

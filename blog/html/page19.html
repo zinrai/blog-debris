@@ -86,6 +86,260 @@
             <li class="left"> &laquo; <a href="page18.html">Newer</a></li>
             <li class="right"><a href="page20.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>September 07, 2013</span>
+        </div>
+        <h1><a href="2013/09/07/debian_wheezy_pxeboot.html">シェルスクリプトでDebian wheezyのインストール自動化</a></h1>
+<p>みなさん、Debianのインストール作業はどうやっているだろうか。私は、OSのインストール作業なんてお金を貰わない限り手動でやりたくないので自動化している。OSの手動インストールをするだけでお金が発生するのであれば喜んでやらせていただく所存である。RedHat系の「<a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">Kickstart</a>」と同じような仕組みの「<a class="reference external" href="http://www.debian.org/releases/stable/amd64/apb.html.ja">preseed</a>」というものがDebianにも存在するが、これを使わずに「pxeboot + debootstrap + シェルスクリプト」でインストールの自動化をしている。</p>
+<div class="section" id="pxeboot">
+<h2>pxeboot</h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># apt-get install debootstrap syslinux dnsmasq nfs-kernel-server</span>
+</pre></div>
+</div>
+<div class="section" id="dnsmasq">
+<h3>dnsmasq</h3>
+<p>DNSサーバ以外にもDHCP,TFTPサーバとしても使える便利なdnsmasq</p>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/dnsmasq.d/pxe.conf
+enable-tftp
+tftp-root=/var/lib/tftpboot
+dhcp-range=192.168.2.200,192.168.2.250,2h
+dhcp-option=3,192.168.2.254
+dhcp-boot=pxelinux.0
+</pre></div>
+</div>
+</div>
+<div class="section" id="nfs">
+<h3>NFS</h3>
+<div class="highlight-python"><div class="highlight"><pre># vi /etc/exports
+/var/lib/tftpboot/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)
+</pre></div>
+</div>
+</div>
+<div class="section" id="debootstrap">
+<h3>debootstrap</h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir -p /var/lib/tftpboot/wheezy</span>
+<span class="c"># debootstrap stable /var/lib/tftpboot/wheezy http://ftp.jp.debian.org/debian</span>
+<span class="c"># chroot /var/lib/tftpboot/wheezy passwd root</span>
+<span class="c"># chroot /var/lib/tftpboot/wheezy/ apt-get install linux-image-`uname -r` parted build-essential bzip2 grub2 debootstrap nfs-common</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="syslinux">
+<h3>syslinux</h3>
+<div class="highlight-python"><div class="highlight"><pre># cp /boot/initrd* /var/lib/tftpboot
+# cp /boot/vmlinuz* /var/lib/tftpboot
+
+# cp /usr/lib/syslinux/pxelinux.0 /var/lib/tftpboot
+# mkdir /var/lib/tftpboot/pxelinux.cfg
+
+# vi /var/lib/tftpboot/pxelinux.cfg/default
+default Debian
+prompt 1
+timeout 10
+label Debian
+kernel vmlinuz-3.2.0-4-amd64
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.253:/var/lib/tftpboot/wheezy rw
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># service dnsmasq start</span>
+<span class="c"># service nfs-kernel-server start</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="debian">
+<h2>Debianインストールスクリプト</h2>
+<p>仕組みは「<a class="reference internal" href="2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」と同じである。</p>
+<p>debootstrapで取得した最小構成のWheezyをコピーするスクリプトを書いただけ。</p>
+<p>パッケージインストール時にダイアログが表示され入力待ちにならないよう環境変数「DEBIAN_FRONTEND=noninteractive」を設定しておくのがポイントである。</p>
+<p>この環境変数は解決方法はないかとdebconf(1)を眺めていたら</p>
+<div class="highlight-python"><div class="highlight"><pre>Debconf is a configuration system for Debian packages. For a debconf overview and documentation for sysadmins, see debconf(7) (in the debconf-doc package).
+</pre></div>
+</div>
+<p>書かれており、説明に従いdebconf-docをインストールし、debconf(7)を眺めたところ見付けた。</p>
+<p>os_install.shはconfファイルが1つだとうまく動いてくれないのでダミーのconfファイルを1つ作っておく。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># touch /var/scripts/dummy.conf</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># mkdir -p /var/scripts/wheezy</span>
+<span class="c"># debootstrap stable /var/scripts/wheezy http://ftp.jp.debian.org/debian</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/os_install.sh</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/sh</span>
+
+get_conf<span class="o">()</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/ether/ {print $NF}'`"</span>
+  <span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">    </span><span class="nb">local </span><span class="nv">MACADDR</span><span class="o">=</span><span class="s2">"`ifconfig | awk '/HWaddr/ {print $NF}'`"</span>
+  <span class="k">fi</span>
+
+<span class="k">  for </span>a in <span class="nv">$MACADDR</span>; <span class="k">do</span>
+<span class="k">    </span>grep -r <span class="nv">$MACADDR</span> <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/*.conf | awk -F: <span class="s1">'{print $1}'</span>
+  <span class="k">done</span>
+<span class="o">}</span>
+
+<span class="nv">CWD</span><span class="o">=</span><span class="sb">`</span>dirname <span class="nv">$0</span><span class="sb">`</span>
+
+<span class="nv">OS</span><span class="o">=</span><span class="sb">`</span>uname<span class="sb">`</span>
+<span class="nv">CONFFILE</span><span class="o">=</span><span class="sb">`</span>get_conf<span class="sb">`</span>
+
+<span class="k">if</span> <span class="o">[</span> -z <span class="s2">"$CONFFILE"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nb">printf</span> <span class="s1">'Script Not Found\n'</span>
+  <span class="nb">exit </span>1
+<span class="k">fi</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"FreeBSD"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($1 ~ /^default$/) print $6}'</span><span class="sb">`</span>
+  <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256 -q <span class="nv">$CONFFILE</span><span class="sb">`</span>
+<span class="k">elif</span> <span class="o">[</span> <span class="s2">"$OS"</span> <span class="o">=</span> <span class="s2">"Linux"</span> <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nv">IFACE</span><span class="o">=</span><span class="sb">`</span>netstat -nr | awk <span class="s1">'{if($4 ~ /^UG$/) print $8}'</span><span class="sb">`</span>
+  <span class="nv">MOUNTNAME</span><span class="o">=</span><span class="sb">`</span>sha256sum <span class="nv">$CONFFILE</span> | awk <span class="s1">'{print $1}'</span><span class="sb">`</span>
+<span class="k">fi</span>
+
+<span class="nv">$CONFFILE</span> <span class="nv">$IFACE</span> <span class="nv">$CWD</span> <span class="nv">$MOUNTNAME</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/debian_install.conf</span>
+</pre></div>
+</div>
+<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash -x</span>
+
+<span class="c"># 01:23:45:67:89:ab</span>
+
+<span class="nv">DISK</span><span class="o">=</span><span class="s2">"/dev/vda"</span>
+<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
+<span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
+<span class="nv">CHROOT_DEBIAN</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
+
+dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
+
+parted <span class="nv">$DISK</span> -s <span class="s1">'mklabel msdos'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 1 500'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 501 35000'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart extended 35001 -0'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 35001 38000'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 38001 -0'</span>
+parted <span class="nv">$DISK</span> -s <span class="s1">'set 1 boot on'</span>
+
+mkswap <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
+swapon <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
+mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1
+mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
+mkfs.ext4 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
+
+mkdir <span class="nv">$CHROOT_DEBIAN</span>
+
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>
+
+cp -Rp <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/wheezy/* <span class="nv">$CHROOT_DEBIAN</span>
+
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/boot
+mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6 <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/home
+
+mount --rbind /dev <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/dev
+mount -t proc none <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/proc
+mount --rbind /sys <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/sys
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/hostname</span>
+<span class="s">install.localnet</span>
+<span class="s">EOF</span>
+
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/resolv.conf</span>
+<span class="s">nameserver 8.8.8.8</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/network/interfaces</span>
+<span class="s">auto lo</span>
+<span class="s">iface lo inet loopback</span>
+
+<span class="s">auto eth0</span>
+<span class="s">iface eth0 inet static</span>
+<span class="s">address  192.168.2.100</span>
+<span class="s">netmask 255.255.255.0</span>
+<span class="s">gateway 192.168.2.254</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/etc/fstab</span>
+<span class="s">${DISK}1               /boot           ext2            defaults        0 2</span>
+<span class="s">${DISK}2               /               ext4            defaults        0 1</span>
+<span class="s">${DISK}6               /home           ext4            defaults        0 2</span>
+<span class="s">${DISK}5               none            swap            sw              0 0</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_DEBIAN}/tmp/debian_setup.sh</span>
+<span class="s">export DEBIAN_FRONTEND=noninteractive</span>
+<span class="s">cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime</span>
+<span class="s">grep -v rootfs /proc/mounts &gt; /etc/mtab</span>
+
+<span class="s">apt-get install -y linux-image-`uname -r` grub2 openssh-server</span>
+
+<span class="s">grub-mkconfig -o /boot/grub/grub.cfg</span>
+<span class="s">grub-install --no-floppy --root-directory=/ $DISK</span>
+<span class="s">EOF</span>
+
+cat <span class="s">&lt;&lt; 'EOF' &gt; ${CHROOT_DEBIAN}/tmp/user_acount.sh</span>
+<span class="s">useradd -m -G sudo nanashi</span>
+<span class="s">printf 'nanashi:$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs.' | chpasswd -e</span>
+<span class="s">printf 'root:$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1' | chpasswd -e</span>
+<span class="s">EOF</span>
+
+chroot <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span> /bin/bash /tmp/debian_setup.sh
+chroot <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span> /bin/bash /tmp/user_acount.sh
+
+rm <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/tmp/debian_setup.sh
+rm <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/tmp/user_acount.sh
+
+<span class="nb">cd</span> /
+umount -l <span class="k">${</span><span class="nv">CHROOT_DEBIAN</span><span class="k">}</span>/<span class="o">{</span>boot,home,proc,dev,sys<span class="o">}</span>
+umount -l <span class="nv">$CHROOT_DEBIAN</span>
+sleep 2
+rmdir <span class="nv">$CHROOT_DEBIAN</span>
+reboot
+</pre></div>
+</div>
+<p>pxeboot時にインストールスクリプトが実行されるようrc.localに書いておく。</p>
+<div class="highlight-python"><div class="highlight"><pre># vi /var/lib/tftpboot/wheezy/etc/rc.local
+
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+/var/scripts/os_install.sh
+
+exit 0
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://fedoraproject.org/wiki/Anaconda/Kickstart">http://fedoraproject.org/wiki/Anaconda/Kickstart</a></li>
+<li><a class="reference external" href="http://www.debian.org/releases/stable/amd64/apb.html.ja">http://www.debian.org/releases/stable/amd64/apb.html.ja</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/debian.html">debian</a>, <a href="categories/pxeboot.html">pxeboot</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/pexboot.html">pexboot</a>, <a href="tags/debootstrap.html">debootstrap</a>, <a href="tags/dnsmasq.html">dnsmasq</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>September 06, 2013</span>
         </div>
         <h1><a href="2013/09/06/debian_wheezy_sshfs.html">sshfs</a></h1>
@@ -206,68 +460,6 @@ log-format = %(addr) - %(user) [%(ltime)] "%(method) %(uri) %(proto)" %(status) 
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/python.html">python</a>, <a href="tags/uwsgi.html">uwsgi</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>September 04, 2013</span>
-        </div>
-        <h1><a href="2013/09/04/freebsd_nginx_reverse_proxy.html">Nginxでリバースプロキシ</a></h1>
-<p>「<a class="reference internal" href="2013/09/03/freebsd_jail_jenkins.html"><em>jail環境でJenkinsを動かす</em></a>」からの続きでlocalhostでListenしているJenkinsをNginxのリバースプロキシを使いlocalhost以外からもアクセスできるようにする。</p>
-<p>Nginxのディレクトリ構成は下記を参考に</p>
-<ul class="simple"><li><a class="reference internal" href="2013/08/31/freebsd_nginx_virtualhost.html"><em>Nginxでバーチャルホスト</em></a></li>
-</ul><div class="highlight-python"><div class="highlight"><pre># nginx -v
-nginx version: nginx/1.4.2
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre># vi /usr/local/etc/nginx/nginx.conf
-http {
-
-    server {
-        listen       80;
-        server_name  localhost;
-
-        location /jenkins {
-            proxy_pass http://127.0.0.1:8180;
-        }
-}
-</pre></div>
-</div>
-<p>proxy_passを設定するだけでJenkinsに接続できるようになる。</p>
-<p>「Python+<a class="reference external" href="http://flask.pocoo.org">Flask</a>+<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>」で作ったAPサーバをバックエンドに置き、リバースプロキシにNginxを使った場合を考えると、上記の設定ではAPサーバのアクセスログにはリバースプロキシのIPアドレスが記録されてしまいアクセス元はどこなのかがわからない状態になってしまう。アクセス元のIPアドレスがAPサーバに記録されるようにするにはproxy_set_headerを設定する必要がある。</p>
-<div class="highlight-python"><div class="highlight"><pre># vi /usr/local/etc/nginx/nginx.conf
-http {
-
-    server {
-        listen       80;
-        server_name  localhost;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Server $host;
-        proxy_set_header X-Real-IP $remote_addr;
-
-        location /myapp {
-            proxy_pass http://127.0.0.1:9090;
-        }
-}
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass</a></li>
-<li><a class="reference external" href="http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header">http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header</a></li>
-</ul>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/nginx.html">nginx</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/nginx.html">nginx</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -276,6 +468,8 @@ http {
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/28/debian_wheezy_apt_cacher_ng.html">apt-cacher-ng でapt用のキャッシュプロキシを構築する</a>
+        </li><li>
             <a href="2014/06/27/centos_65_clamav.html">CentOS 6.5 で ClamAV を使ってみた</a>
         </li><li>
             <a href="2014/06/26/debian_sid_vagrant_kvm.html">Debian sid で vagrant-kvm を使ってみた</a>
@@ -293,15 +487,13 @@ http {
             <a href="2014/06/20/centos_65_munin_node_plugin_enable.html">Munin node のプラグイン有効化</a>
         </li><li>
             <a href="2014/06/19/centos_65_munin_node_setup.html">Munin 監視対象nodeの追加</a>
-        </li><li>
-            <a href="2014/06/18/centos_65_munin_setup.html">CentOS 6.5 で Munin を使ってみる</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (15), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (30), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (24), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (15), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
