@@ -5,8 +5,99 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sat, 28 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Sun, 29 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/29/centos_65_td_agent_out_s3.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/29/centos_65_td_agent_out_s3.html</guid>
+            <title><![CDATA[td-agent で S3 にログを送る]]></title>
+            <description><![CDATA[<h1>td-agent で S3 にログを送る</h1>
+<p>td-agentを使って、/var/log/secureをS3に投げてみる。今回は標準のプラグインのみを使用する。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<p>本家のドキュメントだとインストールスクリプト(シェルスクリプト)をダウンロードして実行し、問答無用でtd-agentをインストールするよう書かれている。シェルスクリプトの中身は/etc/yum.repo.d/td.repoを配置して、GPG Keyをインポートして、td-agentをインストールしているだけ。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/yum.repo.d/td.repo
+[treasuredata]
+name=TreasureData
+baseurl=http://packages.treasuredata.com/redhat/$basearch
+enabled=0
+gpgcheck=1
+gpgkey=http://packages.treasuredata.com/GPG-KEY-td-agent
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% rpm --import http://packages.treasuredata.com/GPG-KEY-td-agent
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ yum info --enablerepo=treasuredata td-agent
+Available Packages
+Name        : td-agent
+Arch        : x86_64
+Version     : 1.1.20
+Release     : 0
+Size        : 64 M
+Repo        : treasuredata
+Summary     : td-agent
+URL         : http://treasure-data.com/
+License     : APL2
+Description :
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install --enablerepo=treasuredata td-agent
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/td-agent/td-agent.conf
+&lt;source&gt;
+  type tail
+  path /var/log/secure
+  pos_file /var/log/td-agent/secure.pos
+  tag syslog.secure
+  format none
+&lt;/source&gt;
+
+&lt;match *.*&gt;
+  type s3
+
+  aws_key_id ${AWS_KEY_ID}
+  aws_sec_key ${AWS_SEC_KEY}
+  s3_bucket ${BUCKET_NAME}
+  s3_endpoint s3-ap-northeast-1.amazonaws.com
+  path %Y/%m/%d/secure_
+  buffer_path /var/log/td-agent/s3
+
+  time_slice_format %Y%m%d%H
+  time_slice_wait 5m
+  utc
+
+  buffer_chunk_limit 256m
+&lt;/match&gt;
+</pre></div>
+</div>
+<p>/var/log/secureのPermissionは600でそのままだとtd-agentが読み込めずにログ(/var/log/td-agent/td-agent.log)に「Permission denied」とか吐くので、secureログのPermissionを644にする。</p>
+<div class="highlight-python"><div class="highlight"><pre>% chmod 644 /var/log/secure
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service td-agent start
+</pre></div>
+</div>
+<p>td-agent.confを書き換え設定を反映させたければreloadする。</p>
+<div class="highlight-python"><div class="highlight"><pre>% service td-agent reload
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://docs.fluentd.org/ja/articles/install-by-rpm">http://docs.fluentd.org/ja/articles/install-by-rpm</a></li>
+<li><a class="reference external" href="http://toolbelt.treasuredata.com/sh/install-redhat.sh">http://toolbelt.treasuredata.com/sh/install-redhat.sh</a></li>
+<li><a class="reference external" href="http://docs.fluentd.org/ja/articles/in_tail">http://docs.fluentd.org/ja/articles/in_tail</a></li>
+<li><a class="reference external" href="http://docs.fluentd.org/ja/articles/out_s3">http://docs.fluentd.org/ja/articles/out_s3</a></li>
+<li><a class="reference external" href="http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region</a></li>
+</ul>]]></description>
+            <category><![CDATA[ td-agent ]]></category>
+             <pubDate>Sun, 29 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/28/debian_wheezy_apt_cacher_ng.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/28/debian_wheezy_apt_cacher_ng.html</guid>

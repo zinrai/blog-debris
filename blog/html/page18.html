@@ -86,6 +86,63 @@
             <li class="left"> &laquo; <a href="page17.html">Newer</a></li>
             <li class="right"><a href="page19.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>September 11, 2013</span>
+        </div>
+        <h1><a href="2013/09/11/debian_wheezy_cowbuilder_chroot.html">cowbuilderを使ったsandbox環境</a></h1>
+<p>今回もchrootネタである。cowbuilderを使うとホスト環境を汚さずにいろいろできる。</p>
+<ul class="simple"><li>気になるパッケージをとりあえずインストールして使ってみたい</li>
+<li>Debianのパッケージが古く最新のソースをビルドして使ってみる</li>
+<li>Texを使いたいがホスト環境には入れたくない</li>
+</ul><p>などのシーンで私は使っている。</p>
+<div class="highlight-python"><div class="highlight"><pre>lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.1 (wheezy)
+Release:        7.1
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install cowbuilder
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% cowbuilder --create --distribution wheezy --architecture amd64 --basepath  /var/cache/pbuilder/base_wheezy_amd64.cow
+</pre></div>
+</div>
+<p>ベース環境を毎回取ってくるのはサーバに負荷がかかるので同じバージョンとアーキテクチャを使うときはコピーする。</p>
+<div class="highlight-python"><div class="highlight"><pre>% cd /var/cache/pbuilder
+% cp -R base_wheezy_amd64.cow rails3_wheezy_amd64.cow
+</pre></div>
+</div>
+<table border="1" class="docutils"><colgroup><col width="18%"/><col width="82%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>–distribution</td>
+<td>作成するディストリビューションの指定。sidもしくはコードネームを選ぶ。(省略した場合のデフォルトはsid)</td>
+</tr><tr class="row-even"><td>–architecture</td>
+<td>アーキテクチャの指定。(省略した場合のデフォルトはホストと同じ)</td>
+</tr><tr class="row-odd"><td>–basepath</td>
+<td>テンプレートのディレクトリパス(省略した場合のデフォルトは/var/cache/pbuilder/base.cow)</td>
+</tr></tbody></table><p>「–save」オプションを付けると変更を保存できる。オプションなしの場合はログアウトすると変更は消える。</p>
+<div class="highlight-python"><div class="highlight"><pre>% cowbuilder --login --save --basepath /var/cache/pbuilder/base_wheezy_amd64.cow
+</pre></div>
+</div>
+<p>「–bindmount」オプションでホストのディレクトリをchroot環境にマウントできる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% cowbuilder --login --save --bindmount /home/hoge/dir --basepath /var/cache/pbuilder/base_wheezy_amd64.cow
+</pre></div>
+</div>
+<p>ほかにもいろいろオプションがあるのでcowbuilder(8)を眺めてみるといい。</p>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/cowbuilder.html">cowbuilder</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/chroot.html">chroot</a>, <a href="tags/cowbuilder.html">cowbuilder</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>September 10, 2013</span>
         </div>
         <h1><a href="2013/09/10/debian_wheezy_chroot_aufs.html">aufsを使ったchroot環境</a></h1>
@@ -237,184 +294,6 @@ Group: E-mail server
                 Tags:
                 <a href="tags/centos.html">centos</a>, <a href="tags/chroot.html">chroot</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>September 08, 2013</span>
-        </div>
-        <h1><a href="2013/09/08/gentoo_install_script.html">Gentoo Linux インストールスクリプト</a></h1>
-<ul class="simple"><li>「そして私はOpenOfficeのビルドを諦めた」</li>
-<li>「俺たちはなにと戦っているのだ...」</li>
-</ul><p>などの名言で知られる(私調べ)Gentoo Linuxのインストールスクリプトを書いてみた。</p>
-<ul class="simple"><li>「Gentoo LiveCD」を使わなくてもGentooはインストール出来るよ</li>
-<li>Gentooインストールまでの各種コマンドを間違いなく打ち込む自身がないよ</li>
-<li>Gentoo怖くないよ</li>
-</ul><p>などが今回のモチベーションである。</p>
-<p>「<a class="reference internal" href="2013/09/07/debian_wheezy_pxeboot.html"><em>シェルスクリプトでDebian wheezyのインストール自動化</em></a>」で構築した環境にスクリプトを配置する。</p>
-<p>その他に、<a class="reference external" href="http://www.gentoo.org/main/en/where.xml">stage3</a>,<a class="reference external" href="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots">portage</a>, カーネルのコンフィグファイルをスクリプトのあるディレクトリに用意しておく。</p>
-<p>実機,仮想環境(KVM)ともに動作することは確認した。Gentooを複数台セットアップする予定はいまのところない。</p>
-<div class="highlight-python"><div class="highlight"><pre>% cp /boot/config-* /var/scripts
-% cd /var/scripts
-% wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-20130830.tar.bz2
-% wget http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/current-stage3/stage3-amd64-20131010.tar.bz2
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /var/scripts/gentoo_install.conf</span>
-</pre></div>
-</div>
-<div class="highlight-bash"><div class="highlight"><pre><span class="c">#!/bin/bash -x</span>
-
-<span class="c"># 01:23:45:67:89:ab</span>
-
-<span class="nv">DATETIME</span><span class="o">=</span><span class="sb">`</span>date +<span class="s2">"%m%d%H%M%Y"</span><span class="sb">`</span>
-
-<span class="nv">DISK</span><span class="o">=</span><span class="s2">"/dev/vda"</span>
-<span class="nv">IFACE</span><span class="o">=</span><span class="nv">$1</span>
-<span class="nv">CWD</span><span class="o">=</span><span class="nv">$2</span>
-<span class="nv">CHROOT_GENTOO</span><span class="o">=</span><span class="s2">"/mnt/$3"</span>
-
-dd <span class="k">if</span><span class="o">=</span>/dev/zero <span class="nv">of</span><span class="o">=</span><span class="nv">$DISK</span> <span class="nv">bs</span><span class="o">=</span>1024 <span class="nv">count</span><span class="o">=</span>1
-
-parted <span class="nv">$DISK</span> -s <span class="s1">'mklabel msdos'</span>
-parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 1 500'</span>
-parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart primary 501 35000'</span>
-parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart extended 35001 -0'</span>
-parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 35001 38000'</span>
-parted <span class="nv">$DISK</span> -s <span class="s1">'mkpart logical 38001 -0'</span>
-parted <span class="nv">$DISK</span> -s <span class="s1">'set 1 boot on'</span>
-
-mkswap <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
-swapon <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>5
-mkfs.ext2 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1
-mkfs.ext3 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2
-mkfs.ext3 <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6
-
-mkdir <span class="nv">$CHROOT_GENTOO</span>
-
-mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>2 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
-
-tar xvjf <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/stage3-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>
-tar xvjf <span class="k">${</span><span class="nv">CWD</span><span class="k">}</span>/portage-*.tar.bz2 -C <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/usr
-
-mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>1 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/boot
-mount <span class="k">${</span><span class="nv">DISK</span><span class="k">}</span>6 <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/home
-
-mount --rbind /dev <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/dev
-mount -t proc none <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/proc
-mount --rbind /sys <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/sys
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/hostname</span>
-<span class="s">HOSTNAME="gentoo.localnet"</span>
-<span class="s">EOF</span>
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/hwclock</span>
-<span class="s">clock="local"</span>
-<span class="s">EOF</span>
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/keymaps</span>
-<span class="s">KEYMAP="us"</span>
-<span class="s">EOF</span>
-
-cp -L /etc/resolv.conf <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/etc
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/conf.d/net</span>
-<span class="s">config_${IFACE}="192.168.2.251/24"</span>
-<span class="s">routes_${IFACE}="default via 192.168.2.254"</span>
-<span class="s">EOF</span>
-
-<span class="nb">cd</span> <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/etc/init.d
-ln -s net.lo net.<span class="k">${</span><span class="nv">IFACE</span><span class="k">}</span>
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/etc/fstab</span>
-<span class="s">${DISK}1               /boot           ext2            defaults        0 2</span>
-<span class="s">${DISK}2               /               ext3            defaults        0 1</span>
-<span class="s">${DISK}6               /home           ext3            defaults        0 2</span>
-<span class="s">${DISK}5               none            swap            sw              0 0</span>
-<span class="s">EOF</span>
-
-cat <span class="s">&lt;&lt; EOF &gt;&gt; ${CHROOT_GENTOO}/etc/portage/make.conf</span>
-<span class="s">SYNC="rsync://ftp.jaist.ac.jp/pub/Linux/Gentoo"</span>
-<span class="s">GENTOO_MIRRORS="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ ftp://ftp.iij.ad.jp/pub/linux/gentoo/"</span>
-<span class="s">EOF</span>
-
-cp /var/scripts/config-* <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/root
-
-cat <span class="s">&lt;&lt; EOF &gt; ${CHROOT_GENTOO}/tmp/gentoo_setup.sh</span>
-<span class="s">env-update</span>
-<span class="s">source /etc/profile</span>
-
-<span class="s">export CONFIG_PROTECT_MASK="/etc"</span>
-
-<span class="s">cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime</span>
-<span class="s">echo "Asia/Tokyo" &gt; /etc/timezone</span>
-<span class="s">date $DATETIME</span>
-
-<span class="s">echo "ja_JP.UTF-8 UTF-8" &gt;&gt; /etc/locale.gen</span>
-<span class="s">locale-gen</span>
-
-<span class="s">emerge-webrsync</span>
-
-<span class="s">emerge rsyslog vixie-cron</span>
-<span class="s">rc-update add vixie-cron default</span>
-<span class="s">rc-update add rsyslog default</span>
-<span class="s">rc-update add sshd default</span>
-<span class="s">rc-update add net.${IFACE} default</span>
-
-<span class="s">emerge vim gentoo-sources</span>
-
-<span class="s">cd /usr/src/linux</span>
-<span class="s">cat &lt;(egrep '(EXT2|EXT3|VIRTIO)' /root/config-* | sed 's/=m/=y/g') &lt;(egrep -v '(EXT2|EXT3|VIRTIO)' /root/config-*) &gt; .config</span>
-
-<span class="s">echo n | make oldconfig</span>
-<span class="s">make</span>
-<span class="s">make modules_install</span>
-<span class="s">make install</span>
-
-<span class="s">emerge --autounmask-write grub:2</span>
-<span class="s">emerge grub:2</span>
-<span class="s">mkdir /boot/grub</span>
-<span class="s">grub2-mkconfig -o /boot/grub/grub.cfg</span>
-<span class="s">grub2-install --no-floppy --root-directory=/ $DISK</span>
-
-<span class="s">grep -v rootfs /proc/mounts &gt; /etc/mtab</span>
-<span class="s">EOF</span>
-
-
-cat <span class="s">&lt;&lt; 'EOF' &gt; ${CHROOT_DEBIAN}/tmp/user_acount.sh</span>
-<span class="s">useradd -m -G wheel nanashi</span>
-<span class="s">printf 'nanashi:$6$oHUVG9WPkdiCoxCP$XsnO5TmowzdGWNkZHv9pPUmFqgsEojkfzUa1OQj2zUOWAChL5cdGkm.dhseF0z5Tz30IEDrxNzOcsflPUgHDs.' | chpasswd -e</span>
-<span class="s">printf 'root:$6$wAeDl/exZFEDC0Sl$UdvTamL.94EcWFcGIAYJSgsvzaFxSd.ZLRMkD.KI27L6jxUGsWqOdEJs6if0rTG/XuEfQ9TNzHbjI99YfxPLD1' | chpasswd -e</span>
-<span class="s">EOF</span>
-
-chroot <span class="nv">$CHROOT_GENTOO</span> /bin/bash /tmp/gentoo_setup.sh
-chroot <span class="nv">$CHROOT_GENTOO</span> /bin/bash /tmp/user_acount.sh
-
-rm <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/tmp/gentoo_setup.sh
-rm <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/tmp/user_acount.sh
-
-<span class="nb">cd</span> /
-umount -l <span class="k">${</span><span class="nv">CHROOT_GENTOO</span><span class="k">}</span>/<span class="o">{</span>boot,home,proc,dev,sys<span class="o">}</span>
-umount -l <span class="nv">$CHROOT_GENTOO</span>
-sleep 2
-rmdir <span class="nv">$CHROOT_GENTOO</span>
-reboot
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://d.hatena.ne.jp/meech/20120221/1329839829">http://d.hatena.ne.jp/meech/20120221/1329839829</a></li>
-<li><a class="reference external" href="http://www.gentoo.org/doc/ja/handbook/handbook-amd64.xml?full=1">http://www.gentoo.org/doc/ja/handbook/handbook-amd64.xml?full=1</a></li>
-</ul>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/gentoo.html">gentoo</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/gentoo.html">gentoo</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -423,6 +302,8 @@ reboot
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/29/centos_65_td_agent_out_s3.html">td-agent で S3 にログを送る</a>
+        </li><li>
             <a href="2014/06/28/debian_wheezy_apt_cacher_ng.html">apt-cacher-ng でapt用のキャッシュプロキシを構築する</a>
         </li><li>
             <a href="2014/06/27/centos_65_clamav.html">CentOS 6.5 で ClamAV を使ってみた</a>
@@ -440,15 +321,13 @@ reboot
             <a href="2014/06/21/debian_wheezy_wpasupplicant.html">Debian wheezy で wpasupplicant を使う</a>
         </li><li>
             <a href="2014/06/20/centos_65_munin_node_plugin_enable.html">Munin node のプラグイン有効化</a>
-        </li><li>
-            <a href="2014/06/19/centos_65_munin_node_setup.html">Munin 監視対象nodeの追加</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/centos.html">centos</a> (15), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (1), <a href="tags/centos.html">centos</a> (16), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
