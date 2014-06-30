@@ -5,8 +5,38 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Mon, 30 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Tue, 01 Jul 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/07/01/centos_65_jenkins_install.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/07/01/centos_65_jenkins_install.html</guid>
+            <title><![CDATA[CentOS 6.5 に Jenkins インストール]]></title>
+            <description><![CDATA[<h1>CentOS 6.5 に Jenkins インストール</h1>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
+% rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install java-1.7.0-openjdk
+% yum install jenkins
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service jenkins start
+</pre></div>
+</div>
+<p>起動スクリプトの/etc/init.d/jenkinsを眺めてみたら、/etc/sysconfig/jenkinsにJenkinsの設定が書かれていた。</p>
+<ul class="simple"><li><a class="reference external" href="http://pkg.jenkins-ci.org/redhat">http://pkg.jenkins-ci.org/redhat/</a></li>
+</ul>]]></description>
+            <category><![CDATA[ jenkins ]]></category>
+             <pubDate>Tue, 01 Jul 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/30/centos_65_fluentd_plugin.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/30/centos_65_fluentd_plugin.html</guid>
@@ -14,6 +44,13 @@
             <description><![CDATA[<h1>td-agent で外部プラグインを使ってみる</h1>
 <ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/06/29/centos_65_td_agent_out_s3.html"><em>td-agent で S3 にログを送る</em></a></li>
 </ul><p>fluentdに組込まれているプラグインを標準プラグイン、それ以外を外部プラグイン呼ぶことにする。今回は、いくつかの外部プラグインを使ってみる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
 <div class="section" id="fluent-plugin-forest">
 <h2>fluent-plugin-forest</h2>
 <p>標準プラグインだではタグごとにmatchを書かなければならないが、これを使うと冗長な記述をテンプレートとしてまとめることができる。tagというプレースホルダを使えるようになる。</p>

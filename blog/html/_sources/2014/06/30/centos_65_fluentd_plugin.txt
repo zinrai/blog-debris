@@ -13,6 +13,14 @@ td-agent で外部プラグインを使ってみる
 fluentdに組込まれているプラグインを標準プラグイン、それ以外を外部プラグイン呼ぶことにする。
 今回は、いくつかの外部プラグインを使ってみる。
 
+::
+
+  $ uname -srv
+  Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
+
+  $ cat /etc/redhat-release
+  CentOS release 6.5 (Final)
+
 fluent-plugin-forest
 ----------------------------------------
 
