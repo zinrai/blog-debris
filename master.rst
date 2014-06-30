@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/06/30/centos_65_fluentd_plugin
    2014/06/29/centos_65_td_agent_out_s3
    2014/06/28/debian_wheezy_apt_cacher_ng
    2014/06/27/centos_65_clamav

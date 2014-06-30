@@ -86,6 +86,145 @@
             <li class="left"> &laquo; <a href="page11.html">Newer</a></li>
             <li class="right"><a href="page13.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>March 20, 2014</span>
+        </div>
+        <h1><a href="2014/03/20/debian_wheezy_virtualbox_vagrant.html">Debian wheezyでVagrantを使てみた</a></h1>
+<p>巷で人気のVagrantで</p>
+<ul class="simple"><li>BOXの追加</li>
+<li>仮想マシンの起動</li>
+<li>プラグインのインストール</li>
+<li>インストールしたプラグインの使用</li>
+</ul><p>までやってみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -a
+Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.54-2 x86_64 GNU/Linux
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.4 (wheezy)
+Release:        7.4
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="section" id="virtualbox">
+<h2>Virtualbox</h2>
+<div class="section" id="id1">
+<h3>インストール</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ wget http://download.virtualbox.org/virtualbox/4.3.8/virtualbox-4.3_4.3.8-92456~Debian~wheezy_amd64.deb
+% dpkg -i virtualbox*.deb
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="vagrant">
+<h2>Vagrant</h2>
+<div class="section" id="id2">
+<h3>インストール</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.5.1_x86_64.deb
+% dpkg -i vagrant*.deb
+</pre></div>
+</div>
+</div>
+<div class="section" id="box">
+<h3>BOXの追加</h3>
+<p>今回はopscodeが公開しているBOXを使う。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ wget http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_centos-6.4_chef-provisionerless.box
+
+$ vagrant box add opscode_centos-6.4 opscode_centos-6.4_chef-provisionerless.box
+$ vagrant box list
+opscode_centos-6.4 (virtualbox)
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h3>仮想マシンの起動</h3>
+<div class="highlight-python"><div class="highlight"><pre>$ vi Vagrantfile
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.hostname = "test"
+  config.vm.box = "opscode_centos-6.4"
+
+  config.vm.network :private_network, ip: "192.168.11.11"
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
+  end
+end
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant up
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="sahara">
+<h2>sahara</h2>
+<p>Vagrantで管理されている仮想マシンのある時点の状態を保存しておきロールバックしたりすることができるプラグイン</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant plugin install sahara
+$ vagrant plugin list
+sahara (0.0.16)
+</pre></div>
+</div>
+<p>インストールするとVagrantにサブコマンドsandboxが追加される。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant sandbox -h
+Usage: vagrant plugin &lt;command&gt; [&lt;args&gt;]
+
+Available subcommands:
+     commit
+     off
+     on
+     rollback
+     status
+</pre></div>
+</div>
+<table border="1" class="docutils"><colgroup><col width="13%"/><col width="88%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>commit</td>
+<td>保存されて状態以降の変更を保存する。</td>
+</tr><tr class="row-even"><td>off</td>
+<td>sandboxをoffにする。保存されちている状態以降の変更は保存される。</td>
+</tr><tr class="row-odd"><td>on</td>
+<td>onにした時点の仮想マシンの状態が保存される。</td>
+</tr><tr class="row-even"><td>rollback</td>
+<td>最後に保存した時点までロールバックする。</td>
+</tr><tr class="row-odd"><td>status</td>
+<td>sandbox状態かの確認</td>
+</tr></tbody></table><div class="highlight-python"><div class="highlight"><pre>$ vagrant status
+Current machine states:
+
+default                   running (virtualbox)
+
+$ vagrant sandbox status
+[default] Sandbox mode is off
+
+$ vagrant sandbox commit
+$ vagrant sandbox off
+$ vagrant sandbox on
+$ vagrant sandbox rollback
+</pre></div>
+</div>
+<p>sandboxをonにしてVagrantで管理している仮想マシンにアクセスして変更を加えたあとrollbackすると仮想マシンがon時の状態に戻る。</p>
+<ul class="simple"><li><a class="reference external" href="http://www.vagrantup.com">http://www.vagrantup.com/</a></li>
+<li><a class="reference external" href="http://opscode.github.io/bento">http://opscode.github.io/bento/</a></li>
+<li><a class="reference external" href="https://github.com/jedi4ever/sahara">https://github.com/jedi4ever/sahara</a></li>
+<li><a class="reference external" href="https://www.virtualbox.org/wiki/Linux_Downloads">https://www.virtualbox.org/wiki/Linux_Downloads</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/vagrant.html">vagrant</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/deiban.html">deiban</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/vagrant.html">vagrant</a>, <a href="tags/virtualbox.html">virtualbox</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>February 26, 2014</span>
         </div>
         <h1><a href="2014/02/26/debian_wheezy_schroot_aufs.html">schrootでaufsを使う</a></h1>
@@ -199,130 +338,6 @@ end
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/synergy.html">synergy</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>February 07, 2014</span>
-        </div>
-        <h1><a href="2014/02/07/debian_wheezy_openvpn.html">OpenVPN サーバ構築</a></h1>
-<div class="highlight-python"><div class="highlight"><pre>$ uname -a
-Linux hoge 3.2.0-4-amd64 #1 SMP Debian 3.2.51-1 x86_64 GNU/Linux
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.3 (wheezy)
-Release:        7.3
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% sysctl -p
-net.ipv4.ip_forward = 1
-</pre></div>
-</div>
-<div class="section" id="id1">
-<h2>サーバ</h2>
-<p>ルーティングモードとブリッジモードがあり、今回はブリッジモードで動かす。</p>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install openvpn openssl bridge-utils
-
-% openvpn --version
-OpenVPN 2.2.1 x86_64-linux-gnu [SSL] [LZO2] [EPOLL] [PKCS11] [eurephia] [MH] [PF_INET6] [IPv6 payload 20110424-2 (2.2RC2)] built on Jun 18 2013
-Originally developed by James Yonan
-Copyright (C) 2002-2010 OpenVPN Technologies, Inc. &lt;sales@openvpn.net&gt;
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% cp -r /usr/share/doc/openvpn/examples/easy-rsa /etc/openvpn
-% cd /etc/openvpn/easy-rsa/2.0
-% . ./vars
-% ./build-ca
-% ./build-key-server server &lt;- サーバ用の証明書
-% ./build-dh
-
-% ./build-key client01 &lt;- クライアント用の証明書
-
-% cd keys
-% cp ca.crt server.crt server.key dh1024.pem /etc/openvpn
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/openvpn/openvpn.conf
-port 1194
-proto tcp
-dev tap0
-ca ca.crt
-cert server.crt
-key server.key
-dh dh1024.pem
-server-bridge 192.168.2.1 255.255.255.0 192.168.2.250 192.168.2.253
-push "route 192.168.2.0 255.255.255.0"
-duplicate-cn
-keepalive 10 120
-comp-lzo
-persist-key
-persist-tun
-status openvpn-status.log
-verb 4
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/network/interfaces
-auto lo
-iface lo inet loopback
-
-auto br0
-iface br0 inet static
-address 192.168.2.1
-netmask 255.255.255.0
-gateway 192.168.2.254
-bridge_ports eth0
-up openvpn --mktun --dev tap0
-up ifconfig tap0 up
-up brctl addif br0 tap0
-down brctl delif br0 tap0
-down ifconfig tap0 down
-down openvpn --rmtun --dev tap0
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% update-rc.d openvpn defaults
-</pre></div>
-</div>
-</div>
-<div class="section" id="id2">
-<h2>クライアント</h2>
-<p>サーバ側で生成したクライアント用の証明書をクライアントPCにもってくる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install openvpn openssl
-
-% vi /etc/openvpn/client.conf
-client
-dev tap
-proto tcp
-remote 10.0.0.1 1194
-resolv-retry infinite
-nobind
-persist-key
-persist-tun
-ca ca.crt
-cert client01.crt
-key client01.key
-ns-cert-type server
-comp-lzo
-verb 3
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#RoutedOrBridged">http://www.openvpn.jp/document/how-to/#RoutedOrBridged</a></li>
-<li><a class="reference external" href="http://www.openvpn.jp/document/how-to/debian_wheezy_openvpn.html#CertificateAuthority">http://www.openvpn.jp/document/how-to/#CertificateAuthority</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/openvpn.html">openvpn</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/openvpn.html">openvpn</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -331,6 +346,8 @@ verb 3
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/06/30/centos_65_fluentd_plugin.html">td-agent で外部プラグインを使ってみる</a>
+        </li><li>
             <a href="2014/06/29/centos_65_td_agent_out_s3.html">td-agent で S3 にログを送る</a>
         </li><li>
             <a href="2014/06/28/debian_wheezy_apt_cacher_ng.html">apt-cacher-ng でapt用のキャッシュプロキシを構築する</a>
@@ -348,15 +365,13 @@ verb 3
             <a href="2014/06/22/debian_wheezy_qemu_img_create_rebase.html">qemu-img の使い方</a>
         </li><li>
             <a href="2014/06/21/debian_wheezy_wpasupplicant.html">Debian wheezy で wpasupplicant を使う</a>
-        </li><li>
-            <a href="2014/06/20/centos_65_munin_node_plugin_enable.html">Munin node のプラグイン有効化</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (1)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (1)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (1), <a href="tags/centos.html">centos</a> (16), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (1), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (1), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (17), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (2), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

@@ -5,10 +5,10 @@ td-agent で S3 にログを送る
 
 .. author:: default
 .. categories:: td-agent
-.. tags:: centos, td-agent, s3, aws
+.. tags:: centos, td-agent, fluentd, s3, aws
 .. comments::
 
-td-agentを使って、/var/log/secureをS3に投げてみる。
+td-agent(fluentd)を使って、/var/log/secureをS3に投げてみる。
 今回は標準のプラグインのみを使用する。
 
 ::

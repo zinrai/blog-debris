@@ -5,14 +5,77 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Sun, 29 Jun 2014 00:00:00 +0900</pubDate>
+        <pubDate>Mon, 30 Jun 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/06/30/centos_65_fluentd_plugin.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/06/30/centos_65_fluentd_plugin.html</guid>
+            <title><![CDATA[td-agent で外部プラグインを使ってみる]]></title>
+            <description><![CDATA[<h1>td-agent で外部プラグインを使ってみる</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/06/29/centos_65_td_agent_out_s3.html"><em>td-agent で S3 にログを送る</em></a></li>
+</ul><p>fluentdに組込まれているプラグインを標準プラグイン、それ以外を外部プラグイン呼ぶことにする。今回は、いくつかの外部プラグインを使ってみる。</p>
+<div class="section" id="fluent-plugin-forest">
+<h2>fluent-plugin-forest</h2>
+<p>標準プラグインだではタグごとにmatchを書かなければならないが、これを使うと冗長な記述をテンプレートとしてまとめることができる。tagというプレースホルダを使えるようになる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-forest
+</pre></div>
+</div>
+</div>
+<div class="section" id="fluent-plugin-config-expander">
+<h2>fluent-plugin-config-expander</h2>
+<p>for文が書けたり、hostnameというプレースホルダを使用できる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-config-expander
+</pre></div>
+</div>
+<p>上記のプラグインを使った場合の設定はこんな感じ</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/td-agent/td-agent.conf
+&lt;source&gt;
+  type config_expander
+  &lt;config&gt;
+    type tail
+    path /var/log/secure
+    pos_file /var/log/td-agent/secure.pos
+    tag ${hostname}/syslog.secure
+    format none
+  &lt;/config&gt;
+&lt;/source&gt;
+
+&lt;match *.**&gt;
+  type forest
+  subtype s3
+
+  &lt;template&gt;
+    aws_key_id AWS_KEY_ID
+    aws_sec_key AWS_SEC_KEY
+    s3_bucket BUCKET_NAME
+    s3_endpoint s3-ap-northeast-1.amazonaws.com
+    path ${tag}/%Y/%m/%d/
+    buffer_path /var/log/td-agent/s3
+
+    time_slice_format %Y-%m-%d-%H-%M-%S
+    time_slice_wait 5m
+    utc
+
+    buffer_chunk_limit 256m
+  &lt;/template&gt;
+&lt;/match&gt;
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="https://github.com/tagomoris/fluent-plugin-forest">https://github.com/tagomoris/fluent-plugin-forest</a></li>
+<li><a class="reference external" href="http://d.hatena.ne.jp/tagomoris/20120410/1334040981">http://d.hatena.ne.jp/tagomoris/20120410/1334040981</a></li>
+<li><a class="reference external" href="https://github.com/tagomoris/fluent-plugin-config-expander">https://github.com/tagomoris/fluent-plugin-config-expander</a></li>
+<li><a class="reference external" href="http://d.hatena.ne.jp/tagomoris/20120802/1343891922">http://d.hatena.ne.jp/tagomoris/20120802/1343891922</a></li>
+</ul></div>]]></description>
+            <category><![CDATA[ td-agent ]]></category>
+             <pubDate>Mon, 30 Jun 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/06/29/centos_65_td_agent_out_s3.html</link>
             <guid>http://127.0.0.1/blog/html/2014/06/29/centos_65_td_agent_out_s3.html</guid>
             <title><![CDATA[td-agent で S3 にログを送る]]></title>
             <description><![CDATA[<h1>td-agent で S3 にログを送る</h1>
-<p>td-agentを使って、/var/log/secureをS3に投げてみる。今回は標準のプラグインのみを使用する。</p>
+<p>td-agent(fluentd)を使って、/var/log/secureをS3に投げてみる。今回は標準のプラグインのみを使用する。</p>
 <div class="highlight-python"><div class="highlight"><pre>$ uname -srv
 Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
 
