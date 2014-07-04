@@ -86,6 +86,94 @@
             <li class="left"> &laquo; <a href="page16.html">Newer</a></li>
             <li class="right"><a href="page18.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>October 24, 2013</span>
+        </div>
+        <h1><a href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a></h1>
+<p>Proxy DHCPを使ってDHCPサーバとネットワークブートサーバを切り離し、ディスクレスブート環境を構築してみる。</p>
+<p>DHCPサーバ,Proxy DHCPともにdnsmasq、OSはDebian wheezyを使用する。</p>
+<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
+No LSB modules are available.
+Distributor ID: Debian
+Description:    Debian GNU/Linux 7.2 (wheezy)
+Release:        7.2
+Codename:       wheezy
+</pre></div>
+</div>
+<div class="section" id="dhcp">
+<h2>DHCPサーバ</h2>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install dnsmasq
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/dnsmasq.d/dhcp.conf
+dhcp-range=192.168.2.230,192.168.2.253,2h
+dhcp-option=3,192.168.2.254
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service dnsmasq restart
+</pre></div>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>Proxy DHCP</h2>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install dnsmasq
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/dnsmasq.d/pxe.conf
+dhcp-range=192.168.2.0,proxy
+pxe-service=x86PC, "os install", pxelinux
+enable-tftp
+tftp-root=/var/diskless
+</pre></div>
+</div>
+</div>
+<div class="section" id="diskless-boot">
+<h2>Diskless Boot</h2>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install syslinux nfs-kernel-server debootstrap
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian
+% chroot /var/diskless/Wheezy passwd root
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
+/var/diskless/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% mkdir /var/diskless
+% cp /usr/lib/syslinux/menu.c32 /var/diskless
+% cp /usr/lib/syslinux/pxelinux.0 /var/diskless
+% cp /boot/initrd* /var/diskless
+% cp /boot/vmlinuz* /var/diskless
+% mkdir /var/diskless/pxelinux.cfg
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/diskless/pxelinux.cfg/default
+default menu.c32
+label Debian Wheezy
+kernel vmlinuz-3.2.0-4-amd64
+append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service dnsmasq restart
+% service nfs-kernel-server restart
+</pre></div>
+</div>
+</div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/dnsmasq.html">dnsmasq</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/dnsmasq.html">dnsmasq</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>October 22, 2013</span>
         </div>
         <h1><a href="2013/10/22/debian_wheezy_openvswitch_bridge.html">Open vSwitchを使ってみる</a></h1>
@@ -308,181 +396,6 @@ uwsgi                            RUNNING    pid 58014, uptime 0:15:23
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/supervisor.html">supervisor</a>, <a href="tags/uwsgi.html">uwsgi</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>October 02, 2013</span>
-        </div>
-        <h1><a href="2013/10/02/xdm_setting.html">XDM 設定</a></h1>
-<p>XDMのログイン画面はデフォルトだと寂しいので、ログイン毎に背景画像が代わるようにしている。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.1 (wheezy)
-Release:        7.1
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% cd /etc/X11/xdm
-% cp xdm-config xdm-config.bak
-% cp Xsetup Xsetup_0
-% cp Xresources Xresources_0
-</pre></div>
-</div>
-<div class="section" id="xdm-config">
-<h2>xdm-config</h2>
-<div class="highlight-python"><div class="highlight"><pre>% diff -u xdm-config xdm-config.bak
---- xdm-config  2013-10-03 00:28:33.000000000 +0900
-+++ xdm-config.bak      2013-10-02 23:18:35.000000000 +0900
-@@ -15,7 +15,7 @@
- DisplayManager.keyFile:                /etc/X11/xdm/xdm-keys
- DisplayManager.servers:                /etc/X11/xdm/Xservers
- DisplayManager.accessFile:     /etc/X11/xdm/Xaccess
--DisplayManager*resources:      /etc/X11/xdm/Xresources_0
-+DisplayManager*resources:      /etc/X11/xdm/Xresources
- DisplayManager.willing:                su nobody -s /bin/sh -c /etc/X11/xdm/Xwilling
- ! All displays should use authorization, but we cannot be sure
- ! X terminals will be configured to support it, so those that do not will
-@@ -25,7 +25,7 @@
- DisplayManager*chooser:                /usr/lib/X11/xdm/chooser
- DisplayManager*startup:                /etc/X11/xdm/Xstartup
- DisplayManager*session:                /etc/X11/xdm/Xsession
--DisplayManager*setup:          /etc/X11/xdm/Xsetup_0
-+DisplayManager*setup:          /etc/X11/xdm/Xsetup
- DisplayManager*reset:          /etc/X11/xdm/Xreset
- DisplayManager*authComplain:   true
-</pre></div>
-</div>
-</div>
-<div class="section" id="xsetup-0">
-<h2>Xsetup_0</h2>
-<p>このファイルに指定したディレクトリにある画像をランダムに背景画像にするスクリプトを書く。</p>
-<p>指定した範囲の値から一つ取り出す処理にathena-jot(1)、背景画像の設定にはxsetbg(1x)を使った。</p>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install athena-jot xloadimage
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/X11/xdm/Xsetup_0
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>#!/bin/sh
-#
-# This script is run as root before showing login widget.
-
-#xsetroot -solid rgb:8/8/8
-
-IMGDIR=/home/hoge/gazo
-
-IMG_COUNT=`ls $IMGDIR | wc -l`
-LINE_NUM=`jot -r 1 1 $IMG_COUNT`
-
-IMG=`ls $IMGDIR | awk 'NR == '$LINE_NUM' { print $1 }'`
-
-if [ -x /usr/bin/xsetbg ]; then
-  /usr/bin/xsetbg -fullscreen $IMGDIR/$IMG
-fi
-</pre></div>
-</div>
-</div>
-<div class="section" id="xresources-0">
-<h2>Xresources_0</h2>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/X11/xdm/Xresources_0
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>--- Xresources        2011-10-23 01:48:34.000000000 +0900
-+++ Xresources_0      2013-10-03 01:50:27.000000000 +0900
-@@ -15,34 +15,35 @@
-  Ctrl&lt;Key&gt;Return: set-session-argument(failsafe) finish-field()\n\
-  &lt;Key&gt;Return: set-session-argument() finish-field()
-
--xlogin*greeting: Welcome to CLIENTHOST
--xlogin*namePrompt: \040\040\040\040\040\040\040Login:
-+xlogin*greeting: Hello World
-+xlogin*namePrompt: Login:
- xlogin*fail: Login incorrect or forbidden by policy
-
- #if WIDTH &gt; 800
--xlogin*greetFont: -adobe-helvetica-bold-o-normal--24-240-75-75-p-138-iso8859-1
--xlogin*font: -adobe-helvetica-medium-r-normal--18-180-75-75-p-98-iso8859-1
--xlogin*promptFont: -adobe-helvetica-bold-r-normal--18-180-75-75-p-103-iso8859-1
--xlogin*failFont: -adobe-helvetica-bold-r-normal--18-180-75-75-p-103-iso8859-1
--xlogin*greetFace:    Serif-24:bold:italic
--xlogin*face:                 Helvetica-18
--xlogin*promptFace:   Helvetica-18:bold
--xlogin*failFace:     Helvetica-18:bold
-+xlogin*greetFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*font: -adobe-helvetica-medium-r-normal--10-100-75-75-p-56-iso8859-1
-+xlogin*promptFont: -adobe-helvetica-bold-r-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*failFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*greetFace:       Serif-8:bold:italic
-+xlogin*face:            Helvetica-8
-+xlogin*promptFace:      Helvetica-8:bold
-+xlogin*failFace:        Helvetica-8:bold
- #else
--xlogin*greetFont: -adobe-helvetica-bold-o-normal--17-120-100-100-p-92-iso8859-1
--xlogin*font: -adobe-helvetica-medium-r-normal--12-120-75-75-p-67-iso8859-1
--xlogin*promptFont: -adobe-helvetica-bold-r-normal--12-120-75-75-p-70-iso8859-1
--xlogin*failFont: -adobe-helvetica-bold-o-normal--14-140-75-75-p-82-iso8859-1
--xlogin*greetFace:    Serif-18:bold:italic
--xlogin*face:         Helvetica-12
--xlogin*promptFace:   Helvetica-12:bold
--xlogin*failFace:     Helvetica-14:bold
-+xlogin*greetFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*font: -adobe-helvetica-medium-r-normal--10-100-75-75-p-56-iso8859-1
-+xlogin*promptFont: -adobe-helvetica-bold-r-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*failFont: -adobe-helvetica-bold-o-normal--10-100-75-75-p-60-iso8859-1
-+xlogin*greetFace:       Serif-8:bold:italic
-+xlogin*face:            Helvetica-8
-+xlogin*promptFace:      Helvetica-8:bold
-+xlogin*failFace:        Helvetica-8:bold
- #endif
-
- #ifdef COLOR
--xlogin*borderWidth: 1
--xlogin*frameWidth: 5
--xlogin*innerFramesWidth: 2
-+xlogin*geometry: 180x120-0-0
-+!xlogin*borderWidth: 1
-+!xlogin*frameWidth: 5
-+!xlogin*innerFramesWidth: 2
- xlogin*shdColor: grey30
- xlogin*hiColor: grey90
- xlogin*background: grey
-@@ -59,13 +60,13 @@
- xlogin*hiColor: black
- #endif
-
--#if PLANES &gt;= 8
--xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debian.xpm
--#else
--xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debianbw.xpm
--#endif
--xlogin*useShape: true
--xlogin*logoPadding: 10
-+!#if PLANES &gt;= 8
-+!xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debian.xpm
-+!#else
-+!xlogin*logoFileName: /usr/share/X11/xdm/pixmaps/debianbw.xpm
-+!#endif
-+!xlogin*useShape: true
-+!xlogin*logoPadding: 10
-
-
- XConsole.text.geometry:      480x130
-</pre></div>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/xdm.html">xdm</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/xdm.html">xdm</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -491,6 +404,8 @@ fi
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a>
+        </li><li>
             <a href="2014/07/01/centos_65_jenkins_install.html">CentOS 6.5 に Jenkins インストール</a>
         </li><li>
             <a href="2014/06/30/centos_65_fluentd_plugin.html">td-agent で外部プラグインを使ってみる</a>
@@ -508,15 +423,13 @@ fi
             <a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
         </li><li>
             <a href="2014/06/23/debian_wheezy_qemu_nbd.html">qemu-nbd を使ってディスクイメージをマウントする</a>
-        </li><li>
-            <a href="2014/06/22/debian_wheezy_qemu_img_create_rebase.html">qemu-img の使い方</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (32), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (26), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

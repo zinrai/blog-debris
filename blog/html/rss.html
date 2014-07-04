@@ -5,8 +5,121 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Tue, 01 Jul 2014 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 04 Jul 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/07/04/debian_wheezy_vagrant_digital_ocean.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/07/04/debian_wheezy_vagrant_digital_ocean.html</guid>
+            <title><![CDATA[Vagrant で DigitalOcean を操作する]]></title>
+            <description><![CDATA[<h1>Vagrant で DigitalOcean を操作する</h1>
+<p>グローバルIPを持ったサーバが必要になったので、DigitalOcean(VPS)を使ってみた。APIが整備されていて、Vagrantで操作できるプラグインもあり簡単にサーバを作ったり消したりできてとても便利</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2
+
+$ cat /etc/debian_version
+7.5
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant version
+Installed Version: 1.6.3
+Latest Version: 1.6.3
+</pre></div>
+</div>
+<div class="section" id="id1">
+<h2>vagrant-digitalocean</h2>
+<p>dotenvを使いapi_keyなどをVagrantfileにベタ書きしないようにする。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant plugin install vagrant-digitalocean
+$ vagrant plugin install dotenv
+
+$ vagrant plugin list
+dotenv (0.11.1)
+vagrant-digitalocean (0.5.5)
+</pre></div>
+</div>
+</div>
+<div class="section" id="vagrantfile">
+<h2>Vagrantfile</h2>
+<div class="highlight-python"><div class="highlight"><pre># -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Dotenv.load
+
+# change default provider to digital_ocean
+ENV['VAGRANT_DEFAULT_PROVIDER'] = "digital_ocean"
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.provider :digital_ocean do |provider, override|
+    override.vm.hostname          = "debian-wheezy-64"
+    override.vm.box               = "digital_ocean"
+    override.vm.box_url           = "https://github.com/smdahlen/vagrant-digitalocean/raw/master/box/digital_ocean.box"
+    override.ssh.username         = ENV['DO_SSH_USERNAME']
+    override.ssh.private_key_path = ENV['DO_SSH_KEY']
+    # disable synced_folder: rsync is not installed on DigitalOcean's guest machine
+    override.vm.synced_folder "./", "/vagrant", disabled: true
+
+    provider.client_id            = ENV['DO_CLIENT_ID']
+    provider.api_key              = ENV['DO_API_KEY']
+    provider.region               = "Singapore 1"
+    provider.image                = "Debian 7.0 x64"
+    provider.size                 = "512MB"
+    provider.private_networking   = true
+    provider.setup                = true
+
+    # provision
+    # Do whatever you wanna do !!
+  end
+
+end
+</pre></div>
+</div>
+</div>
+<div class="section" id="env">
+<h2>.env</h2>
+<p>SSH公開鍵をDigitalOceanに登録しておくこと。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ vi .env
+DO_SSH_USERNAME="zinrai"
+DO_SSH_KEY=${HOME}/.ssh/id_rsa
+DO_CLIENT_ID="1234567890"
+DO_API_KEY="abcdefghijklmn"
+</pre></div>
+</div>
+</div>
+<div class="section" id="vagrant">
+<h2>Vagrant</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ vagrant up
+Bringing machine 'default' up with 'digital_ocean' provider...
+==&gt; default: Using existing SSH key: Vagrant
+==&gt; default: Creating a new droplet...
+==&gt; default: Assigned IP address: 1.2.3.4
+==&gt; default: Private IP address: 10.1.1.1
+==&gt; default: Creating user account: zinrai...
+
+$ vagrant status
+Current machine states:
+
+default                   active (digital_ocean)
+
+active
+
+$ vagrant halt
+==&gt; default: Powering off the droplet...
+
+$ vagrant destroy
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="https://www.digitalocean.com">https://www.digitalocean.com/</a></li>
+<li><a class="reference external" href="https://github.com/bkeepers/dotenv">https://github.com/bkeepers/dotenv</a></li>
+<li><a class="reference external" href="https://github.com/smdahlen/vagrant-digitalocean">https://github.com/smdahlen/vagrant-digitalocean</a></li>
+<li><a class="reference external" href="http://qiita.com/msykiino/items/d45cab7f520a3288862a">http://qiita.com/msykiino/items/d45cab7f520a3288862a</a></li>
+</ul></div>]]></description>
+            <category><![CDATA[ vagrant ]]></category>
+             <pubDate>Fri, 04 Jul 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/07/01/centos_65_jenkins_install.html</link>
             <guid>http://127.0.0.1/blog/html/2014/07/01/centos_65_jenkins_install.html</guid>

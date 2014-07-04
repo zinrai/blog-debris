@@ -86,6 +86,129 @@
             <li class="left"> &laquo; <a href="page15.html">Newer</a></li>
             <li class="right"><a href="page17.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>November 01, 2013</span>
+        </div>
+        <h1><a href="2013/11/01/freebsd_mfsbsd.html">virtioを組み込んだmfsBSDイメージ作成</a></h1>
+<p>「<a class="reference internal" href="2013/07/20/freebsd_pxeboot.html"><em>シェルスクリプトでFreeBSD 9.1のインストール自動化</em></a>」だとFreeBSD母艦が必要になるので、どうにかして<a class="reference external" href="http://www.syslinux.org/wiki/index.php/The_Syslinux_Project">Syslinux</a>にまとめられないか調べてみたところ<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>というものを見付けた。今回は「9.1-RELEASE」のmfsBSDを作成した。</p>
+<div class="section" id="mfsbsd">
+<h2>mfsBSDイメージ作成</h2>
+<div class="highlight-python"><div class="highlight"><pre>% fetch http://mfsbsd.vx.sk/release/mfsbsd-2.1.tar.gz
+% tar zvxf mfsbsd-2.1.tar.gz
+% cd mfsbsd-2.1/conf
+% cp rc.conf.sample rc.conf
+% cp rc.local.sample rc.local
+% cp loader.conf.sample loader.conf
+% cd ..
+% mkdir freebsd91
+% cd freebsd91
+% fetch http://ftp.jaist.ac.jp/pub/FreeBSD/releases/amd64/9.1-RELEASE/base.txz
+% fetch http://ftp.jaist.ac.jp/pub/FreeBSD/releases/amd64/9.1-RELEASE/kernel.txz
+% cd ..
+% make RELEASE=9.1-RELEASE BASE=/path/freebsd91
+
+% ls *.img
+mfsbsd-9.1-RELEASE-amd64.img
+</pre></div>
+</div>
+<p><a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>のMakefileを眺めてみると「RELEASE」オプションを付けない場合、生成されるイメージファイル名にuname(1)が使われる。「RELEASE」オプションを付けてないとホストが「9.2-RELEASE」「10-CURRENT」のとき「9.1-RELEASE」のイメージファイルを作成するとホストのversionの付いたファイル名でイメージファイルが生成される。</p>
+<p>VirtIOを有効にしている仮想環境でも<a class="reference external" href="http://mfsbsd.vx.sk">mfsBSD</a>を使えるようにしてみる。VirtIOのバイナリを作るのが面倒だったので配布されていないか調べてみたら見付けた。</p>
+<div class="highlight-python"><div class="highlight"><pre>% mkdir virtio
+% cd virtio
+% fetch http://people.freebsd.org/~kuriyama/virtio/9.1/virtio-kmod-9.1-0.250249.tbz
+% tar Jxf virtio-kmod-9.1-0.250249.tbz
+</pre></div>
+</div>
+<p>「BOOTMODULES」変数にモジュールをスペース区切り書いておけばイメージファイル作成時にモジュールが組込まれる。VirtIOモジュールのほうはkernel.txzを展開し、boot/kernelにコピーして再度圧縮しておく。</p>
+<div class="highlight-python"><div class="highlight"><pre>% cd /path/freebsd91
+% tar zxpf kernel.txz
+
+% cd /path/virtio/boot/modules
+% cp `ls` /path/freebsd91/boot/kernel
+
+% cd /path/freebsd91
+% tar Jcvf kernel.txz boot
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% diff -u Makefile Makefile.org
+--- Makefile    2013-11-01 12:43:34.000000000 +0900
++++ Makefile.org        2013-11-01 01:34:12.000000000 +0900
+@@ -73,7 +73,7 @@
+ #
+ DOFS=${TOOLSDIR}/doFS.sh
+ SCRIPTS=mdinit mfsbsd interfaces packages
+-BOOTMODULES=acpi ahci virtio virtio_pci virtio_blk virtio_balloon if_vtnet
++BOOTMODULES=acpi ahci
+ MFSMODULES=geom_mirror geom_nop opensolaris zfs ext2fs snp smbus ipmi ntfs nullfs tmpfs
+ #
+</pre></div>
+</div>
+</div>
+<div class="section" id="syslinux">
+<h2>Syslinux</h2>
+<ul class="simple"><li><a class="reference internal" href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html"><em>Proxy DHCPを使ったディスクレスブート環境構築</em></a></li>
+<li><a class="reference internal" href="2013/10/26/centos_diskless.html"><em>CentOS ディスクレスブートサーバ構築</em></a></li>
+</ul><p>これでDebian,CentOS,FreeBSDのディスクレスブート環境が出来上がった。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /path/pxelinux.cfg/default
+
+default menu.c32
+label FreeBSD 9.1
+kernel memdisk
+append initrd=mfsbsd-9.1-RELEASE-amd64.img harddisk
+</pre></div>
+</div>
+<p>9.2-RELEASEからVirtIOは標準で入っている。VirtIOを使いたければ、設定をloader.confに書くだけ。シェルスクリプトには下記のような変更を加えておけばいい。</p>
+<div class="highlight-python"><div class="highlight"><pre>% diff -u freebsd_install.conf freebsd_virtio.conf
+--- freebsd_install.conf        2013-11-01 18:05:26.993246593 +0900
++++ freebsd_virtio.conf 2013-11-01 17:48:52.725299517 +0900
+@@ -1,8 +1,8 @@
+ #!/bin/sh -x
+
+-# 01:23:45:67:89:ab
++# 01:23:45:67:89:cd
+
+-DISK=ada0
++DISK=vtbd0
+ IFACE=$1
+ CWD=$2
+ CHROOT_FREEBSD="/mnt/$3"
+@@ -27,8 +27,16 @@
+   tar xfzp $FILE
+ done
+
++cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/boot/loader.conf
++virtio_load="YES"
++virtio_pci_load="YES"
++virtio_blk_load="YES"
++if_vtnet_load="YES"
++virtio_balloon_load="YES"
++EOF
++
+ cat &lt;&lt; EOF &gt; ${CHROOT_FREEBSD}/etc/rc.conf
+-hostname="freebsd-install.local"
++hostname="freebsd-virtio.local"
+ keymap="us.iso.kbd"
+ ifconfig_${IFACE}=" inet 192.168.2.200 netmask 255.255.255.0"
+ defaultrouter="192.168.2.254"
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://mfsbsd.vx.sk">http://mfsbsd.vx.sk/</a></li>
+<li><a class="reference external" href="http://people.freebsd.org/~kuriyama/virtio">http://people.freebsd.org/~kuriyama/virtio/</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/mfsbsd.html">mfsbsd</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/mfsbsd.html">mfsbsd</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>October 26, 2013</span>
         </div>
         <h1><a href="2013/10/26/centos_diskless.html">CentOS ディスクレスブートサーバ構築</a></h1>
@@ -232,94 +355,6 @@ SYNC="rsync://192.168.2.1/gentoo-portage"
                 Tags:
                 <a href="tags/gentoo.html">gentoo</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>October 24, 2013</span>
-        </div>
-        <h1><a href="2013/10/24/debian_wheezy_dnsmasq_proxy_dhcp.html">Proxy DHCPを使ったディスクレスブート環境構築</a></h1>
-<p>Proxy DHCPを使ってDHCPサーバとネットワークブートサーバを切り離し、ディスクレスブート環境を構築してみる。</p>
-<p>DHCPサーバ,Proxy DHCPともにdnsmasq、OSはDebian wheezyを使用する。</p>
-<div class="highlight-python"><div class="highlight"><pre>% lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description:    Debian GNU/Linux 7.2 (wheezy)
-Release:        7.2
-Codename:       wheezy
-</pre></div>
-</div>
-<div class="section" id="dhcp">
-<h2>DHCPサーバ</h2>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install dnsmasq
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/dnsmasq.d/dhcp.conf
-dhcp-range=192.168.2.230,192.168.2.253,2h
-dhcp-option=3,192.168.2.254
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% service dnsmasq restart
-</pre></div>
-</div>
-</div>
-<div class="section" id="id1">
-<h2>Proxy DHCP</h2>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install dnsmasq
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/dnsmasq.d/pxe.conf
-dhcp-range=192.168.2.0,proxy
-pxe-service=x86PC, "os install", pxelinux
-enable-tftp
-tftp-root=/var/diskless
-</pre></div>
-</div>
-</div>
-<div class="section" id="diskless-boot">
-<h2>Diskless Boot</h2>
-<div class="highlight-python"><div class="highlight"><pre>% apt-get install syslinux nfs-kernel-server debootstrap
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% debootstrap stable /var/diskless/wheezy http://ftp.jp.debian.org/debian
-% chroot /var/diskless/Wheezy passwd root
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/exports
-/var/diskless/wheezy 192.168.2.0/24(rw,no_root_squash,no_subtree_check)
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% mkdir /var/diskless
-% cp /usr/lib/syslinux/menu.c32 /var/diskless
-% cp /usr/lib/syslinux/pxelinux.0 /var/diskless
-% cp /boot/initrd* /var/diskless
-% cp /boot/vmlinuz* /var/diskless
-% mkdir /var/diskless/pxelinux.cfg
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% vi /var/diskless/pxelinux.cfg/default
-default menu.c32
-label Debian Wheezy
-kernel vmlinuz-3.2.0-4-amd64
-append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.100:/var/diskless/wheezy rw
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>% service dnsmasq restart
-% service nfs-kernel-server restart
-</pre></div>
-</div>
-</div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/dnsmasq.html">dnsmasq</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/dnsmasq.html">dnsmasq</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -328,6 +363,8 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a>
+        </li><li>
             <a href="2014/07/01/centos_65_jenkins_install.html">CentOS 6.5 に Jenkins インストール</a>
         </li><li>
             <a href="2014/06/30/centos_65_fluentd_plugin.html">td-agent で外部プラグインを使ってみる</a>
@@ -345,15 +382,13 @@ append initrd=initrd.img-3.2.0-4-amd64 root=/dev/nfs ip=dhcp nfsroot=192.168.2.1
             <a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
         </li><li>
             <a href="2014/06/23/debian_wheezy_qemu_nbd.html">qemu-nbd を使ってディスクイメージをマウントする</a>
-        </li><li>
-            <a href="2014/06/22/debian_wheezy_qemu_img_create_rebase.html">qemu-img の使い方</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (2)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (31), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (3), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (25), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (32), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (26), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />
