@@ -1,0 +1,369 @@
+<!DOCTYPE html><!--[if lt IE 7]>      <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:og="http://ogp.me/ns#"
+    xmlns:fb="https://www.facebook.com/2008/fbml" class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="This is an awesome blog">
+        <meta name="viewport" content="width=device-width">
+        <title>Debian wheezyでLXCを使ってみる &mdash; command not found:</title>
+            <link rel="stylesheet" href="../../../_static/normalize.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/sphinx.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/main.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/dark.css" type="text/css">
+            <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+            <link rel="stylesheet" href="../../../_static/font-awesome.min.css" type="text/css">
+        <!-- Load modernizr and JQuery -->
+        <script src="../../../_static/vendor/modernizr-2.6.2.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="../../../_static/vendor/jquery-1.8.2.min.js"><\/script>')</script>
+        <script src="../../../_static/plugins.js"></script>
+        <script src="../../../_static/main.js"></script>
+        <link rel="next" title="Vagrant で DigitalOcean を操作する" href="../../07/04/debian_wheezy_vagrant_digital_ocean.html" /><link rel="alternate" type="application/rss+xml" title="RSS" href="../../../rss.html" /><script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.4.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script><script type="text/javascript" src="../../../_static/underscore.js"></script><script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Adjusts document height if sidebar is taller
+            var documentwrapper = document.getElementsByTagName('article')[0];
+            var sidebar = document.getElementsByTagName('aside')[0];
+
+            if (sidebar.offsetHeight > documentwrapper.offsetHeight)
+            {
+                documentwrapper.style.minHeight = sidebar.offsetHeight + "px";
+            }
+
+            // Scroll to content if on small screen
+            if (screen.width < 480)
+            {
+                $(document).scrollTop(documentwrapper.offsetTop - 44);
+            }
+        });
+    </script></head>
+    <body role="document">
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+        <![endif]-->
+
+      <div id="container"><div class="header-container">
+    <header class="wrapper clearfix">
+        <div class="title">
+          <h1><a href="../../../index.html">command not found:</a></h1>
+          <h4>Hello World</h4>
+        </div>
+        <nav>
+          <ul>
+            <li class="main-nav">
+              <a href="../../../index.html">Home</a>
+            </li>
+            <li class="main-nav">
+              <a href="../../../pages/about.html">About</a>
+            </li>
+            <li class="quicklink"><div class="rss">
+        <a href="../../../rss.html" title="Subscribe via RSS"><span class="fa fa-lg fa-rss"></span></a>
+    </div></li></ul>
+        </nav>
+    </header>
+</div>
+
+<div class="main-container" role="main"><div class="main wrapper clearfix"><article role="article"><ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../../07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a> &raquo; </li>
+        </ul><div class="timestamp postmeta">
+            <span>August 24, 2014</span>
+        </div>
+    <div class="section" id="debian-wheezylxc">
+<h1>Debian wheezyでLXCを使ってみる</h1>
+<p><a class="reference external" href="https://wiki.debian.org/LXC">https://wiki.debian.org/LXC</a>とREADME.Debianを見ながらDebian wheezyでLXCを使ってみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.2.0-4-amd64 #1 SMP Debian 3.2.60-1+deb7u3
+
+$ cat /etc/debian_version
+7.6
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-cache show lxc
+Package: lxc
+Version: 0.8.0~rc1-8+deb7u2
+Installed-Size: 712
+Maintainer: Daniel Baumann &lt;daniel.baumann@progress-technologies.net&gt;
+Architecture: amd64
+Depends: debconf (&gt;= 0.5) | debconf-2.0, libc6 (&gt;= 2.8), libcap2 (&gt;= 2.10)
+Pre-Depends: multiarch-support
+Recommends: debootstrap | cdebootstrap, rsync, libcap2-bin
+Suggests: lxctl
+Conflicts: cgroup-bin
+Description-en: Linux Containers userspace tools
+ Containers are insulated areas inside a system, which have their own namespace
+ for filesystem, network, PID, IPC, CPU and memory allocation and which can be
+ created using the Control Group and Namespace features included in the Linux
+ kernel.
+ .
+ This package provides the lxc-* tools, which can be used to start a single
+ daemon in a container, or to boot an entire &quot;containerized&quot; system, and to
+ manage and debug your containers.
+Homepage: http://lxc.sourceforge.net/
+Description-md5: 4ece0dffd153c29e95ffdb89f8238dfc
+Tag: admin::virtualization, implemented-in::c, interface::commandline,
+ role::program, scope::application
+Section: admin
+Priority: optional
+Filename: pool/main/l/lxc/lxc_0.8.0~rc1-8+deb7u2_amd64.deb
+Size: 169900
+MD5sum: 00e9b7b812d6b156f0ea298b88ed6673
+SHA1: 74ccf808df7d19242ebf1a91a7f32fb66f39a6fc
+SHA256: 06f2ba886c07b0e224429f7b03802612ee58852d7b5be7e8e4b28d74dcd40119
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install rsync bridge-utils libvirt-bin debootstrap dnsmasq lxc
+</pre></div>
+</div>
+<div class="section" id="id1">
+<h2>ネットワーク設定</h2>
+<p>libvirtを使いvirbr0インタフェースを作成、ここにコンテナを接続する。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/libvirt/qemu/networks/default.xml
+&lt;network&gt;
+&lt;name&gt;default&lt;/name&gt;
+&lt;bridge name=&quot;virbr0&quot; /&gt;
+&lt;forward/&gt;
+&lt;ip address=&quot;192.168.122.1&quot; netmask=&quot;255.255.255.0&quot;&gt;
+&lt;dhcp&gt;
+&lt;range start=&quot;192.168.122.2&quot; end=&quot;192.168.122.254&quot; /&gt;
+&lt;/dhcp&gt;
+&lt;/ip&gt;
+&lt;/network&gt;
+
+% service dnsmasq stop
+% insserv -f -r dnsmasq
+% virsh net-autostart default
+% virsh net-start default
+</pre></div>
+</div>
+</div>
+<div class="section" id="lxc">
+<h2>LXC</h2>
+<p><a class="reference external" href="https://wiki.debian.org/LXC">Debian Wiki</a>の「Prepare the host」に書いてあるfstab(5)の設定ではcgroupsファイルシステムはマウントされない。/usr/share/doc/lxc/README.Debianを読んだほうがいい。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/fstab
+cgroup /sys/fs/cgroup cgroup defaults 0 0
+
+% mount -a
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-checkconfig
+Kernel config /proc/config.gz not found, looking in other places...
+Found kernel config file /boot/config-3.2.0-4-amd64
+--- Namespaces ---
+Namespaces: enabled
+Utsname namespace: enabled
+Ipc namespace: enabled
+Pid namespace: enabled
+User namespace: enabled
+Network namespace: enabled
+Multiple /dev/pts instances: enabled
+
+--- Control groups ---
+Cgroup: enabled
+Cgroup clone_children flag: enabled
+Cgroup device: enabled
+Cgroup sched: enabled
+Cgroup cpu account: enabled
+Cgroup memory controller: enabled
+Cgroup cpuset: enabled
+
+--- Misc ---
+Veth pair device: enabled
+Macvlan: enabled
+Vlan: enabled
+File capabilities: enabled
+
+Note : Before booting a new kernel, you can check its configuration
+usage : CONFIG=/path/to/config /usr/bin/lxc-checkconfig
+</pre></div>
+</div>
+<p>テンプレート(シェルスクリプト)に従ってコンテナは作成される。</p>
+<div class="highlight-python"><div class="highlight"><pre>% dpkg -L lxc | grep template
+/usr/share/lxc/templates
+/usr/share/lxc/templates/lxc-ubuntu-cloud
+/usr/share/lxc/templates/lxc-debian
+/usr/share/lxc/templates/lxc-debconf.d
+/usr/share/lxc/templates/lxc-debconf.d/03-debconf
+/usr/share/lxc/templates/lxc-debconf.d/03-debconf.templates
+/usr/share/lxc/templates/lxc-debconf.d/01-preseed-file.templates
+/usr/share/lxc/templates/lxc-debconf.d/01-preseed-file
+/usr/share/lxc/templates/lxc-debconf.d/02-preseed-debconf
+/usr/share/lxc/templates/lxc-fedora
+/usr/share/lxc/templates/lxc-sshd
+/usr/share/lxc/templates/lxc-archlinux
+/usr/share/lxc/templates/lxc-opensuse
+/usr/share/lxc/templates/lxc-debconf
+/usr/share/lxc/templates/lxc-altlinux
+/usr/share/lxc/templates/lxc-progress
+/usr/share/lxc/templates/lxc-progress.d
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% cat -n /usr/share/lxc/templates/lxc-debian
+293 usage()
+294 {
+295 cat &lt;&lt;EOF
+296 $1 -h|--help -p|--path=&lt;path&gt; [-a|--arch] [-r|--release=&lt;release&gt;] [-c|--clean]
+297 release: the debian release (e.g. wheezy): defaults to current stable
+298 arch: the container architecture (e.g. amd64): defaults to host arch
+299 EOF
+300 return 0
+301 }
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-create -h
+usage: lxc-create -n &lt;name&gt; [-f configuration] [-t template] [-h] [fsopts] -- [template_options]
+fsopts: -B none
+fsopts: -B lvm [--lvname lvname] [--vgname vgname] [--fstype fstype] [--fssize fssize]
+fsopts: -B btrfs
+flag is not necessary, if possible btrfs support will be used
+
+creates a lxc system object.
+
+Options:
+name : name of the container
+configuration: lxc configuration
+template : lxc-template is an accessible template script
+
+The container backing store can be altered using &#39;-B&#39;. By default it
+is &#39;none&#39;, which is a simple directory tree under /var/lib/lxc/&lt;name&gt;/rootfs
+Otherwise, the following option values may be relevant:
+lvname : [for -lvm] name of lv in which to create lv,
+container-name by default
+vgname : [for -lvm] name of vg in which to create lv, &#39;lxc&#39; by default
+fstype : name of filesystem to create, ext4 by default
+fssize : size of filesystem to create, 500M by default
+
+for template-specific help, specify a template, for instance:
+lxc-create -t debconf -h
+</pre></div>
+</div>
+<p>テンプレート側で用意している-rオプションを使うと指定したコードネームのベースイメージを取得できる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% MIRROR=http://ftp.jp.debian.org/debian lxc-create -n wheezy64 -t debian
+% MIRROR=http://ftp.jp.debian.org/debian lxc-create -n jessie64 -t debian -- -r jessie
+% MIRROR=http://ftp.jp.debian.org/debian lxc-create -n sid64 -t debian -- -r sid
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-list
+RUNNING
+
+FROZEN
+
+STOPPED
+jessie64
+sid64
+wheezy64
+</pre></div>
+</div>
+<p>コンテナを外部と通信させるには下記の設定を追加する。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/lib/lxc/wheezy64/config
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.link = virbr0
+</pre></div>
+</div>
+<p>lxc-console(1)から抜ける場合は「Ctrl + a q」</p>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-start -n wheezy64 -d
+% lxc-console -n wheezy64
+</pre></div>
+</div>
+<p>Debian起動時にコンテナを起動させておきたければ、/etc/lxc/autoにシンボリックリンクを張る。/usr/share/doc/lxc/README.Debianの「4. Autostart」に書かれている。</p>
+<div class="highlight-python"><div class="highlight"><pre>% ln -s /var/lib/lxc/wheezy64/config /etc/lxc/auto/wheezy64
+</pre></div>
+</div>
+<p>bindmountもできる。ホストのJenkinsディレクトリをコンテナにマウントするには下記の設定を追加する。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/lib/lxc/wheezy64/config
+lxc.mount.entry=/var/lib/jenkins /var/lib/lxc/wheezy64/rootfs/home none bind 0 0
+</pre></div>
+</div>
+<p>lxc-attach(1)を使ってホストからコンテナへコマンドを実行させようとしたが、Kernel 3.8以降でないとlxc-attach(1)はうまく動作しないようだ。</p>
+<ul class="simple">
+<li><a class="reference external" href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=708144">https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=708144</a></li>
+</ul>
+<p>wheezy-backportsにKernel 3.14のソースが置いてあるがビルドするのが面倒くさい。Debian sidでもLXCを試してみようと思う。</p>
+<ul class="simple">
+<li><a class="reference external" href="https://packages.debian.org/ja/wheezy-backports/linux-source">https://packages.debian.org/ja/wheezy-backports/linux-source</a></li>
+</ul>
+</div>
+</div>
+
+    <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="../../../categories/lxc.html">lxc</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="../../../tags/debian.html">debian</a>, <a href="../../../tags/wheezy.html">wheezy</a>, <a href="../../../tags/lxc.html">lxc</a>, <a href="../../../tags/libvirt.html">libvirt</a></span>
+        </div>
+        </div>
+    <ul class="related clearfix">
+            <li class="left"></li>
+            <li class="right"><a href="../../07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a> &raquo; </li>
+        </ul></article><aside class="sidebar"><section><div class="widget">
+    <h1>Recent Posts</h1>
+    <ul><li>
+            <a href="#">Debian wheezyでLXCを使ってみる</a>
+        </li><li>
+            <a href="../../07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a>
+        </li><li>
+            <a href="../../07/01/centos_65_jenkins_install.html">CentOS 6.5 に Jenkins インストール</a>
+        </li><li>
+            <a href="../../06/30/centos_65_fluentd_plugin.html">td-agent で外部プラグインを使ってみる</a>
+        </li><li>
+            <a href="../../06/29/centos_65_td_agent_out_s3.html">td-agent で S3 にログを送る</a>
+        </li><li>
+            <a href="../../06/28/debian_wheezy_apt_cacher_ng.html">apt-cacher-ng でapt用のキャッシュプロキシを構築する</a>
+        </li><li>
+            <a href="../../06/27/centos_65_clamav.html">CentOS 6.5 で ClamAV を使ってみた</a>
+        </li><li>
+            <a href="../../06/26/debian_sid_vagrant_kvm.html">Debian sid で vagrant-kvm を使ってみた</a>
+        </li><li>
+            <a href="../../06/25/debian_sid_install.html">Debian sid インストール</a>
+        </li><li>
+            <a href="../../06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
+        </li></ul>
+</div>
+</section><section><div class="widget">
+    <h1>Categories</h1>
+    <ul><li><a href="../../../categories/aide.html">aide</a> (1)</li><li><a href="../../../categories/ansible.html">ansible</a> (1)</li><li><a href="../../../categories/apt.html">apt</a> (1)</li><li><a href="../../../categories/centos.html">centos</a> (2)</li><li><a href="../../../categories/chef.html">chef</a> (2)</li><li><a href="../../../categories/clamav.html">clamav</a> (1)</li><li><a href="../../../categories/cobbler.html">cobbler</a> (2)</li><li><a href="../../../categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="../../../categories/dante.html">dante</a> (1)</li><li><a href="../../../categories/debian.html">debian</a> (5)</li><li><a href="../../../categories/direnv.html">direnv</a> (1)</li><li><a href="../../../categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="../../../categories/docker.html">docker</a> (1)</li><li><a href="../../../categories/fabric.html">fabric</a> (2)</li><li><a href="../../../categories/freebsd.html">freebsd</a> (6)</li><li><a href="../../../categories/gentoo.html">gentoo</a> (2)</li><li><a href="../../../categories/jail.html">jail</a> (2)</li><li><a href="../../../categories/jenkins.html">jenkins</a> (2)</li><li><a href="../../../categories/kvm.html">kvm</a> (1)</li><li><a href="../../../categories/libvirt.html">libvirt</a> (1)</li><li><a href="../../../categories/lxc.html">lxc</a> (1)</li><li><a href="../../../categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="../../../categories/mongodb.html">mongodb</a> (2)</li><li><a href="../../../categories/munin.html">munin</a> (3)</li><li><a href="../../../categories/mysql.html">mysql</a> (2)</li><li><a href="../../../categories/nfs.html">nfs</a> (2)</li><li><a href="../../../categories/nginx.html">nginx</a> (4)</li><li><a href="../../../categories/ngircd.html">ngircd</a> (1)</li><li><a href="../../../categories/nsd.html">nsd</a> (1)</li><li><a href="../../../categories/ntp.html">ntp</a> (1)</li><li><a href="../../../categories/openvpn.html">openvpn</a> (1)</li><li><a href="../../../categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="../../../categories/packer.html">packer</a> (1)</li><li><a href="../../../categories/poudriere.html">poudriere</a> (1)</li><li><a href="../../../categories/puppet.html">puppet</a> (1)</li><li><a href="../../../categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="../../../categories/qemu.html">qemu</a> (2)</li><li><a href="../../../categories/rails.html">rails</a> (1)</li><li><a href="../../../categories/rbenv.html">rbenv</a> (1)</li><li><a href="../../../categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="../../../categories/schroot.html">schroot</a> (2)</li><li><a href="../../../categories/serverspec.html">serverspec</a> (1)</li><li><a href="../../../categories/snort.html">snort</a> (2)</li><li><a href="../../../categories/squid.html">squid</a> (1)</li><li><a href="../../../categories/ssh.html">ssh</a> (1)</li><li><a href="../../../categories/sshfs.html">sshfs</a> (1)</li><li><a href="../../../categories/supervisor.html">supervisor</a> (1)</li><li><a href="../../../categories/synergy.html">synergy</a> (1)</li><li><a href="../../../categories/td_agent.html">td-agent</a> (2)</li><li><a href="../../../categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="../../../categories/unbound.html">unbound</a> (1)</li><li><a href="../../../categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="../../../categories/vagrant.html">vagrant</a> (3)</li><li><a href="../../../categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="../../../categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="../../../categories/xbuild.html">xbuild</a> (1)</li><li><a href="../../../categories/xdm.html">xdm</a> (1)</li><li><a href="../../../categories/zfs.html">zfs</a> (2)</li><li><a href="../../../categories/znc.html">znc</a> (1)</li></ul>
+</div></section><section><div class="widget">
+    <h1>Tags</h1><a href="../../../tags/aide.html">aide</a> (1), <a href="../../../tags/ansible.html">ansible</a> (1), <a href="../../../tags/apt.html">apt</a> (1), <a href="../../../tags/aufs.html">aufs</a> (2), <a href="../../../tags/aws.html">aws</a> (2), <a href="../../../tags/centos.html">centos</a> (18), <a href="../../../tags/chef.html">chef</a> (3), <a href="../../../tags/chroot.html">chroot</a> (4), <a href="../../../tags/clamav.html">clamav</a> (1), <a href="../../../tags/cobbler.html">cobbler</a> (2), <a href="../../../tags/cowbuilder.html">cowbuilder</a> (1), <a href="../../../tags/dante.html">dante</a> (1), <a href="../../../tags/debian.html">debian</a> (33), <a href="../../../tags/debootstrap.html">debootstrap</a> (1), <a href="../../../tags/deiban.html">deiban</a> (1), <a href="../../../tags/direnv.html">direnv</a> (1), <a href="../../../tags/dns.html">dns</a> (2), <a href="../../../tags/dnsmasq.html">dnsmasq</a> (3), <a href="../../../tags/docker.html">docker</a> (2), <a href="../../../tags/fabric.html">fabric</a> (2), <a href="../../../tags/fluentd.html">fluentd</a> (2), <a href="../../../tags/freebsd.html">freebsd</a> (17), <a href="../../../tags/gentoo.html">gentoo</a> (2), <a href="../../../tags/github.html">github</a> (1), <a href="../../../tags/irc.html">irc</a> (2), <a href="../../../tags/jail.html">jail</a> (3), <a href="../../../tags/jenkins.html">jenkins</a> (3), <a href="../../../tags/kvm.html">kvm</a> (3), <a href="../../../tags/libvirt.html">libvirt</a> (2), <a href="../../../tags/lxc.html">lxc</a> (1), <a href="../../../tags/mfsbsd.html">mfsbsd</a> (1), <a href="../../../tags/mongodb.html">mongodb</a> (2), <a href="../../../tags/munin.html">munin</a> (3), <a href="../../../tags/mysql.html">mysql</a> (2), <a href="../../../tags/nfs.html">nfs</a> (2), <a href="../../../tags/nginx.html">nginx</a> (4), <a href="../../../tags/ngircd.html">ngircd</a> (1), <a href="../../../tags/nsd.html">nsd</a> (1), <a href="../../../tags/ntp.html">ntp</a> (1), <a href="../../../tags/nullfs.html">nullfs</a> (2), <a href="../../../tags/openvpn.html">openvpn</a> (1), <a href="../../../tags/openvswitch.html">openvswitch</a> (1), <a href="../../../tags/packages.html">packages</a> (3), <a href="../../../tags/packer.html">packer</a> (1), <a href="../../../tags/pexboot.html">pexboot</a> (1), <a href="../../../tags/ports.html">ports</a> (3), <a href="../../../tags/poudriere.html">poudriere</a> (1), <a href="../../../tags/pulledpork.html">pulledpork</a> (1), <a href="../../../tags/puppet.html">puppet</a> (1), <a href="../../../tags/pxeboot.html">pxeboot</a> (1), <a href="../../../tags/python.html">python</a> (5), <a href="../../../tags/qemu.html">qemu</a> (2), <a href="../../../tags/rails.html">rails</a> (1), <a href="../../../tags/rbenv.html">rbenv</a> (1), <a href="../../../tags/rpmbuild.html">rpmbuild</a> (2), <a href="../../../tags/ruby_build.html">ruby-build</a> (1), <a href="../../../tags/s3.html">s3</a> (2), <a href="../../../tags/schroot.html">schroot</a> (2), <a href="../../../tags/serverspec.html">serverspec</a> (1), <a href="../../../tags/sid.html">sid</a> (2), <a href="../../../tags/snort.html">snort</a> (2), <a href="../../../tags/socks.html">socks</a> (1), <a href="../../../tags/squid.html">squid</a> (1), <a href="../../../tags/ssh.html">ssh</a> (1), <a href="../../../tags/sshfs.html">sshfs</a> (1), <a href="../../../tags/supervisor.html">supervisor</a> (1), <a href="../../../tags/synergy.html">synergy</a> (1), <a href="../../../tags/td_agent.html">td-agent</a> (2), <a href="../../../tags/tinkerer.html">tinkerer</a> (1), <a href="../../../tags/ubuntu.html">ubuntu</a> (5), <a href="../../../tags/unbound.html">unbound</a> (1), <a href="../../../tags/uwsgi.html">uwsgi</a> (2), <a href="../../../tags/vagrant.html">vagrant</a> (4), <a href="../../../tags/vimage.html">vimage</a> (2), <a href="../../../tags/virtualbox.html">virtualbox</a> (3), <a href="../../../tags/vsftpd.html">vsftpd</a> (1), <a href="../../../tags/wheezy.html">wheezy</a> (27), <a href="../../../tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="../../../tags/xbuild.html">xbuild</a> (1), <a href="../../../tags/xdm.html">xdm</a> (1), <a href="../../../tags/yum.html">yum</a> (1), <a href="../../../tags/zfs.html">zfs</a> (5), <a href="../../../tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Search</h1>
+    <form action="../../../search.html" method="get">
+        <input type="text" name="q" />
+        <button type="submit"><span class="fa fa-search"></span></button>
+    </form>
+</div></section></aside></div> <!-- #main --></div> <!-- #main-container -->
+
+        <div class="footer-container" role="contentinfo"><footer class="wrapper">&copy; Copyright 2012, zinrai. Powered by <a href="http://www.tinkerer.me/">Tinkerer</a> and <a href="http://sphinx.pocoo.org/">Sphinx</a>.</footer></div> <!-- footer-container -->
+
+      </div> <!--! end of #container --><!--[if lt IE 7 ]>
+          <script src="//ajax.googleapis.com/ajax/libs/chrome-frame/1.0.3/CFInstall.min.js"></script>
+          <script>window.attachEvent('onload',function(){CFInstall.check({mode:'overlay'})})</script>
+        <![endif]-->
+    </body>
+</html>

@@ -86,6 +86,243 @@
             <li class="left"> &laquo; <a href="page2.html">Newer</a></li>
             <li class="right"><a href="page4.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>June 27, 2014</span>
+        </div>
+        <h1><a href="2014/06/27/centos_65_clamav.html">CentOS 6.5 で ClamAV を使ってみた</a></h1>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 2.6.32-431.20.3.el6.x86_64 #1 SMP Thu Jun 19 21:14:45 UTC 2014
+
+$ cat /etc/redhat-release
+CentOS release 6.5 (Final)
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install http://ftp-srv2.kddilabs.jp/Linux/distributions/fedora/epel/6/x86_64/epel-release-6-8.noarch.rpm
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/yum.repos.d/epel.repo
+[epel]
+name=Extra Packages for Enterprise Linux 6 - $basearch
+#baseurl=http://download.fedoraproject.org/pub/epel/6/$basearch
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-6&amp;arch=$basearch
+failovermethod=priority
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+</pre></div>
+</div>
+<p>EPELだとclamavとclamdにパッケージが分かれている。それぞれのパッケージに入っているものは表のようになっている。</p>
+<table border="1" class="docutils"><colgroup><col width="15%"/><col width="21%"/><col width="64%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>clamav</td>
+<td> </td>
+<td> </td>
+</tr><tr class="row-even"><td> </td>
+<td>clamscan</td>
+<td>単体で動作するウィルススキャン用コマンド</td>
+</tr><tr class="row-odd"><td> </td>
+<td>freshclam</td>
+<td>ウィルス定義ファイルを更新するためのコマンド</td>
+</tr><tr class="row-even"><td>clamd</td>
+<td> </td>
+<td> </td>
+</tr><tr class="row-odd"><td> </td>
+<td>clamd</td>
+<td>ウィルススキャンデーモン</td>
+</tr><tr class="row-even"><td> </td>
+<td>clamdscan</td>
+<td>clamdクライアント</td>
+</tr></tbody></table><p>clamdとclamdscanはサーバ、クライアントモデルになっている。clamdがウィルス定義ファイルをメモリに展開しデーモンとして常駐、clamdscanで問い合わせるという形になっている。clamscanはスキャンのたびにウィルス定義ファイルを読み込むが、clamdはメモリに展開しているので高速に動作する。</p>
+<div class="section" id="clamav">
+<h2>clamav</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ yum info --enablerepo=epel clamav
+Available Packages
+Name        : clamav
+Arch        : x86_64
+Version     : 0.98.3
+Release     : 1.el6
+Size        : 1.4 M
+Repo        : epel
+Summary     : Anti-virus software
+URL         : http://www.clamav.net/
+License     : GPLv2
+Description : Clam AntiVirus is a GPL anti-virus toolkit for UNIX. The main
+            : purpose of this software is the integration with mail servers
+            : (attachment scanning). The package provides a flexible and
+            : scalable multi-threaded daemon, a command line scanner, and a
+            : tool for automatic updating via Internet.
+            :
+            : The programs are based on a shared library distributed with the
+            : Clam AntiVirus package, which you can use with your own software.
+            : Most importantly, the virus database is kept up to date
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum --enablerepo=epel install clamav
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ rpm -ql clamav
+/etc/freshclam.conf
+/usr/bin/clambc
+/usr/bin/clamscan
+/usr/bin/clamsubmit
+/usr/bin/freshclam
+/usr/bin/sigtool
+/usr/lib64/libclamav.so.6
+/usr/lib64/libclamav.so.6.1.22
+/usr/share/doc/clamav-0.98.3
+/usr/share/doc/clamav-0.98.3/AUTHORS
+/usr/share/doc/clamav-0.98.3/BUGS
+/usr/share/doc/clamav-0.98.3/COPYING
+/usr/share/doc/clamav-0.98.3/ChangeLog
+/usr/share/doc/clamav-0.98.3/FAQ
+/usr/share/doc/clamav-0.98.3/INSTALL
+/usr/share/doc/clamav-0.98.3/NEWS
+/usr/share/doc/clamav-0.98.3/README
+/usr/share/doc/clamav-0.98.3/clamav-mirror-howto.pdf
+/usr/share/doc/clamav-0.98.3/clamdoc.pdf
+/usr/share/doc/clamav-0.98.3/freshclam.conf
+/usr/share/doc/clamav-0.98.3/phishsigs_howto.pdf
+/usr/share/doc/clamav-0.98.3/signatures.pdf
+/usr/share/man/man1/clamscan.1.gz
+/usr/share/man/man1/clamsubmit.1.gz
+/usr/share/man/man1/freshclam.1.gz
+/usr/share/man/man1/sigtool.1.gz
+/usr/share/man/man5/freshclam.conf.5.gz
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ clamscan -r /home/vagrant/
+/home/vagrant/.ssh/authorized_keys: OK
+/home/vagrant/.bash_logout: OK
+/home/vagrant/.bashrc: OK
+/home/vagrant/.bash_history: OK
+/home/vagrant/.lesshst: OK
+/home/vagrant/.vbox_version: OK
+/home/vagrant/.bash_profile: OK
+
+----------- SCAN SUMMARY -----------
+Known viruses: 3473278
+Engine version: 0.98.3
+Scanned directories: 4
+Scanned files: 7
+Infected files: 0
+Data scanned: 0.00 MB
+Data read: 0.00 MB (ratio 0.00:1)
+Time: 5.791 sec (0 m 5 s)
+</pre></div>
+</div>
+<p>他にもログをファイルに書き出したりするオプションもある。clamscan(1)を眺めてみるといい。</p>
+</div>
+<div class="section" id="clamd">
+<h2>clamd</h2>
+<div class="highlight-python"><div class="highlight"><pre>$ yum info --enablerepo=epel clamd
+Name        : clamd
+Arch        : x86_64
+Version     : 0.98.3
+Release     : 1.el6
+Size        : 159 k
+Repo        : epel
+Summary     : The Clam AntiVirus Daemon
+URL         : http://www.clamav.net/
+License     : GPLv2
+Description : The Clam AntiVirus Daemon
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% yum install --enablerepo=epel clamd
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ rpm -ql clamd
+/etc/clamd.conf
+/etc/clamd.d
+/etc/logrotate.d/clamav
+/etc/rc.d/init.d/clamd
+/usr/bin/clamconf
+/usr/bin/clamdscan
+/usr/bin/clamdtop
+/usr/sbin/clamd
+/usr/share/clamav/README.clamd-wrapper
+/usr/share/clamav/clamd-wrapper
+/usr/share/doc/clamd-0.98.3
+/usr/share/doc/clamd-0.98.3/clamd.conf
+/usr/share/man/man1/clambc.1.gz
+/usr/share/man/man1/clamconf.1.gz
+/usr/share/man/man1/clamdscan.1.gz
+/usr/share/man/man1/clamdtop.1.gz
+/usr/share/man/man5/clamd.conf.5.gz
+/usr/share/man/man8/clamd.8.gz
+/var/lib/clamav
+/var/log/clamav
+/var/log/clamav/clamd.log
+/var/run/clamav
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service clamd start
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% clamdscan /root
+clamdscan /root
+/root: lstat() failed: Permission denied. ERROR
+</pre></div>
+</div>
+<p>インストール時の設定だと「Permission denied」となりスキャンできない。そこで、clamd.confとclamd.conf(5)を眺めてみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>User STRING
+       Run  the  daemon as a specified user (the process must be
+       started by root).
+       Default: disabled
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>$ diff -u clamd.conf.orig clamd.conf
+--- clamd.conf.orig     2014-06-27 02:23:44.790917776 +0000
++++ clamd.conf  2014-06-27 02:24:19.483912097 +0000
+@@ -192,7 +192,7 @@
+
+ # Run as another user (clamd must be started by root for this option to work)
+ # Default: don't drop privileges
+-User clam
++#User clam
+
+ # Initialize supplementary group access (clamd must be started by root).
+ # Default: no
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% service clamd restart
+</pre></div>
+</div>
+<p>デフォルトは「User clam」になっておりclamユーザで動作する。「the process must be started by root」と書かれている通りrootユーザで動かすためにコメントアウトする。これでclamdを再起動すればスキャンできるようになる。</p>
+</div>
+<div class="section" id="freshclam">
+<h2>freshclam</h2>
+<p>proxyの設定もできたりする。freshclam.conf(5)</p>
+<div class="highlight-python"><div class="highlight"><pre>$ diff -u freshclam.conf.org freshclam.conf
+--- freshclam.conf.org  2014-06-16 01:20:57.641926268 +0000
++++ freshclam.conf      2014-06-16 01:21:43.073926648 +0000
+@@ -118,8 +118,8 @@
+
+ # Proxy settings
+ # Default: disabled
+-#HTTPProxyServer myproxy.com
+-#HTTPProxyPort 1234
++HTTPProxyServer 192.168.0.1
++HTTPProxyPort 3128
+ #HTTPProxyUsername myusername
+ #HTTPProxyPassword mypass
+</pre></div>
+</div>
+<p>clamavインストール時に/etc/cron.dailyにfreshclamという名前のシェルスクリプトが配置され、ウィルス定義ファイルの更新は毎日行われる。あとはこのシェルスクリプトに「yum update –enablerepo=epel clamav clamd」でも仕込んでおけばClamAVあ本体のほうも最新に保てると思う。(EPELが小まめにClamAVを更新してくれていれば)</p>
+<ul class="simple"><li><a class="reference external" href="http://www.clamav.net/lang/en">http://www.clamav.net/lang/en/</a></li>
+<li><a class="reference external" href="http://www.clamav.net/doc/latest/clamdoc.pdf">http://www.clamav.net/doc/latest/clamdoc.pdf</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/clamav.html">clamav</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/centos.html">centos</a>, <a href="tags/clamav.html">clamav</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>June 26, 2014</span>
         </div>
         <h1><a href="2014/06/26/debian_sid_vagrant_kvm.html">Debian sid で vagrant-kvm を使ってみた</a></h1>
@@ -218,96 +455,6 @@ jessie/sid
                 Tags:
                 <a href="tags/debian.html">debian</a>, <a href="tags/sid.html">sid</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>June 24, 2014</span>
-        </div>
-        <h1><a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a></h1>
-<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
-Linux 3.2.0-4-amd64 #1 SMP Debian 3.2.57-3+deb7u2
-
-$ cat /etc/debian_version
-7.5
-</pre></div>
-</div>
-<p>Debianではユーザをlibvirtグループに追加するだけ。</p>
-<div class="highlight-python"><div class="highlight"><pre>% gpasswd -a zinrai libvirt
-</pre></div>
-</div>
-<p>これだけだと中身カラッポすぎるので、なんでなのかをlibvirt本家ドキュメントとlibvirtのDebianディレクトリで調べてみた。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ wget http://ftp.de.debian.org/debian/pool/main/libv/libvirt/libvirt_0.9.12.3-1.debian.tar.gz
-$ tar zvxf libvirt_0.9.12.3-1.debian.tar.gz
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ cat debian/patches/debian/Allow-libvirt-group-to-access-the-socket.patch
-From: Guido Guenther &lt;agx@sigxcpu.org&gt;
-Date: Thu, 26 Jun 2008 20:01:38 +0200
-Subject: Allow libvirt group to access the socket
-
----
- daemon/libvirtd.conf |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/daemon/libvirtd.conf b/daemon/libvirtd.conf
-index 50eda1b..21cfcce 100644
---- a/daemon/libvirtd.conf
-+++ b/daemon/libvirtd.conf
-@@ -78,7 +78,7 @@
- # without becoming root.
- #
- # This is restricted to 'root' by default.
--#unix_sock_group = "libvirt"
-+unix_sock_group = "libvirt"
-
- # Set the UNIX socket permissions for the R/O socket. This is used
- # for monitoring VM status only
-@@ -95,7 +95,7 @@
- #
- # If not using PolicyKit and setting group ownership for access
- # control then you may want to relax this to:
--#unix_sock_rw_perms = "0770"
-+unix_sock_rw_perms = "0770"
-
- # Set the name of the directory in which sockets will be found/created.
- #unix_sock_dir = "/var/run/libvirt"
-@@ -126,7 +126,7 @@
- #
- # To restrict monitoring of domains you may wish to enable
- # an authentication mechanism here
--#auth_unix_ro = "none"
-+auth_unix_ro = "none"
-
- # Set an authentication scheme for UNIX read-write sockets
- # By default socket permissions only allow root. If PolicyKit
-@@ -135,7 +135,7 @@
- #
- # If the unix_sock_rw_perms are changed you may wish to enable
- # an authentication mechanism here
--#auth_unix_rw = "none"
-+auth_unix_rw = "none"
-
- # Change the authentication scheme for TCP sockets.
- #
-</pre></div>
-</div>
-<p>オリジナルソースではコメントアウトされているが、debパッケージ作成時にパッチが当たり、libvirtグループに所属しているユーザはlibvirtのUNIX domain socketへの読み書き実行権限が付与される設定になる。auth_unix_{ro,rw}はパスワード認証やKerberos認証を使えたりするが、デフォルトではこれらの認証方法は使わないようになっている。</p>
-<ul class="simple"><li><a class="reference external" href="http://libvirt.org/auth.html">http://libvirt.org/auth.html</a></li>
-<li><a class="reference external" href="http://libvirt.org/auth.html#ACL_server_unix_perms">http://libvirt.org/auth.html#ACL_server_unix_perms</a></li>
-<li><a class="reference external" href="https://packages.debian.org/wheezy/libvirt-bin">https://packages.debian.org/wheezy/libvirt-bin</a></li>
-</ul>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/libvirt.html">libvirt</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/libvirt.html">libvirt</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -316,6 +463,8 @@ index 50eda1b..21cfcce 100644
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/08/24/debian_wheezy_lxc.html">Debian wheezyでLXCを使ってみる</a>
+        </li><li>
             <a href="2014/07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a>
         </li><li>
             <a href="2014/07/01/centos_65_jenkins_install.html">CentOS 6.5 に Jenkins インストール</a>
@@ -333,15 +482,13 @@ index 50eda1b..21cfcce 100644
             <a href="2014/06/25/debian_sid_install.html">Debian sid インストール</a>
         </li><li>
             <a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
-        </li><li>
-            <a href="2014/06/23/debian_wheezy_qemu_nbd.html">qemu-nbd を使ってディスクイメージをマウントする</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/lxc.html">lxc</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (32), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (26), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (33), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (2), <a href="tags/lxc.html">lxc</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (27), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

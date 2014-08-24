@@ -86,6 +86,233 @@
             <li class="left"></li>
             <li class="right"><a href="page2.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>August 24, 2014</span>
+        </div>
+        <h1><a href="2014/08/24/debian_wheezy_lxc.html">Debian wheezyでLXCを使ってみる</a></h1>
+<p><a class="reference external" href="https://wiki.debian.org/LXC">https://wiki.debian.org/LXC</a>とREADME.Debianを見ながらDebian wheezyでLXCを使ってみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
+Linux 3.2.0-4-amd64 #1 SMP Debian 3.2.60-1+deb7u3
+
+$ cat /etc/debian_version
+7.6
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-cache show lxc
+Package: lxc
+Version: 0.8.0~rc1-8+deb7u2
+Installed-Size: 712
+Maintainer: Daniel Baumann &lt;daniel.baumann@progress-technologies.net&gt;
+Architecture: amd64
+Depends: debconf (&gt;= 0.5) | debconf-2.0, libc6 (&gt;= 2.8), libcap2 (&gt;= 2.10)
+Pre-Depends: multiarch-support
+Recommends: debootstrap | cdebootstrap, rsync, libcap2-bin
+Suggests: lxctl
+Conflicts: cgroup-bin
+Description-en: Linux Containers userspace tools
+ Containers are insulated areas inside a system, which have their own namespace
+ for filesystem, network, PID, IPC, CPU and memory allocation and which can be
+ created using the Control Group and Namespace features included in the Linux
+ kernel.
+ .
+ This package provides the lxc-* tools, which can be used to start a single
+ daemon in a container, or to boot an entire "containerized" system, and to
+ manage and debug your containers.
+Homepage: http://lxc.sourceforge.net/
+Description-md5: 4ece0dffd153c29e95ffdb89f8238dfc
+Tag: admin::virtualization, implemented-in::c, interface::commandline,
+ role::program, scope::application
+Section: admin
+Priority: optional
+Filename: pool/main/l/lxc/lxc_0.8.0~rc1-8+deb7u2_amd64.deb
+Size: 169900
+MD5sum: 00e9b7b812d6b156f0ea298b88ed6673
+SHA1: 74ccf808df7d19242ebf1a91a7f32fb66f39a6fc
+SHA256: 06f2ba886c07b0e224429f7b03802612ee58852d7b5be7e8e4b28d74dcd40119
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install rsync bridge-utils libvirt-bin debootstrap dnsmasq lxc
+</pre></div>
+</div>
+<div class="section" id="id1">
+<h2>ネットワーク設定</h2>
+<p>libvirtを使いvirbr0インタフェースを作成、ここにコンテナを接続する。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cat /etc/libvirt/qemu/networks/default.xml
+&lt;network&gt;
+&lt;name&gt;default&lt;/name&gt;
+&lt;bridge name="virbr0" /&gt;
+&lt;forward/&gt;
+&lt;ip address="192.168.122.1" netmask="255.255.255.0"&gt;
+&lt;dhcp&gt;
+&lt;range start="192.168.122.2" end="192.168.122.254" /&gt;
+&lt;/dhcp&gt;
+&lt;/ip&gt;
+&lt;/network&gt;
+
+% service dnsmasq stop
+% insserv -f -r dnsmasq
+% virsh net-autostart default
+% virsh net-start default
+</pre></div>
+</div>
+</div>
+<div class="section" id="lxc">
+<h2>LXC</h2>
+<p><a class="reference external" href="https://wiki.debian.org/LXC">Debian Wiki</a>の「Prepare the host」に書いてあるfstab(5)の設定ではcgroupsファイルシステムはマウントされない。/usr/share/doc/lxc/README.Debianを読んだほうがいい。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /etc/fstab
+cgroup /sys/fs/cgroup cgroup defaults 0 0
+
+% mount -a
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-checkconfig
+Kernel config /proc/config.gz not found, looking in other places...
+Found kernel config file /boot/config-3.2.0-4-amd64
+--- Namespaces ---
+Namespaces: enabled
+Utsname namespace: enabled
+Ipc namespace: enabled
+Pid namespace: enabled
+User namespace: enabled
+Network namespace: enabled
+Multiple /dev/pts instances: enabled
+
+--- Control groups ---
+Cgroup: enabled
+Cgroup clone_children flag: enabled
+Cgroup device: enabled
+Cgroup sched: enabled
+Cgroup cpu account: enabled
+Cgroup memory controller: enabled
+Cgroup cpuset: enabled
+
+--- Misc ---
+Veth pair device: enabled
+Macvlan: enabled
+Vlan: enabled
+File capabilities: enabled
+
+Note : Before booting a new kernel, you can check its configuration
+usage : CONFIG=/path/to/config /usr/bin/lxc-checkconfig
+</pre></div>
+</div>
+<p>テンプレート(シェルスクリプト)に従ってコンテナは作成される。</p>
+<div class="highlight-python"><div class="highlight"><pre>% dpkg -L lxc | grep template
+/usr/share/lxc/templates
+/usr/share/lxc/templates/lxc-ubuntu-cloud
+/usr/share/lxc/templates/lxc-debian
+/usr/share/lxc/templates/lxc-debconf.d
+/usr/share/lxc/templates/lxc-debconf.d/03-debconf
+/usr/share/lxc/templates/lxc-debconf.d/03-debconf.templates
+/usr/share/lxc/templates/lxc-debconf.d/01-preseed-file.templates
+/usr/share/lxc/templates/lxc-debconf.d/01-preseed-file
+/usr/share/lxc/templates/lxc-debconf.d/02-preseed-debconf
+/usr/share/lxc/templates/lxc-fedora
+/usr/share/lxc/templates/lxc-sshd
+/usr/share/lxc/templates/lxc-archlinux
+/usr/share/lxc/templates/lxc-opensuse
+/usr/share/lxc/templates/lxc-debconf
+/usr/share/lxc/templates/lxc-altlinux
+/usr/share/lxc/templates/lxc-progress
+/usr/share/lxc/templates/lxc-progress.d
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% cat -n /usr/share/lxc/templates/lxc-debian
+293 usage()
+294 {
+295 cat &lt;&lt;EOF
+296 $1 -h|--help -p|--path=&lt;path&gt; [-a|--arch] [-r|--release=&lt;release&gt;] [-c|--clean]
+297 release: the debian release (e.g. wheezy): defaults to current stable
+298 arch: the container architecture (e.g. amd64): defaults to host arch
+299 EOF
+300 return 0
+301 }
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-create -h
+usage: lxc-create -n &lt;name&gt; [-f configuration] [-t template] [-h] [fsopts] -- [template_options]
+fsopts: -B none
+fsopts: -B lvm [--lvname lvname] [--vgname vgname] [--fstype fstype] [--fssize fssize]
+fsopts: -B btrfs
+flag is not necessary, if possible btrfs support will be used
+
+creates a lxc system object.
+
+Options:
+name : name of the container
+configuration: lxc configuration
+template : lxc-template is an accessible template script
+
+The container backing store can be altered using '-B'. By default it
+is 'none', which is a simple directory tree under /var/lib/lxc/&lt;name&gt;/rootfs
+Otherwise, the following option values may be relevant:
+lvname : [for -lvm] name of lv in which to create lv,
+container-name by default
+vgname : [for -lvm] name of vg in which to create lv, 'lxc' by default
+fstype : name of filesystem to create, ext4 by default
+fssize : size of filesystem to create, 500M by default
+
+for template-specific help, specify a template, for instance:
+lxc-create -t debconf -h
+</pre></div>
+</div>
+<p>テンプレート側で用意している-rオプションを使うと指定したコードネームのベースイメージを取得できる。</p>
+<div class="highlight-python"><div class="highlight"><pre>% MIRROR=http://ftp.jp.debian.org/debian lxc-create -n wheezy64 -t debian
+% MIRROR=http://ftp.jp.debian.org/debian lxc-create -n jessie64 -t debian -- -r jessie
+% MIRROR=http://ftp.jp.debian.org/debian lxc-create -n sid64 -t debian -- -r sid
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-list
+RUNNING
+
+FROZEN
+
+STOPPED
+jessie64
+sid64
+wheezy64
+</pre></div>
+</div>
+<p>コンテナを外部と通信させるには下記の設定を追加する。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/lib/lxc/wheezy64/config
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.link = virbr0
+</pre></div>
+</div>
+<p>lxc-console(1)から抜ける場合は「Ctrl + a q」</p>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-start -n wheezy64 -d
+% lxc-console -n wheezy64
+</pre></div>
+</div>
+<p>Debian起動時にコンテナを起動させておきたければ、/etc/lxc/autoにシンボリックリンクを張る。/usr/share/doc/lxc/README.Debianの「4. Autostart」に書かれている。</p>
+<div class="highlight-python"><div class="highlight"><pre>% ln -s /var/lib/lxc/wheezy64/config /etc/lxc/auto/wheezy64
+</pre></div>
+</div>
+<p>bindmountもできる。ホストのJenkinsディレクトリをコンテナにマウントするには下記の設定を追加する。</p>
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/lib/lxc/wheezy64/config
+lxc.mount.entry=/var/lib/jenkins /var/lib/lxc/wheezy64/rootfs/home none bind 0 0
+</pre></div>
+</div>
+<p>lxc-attach(1)を使ってホストからコンテナへコマンドを実行させようとしたが、Kernel 3.8以降でないとlxc-attach(1)はうまく動作しないようだ。</p>
+<ul class="simple"><li><a class="reference external" href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=708144">https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=708144</a></li>
+</ul><p>wheezy-backportsにKernel 3.14のソースが置いてあるがビルドするのが面倒くさい。Debian sidでもLXCを試してみようと思う。</p>
+<ul class="simple"><li><a class="reference external" href="https://packages.debian.org/ja/wheezy-backports/linux-source">https://packages.debian.org/ja/wheezy-backports/linux-source</a></li>
+</ul></div>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/lxc.html">lxc</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/debian.html">debian</a>, <a href="tags/wheezy.html">wheezy</a>, <a href="tags/lxc.html">lxc</a>, <a href="tags/libvirt.html">libvirt</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>July 04, 2014</span>
         </div>
         <h1><a href="2014/07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a></h1>
@@ -246,85 +473,6 @@ CentOS release 6.5 (Final)
                 Tags:
                 <a href="tags/centos.html">centos</a>, <a href="tags/yum.html">yum</a>, <a href="tags/jenkins.html">jenkins</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>June 30, 2014</span>
-        </div>
-        <h1><a href="2014/06/30/centos_65_fluentd_plugin.html">td-agent で外部プラグインを使ってみる</a></h1>
-<ul class="simple"><li><a class="reference internal" href="2014/06/29/centos_65_td_agent_out_s3.html"><em>td-agent で S3 にログを送る</em></a></li>
-</ul><p>fluentdに組込まれているプラグインを標準プラグイン、それ以外を外部プラグイン呼ぶことにする。今回は、いくつかの外部プラグインを使ってみる。</p>
-<div class="highlight-python"><div class="highlight"><pre>$ uname -srv
-Linux 2.6.32-431.el6.x86_64 #1 SMP Fri Nov 22 03:15:09 UTC 2013
-
-$ cat /etc/redhat-release
-CentOS release 6.5 (Final)
-</pre></div>
-</div>
-<div class="section" id="fluent-plugin-forest">
-<h2>fluent-plugin-forest</h2>
-<p>標準プラグインだではタグごとにmatchを書かなければならないが、これを使うと冗長な記述をテンプレートとしてまとめることができる。tagというプレースホルダを使えるようになる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-forest
-</pre></div>
-</div>
-</div>
-<div class="section" id="fluent-plugin-config-expander">
-<h2>fluent-plugin-config-expander</h2>
-<p>for文が書けたり、hostnameというプレースホルダを使用できる。</p>
-<div class="highlight-python"><div class="highlight"><pre>% /usr/lib64/fluent/ruby/bin/fluent-gem install fluent-plugin-config-expander
-</pre></div>
-</div>
-<p>上記のプラグインを使った場合の設定はこんな感じ</p>
-<div class="highlight-python"><div class="highlight"><pre>% vi /etc/td-agent/td-agent.conf
-&lt;source&gt;
-  type config_expander
-  &lt;config&gt;
-    type tail
-    path /var/log/secure
-    pos_file /var/log/td-agent/secure.pos
-    tag ${hostname}/syslog.secure
-    format none
-  &lt;/config&gt;
-&lt;/source&gt;
-
-&lt;match *.**&gt;
-  type forest
-  subtype s3
-
-  &lt;template&gt;
-    aws_key_id AWS_KEY_ID
-    aws_sec_key AWS_SEC_KEY
-    s3_bucket BUCKET_NAME
-    s3_endpoint s3-ap-northeast-1.amazonaws.com
-    path ${tag}/%Y/%m/%d/
-    buffer_path /var/log/td-agent/s3
-
-    time_slice_format %Y-%m-%d-%H-%M-%S
-    time_slice_wait 5m
-    utc
-
-    buffer_chunk_limit 256m
-  &lt;/template&gt;
-&lt;/match&gt;
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="https://github.com/tagomoris/fluent-plugin-forest">https://github.com/tagomoris/fluent-plugin-forest</a></li>
-<li><a class="reference external" href="http://d.hatena.ne.jp/tagomoris/20120410/1334040981">http://d.hatena.ne.jp/tagomoris/20120410/1334040981</a></li>
-<li><a class="reference external" href="https://github.com/tagomoris/fluent-plugin-config-expander">https://github.com/tagomoris/fluent-plugin-config-expander</a></li>
-<li><a class="reference external" href="http://d.hatena.ne.jp/tagomoris/20120802/1343891922">http://d.hatena.ne.jp/tagomoris/20120802/1343891922</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/td_agent.html">td-agent</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/centos.html">centos</a>, <a href="tags/td_agent.html">td-agent</a>, <a href="tags/fluentd.html">fluentd</a>, <a href="tags/s3.html">s3</a>, <a href="tags/aws.html">aws</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -333,6 +481,8 @@ CentOS release 6.5 (Final)
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/08/24/debian_wheezy_lxc.html">Debian wheezyでLXCを使ってみる</a>
+        </li><li>
             <a href="2014/07/04/debian_wheezy_vagrant_digital_ocean.html">Vagrant で DigitalOcean を操作する</a>
         </li><li>
             <a href="2014/07/01/centos_65_jenkins_install.html">CentOS 6.5 に Jenkins インストール</a>
@@ -350,15 +500,13 @@ CentOS release 6.5 (Final)
             <a href="2014/06/25/debian_sid_install.html">Debian sid インストール</a>
         </li><li>
             <a href="2014/06/24/debian_wheezy_libvirtd_conf_unix_sock_auth_unix.html">一般ユーザでvirt-managerを使う</a>
-        </li><li>
-            <a href="2014/06/23/debian_wheezy_qemu_nbd.html">qemu-nbd を使ってディスクイメージをマウントする</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/lxc.html">lxc</a> (1)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (32), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (26), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (33), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (2), <a href="tags/lxc.html">lxc</a> (1), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (2), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (27), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

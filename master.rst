@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/08/24/debian_wheezy_lxc
    2014/07/04/debian_wheezy_vagrant_digital_ocean
    2014/07/01/centos_65_jenkins_install
    2014/06/30/centos_65_fluentd_plugin
