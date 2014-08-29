@@ -4,6 +4,7 @@ Sitemap
 .. toctree::
    :maxdepth: 1
 
+   2014/08/29/debian_sid_lxc_centos_container
    2014/08/28/debian_sid_lxc
    2014/08/24/debian_wheezy_lxc
    2014/07/04/debian_wheezy_vagrant_digital_ocean

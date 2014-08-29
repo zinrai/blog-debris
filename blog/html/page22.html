@@ -86,6 +86,80 @@
             <li class="left"> &laquo; <a href="page21.html">Newer</a></li>
             <li class="right"><a href="page23.html">Older</a> &raquo; </li>
         </ul><div class="timestamp postmeta">
+            <span>September 05, 2013</span>
+        </div>
+        <h1><a href="2013/09/05/freebsd_python_uwsgi_logformat.html">uWSGIのログフォーマット</a></h1>
+<p>「<a class="reference internal" href="2013/09/04/freebsd_nginx_reverse_proxy.html"><em>Nginxでリバースプロキシ</em></a>」でバックエンドにアクセス元のIPアドレスがログに記録されると書いたが、バックエンド側でも設定しなければログには記録されない。個人でひっそりとWebサービスを運営していてもディレクトリトラバーサルや某CMSを攻撃しているのかなと思われるリクエストがログに記録されている。ログを眺めるのは楽しいものだ。</p>
+<p>今回はバックエンドに「<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>」を置いた場合のログ設定について書く。動作するまでを書いた記事はよく見掛けるが、ログについて書いている記事は見たことがない。ドキュメントに書いてある通りに設定すればいいだけなので、わざわざ書き留めるほどの情報ではないのだろうか。</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># pw groupadd uwsgi -g 9090</span>
+<span class="c"># pw useradd uwsgi -u 9090 -g 9090 -c "uWSGI" -d /nonexistent -s /usr/sbin/nologin</span>
+</pre></div>
+</div>
+<p>アクセスしたら「Hellow World」を出力するだけの<a class="reference external" href="http://flask.pocoo.org">Flask</a>を使ったアプリケーション</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi sample.py</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="nd">@app.route</span><span class="p">(</span><span class="s">'/myapp'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">"Hello World!"</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>の設定をいろいろと書いているが大事なのはlog-x-forwarded-forとlog-formatの部分である。log-x-forwarded-forを有効にすればlog-formatの%(addr)にアクセス元のIPアドレスが記録される。</p>
+<p>ログフォーマットは「<a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html">Formatting uWSGI requests logs</a>」に詳しく書いてある。</p>
+<div class="highlight-python"><div class="highlight"><pre># vi development.ini
+[uwsgi]
+http = :9090
+workers = 3
+threads = 2
+virtualenv = ${virtualenv_path}
+python-path = ${application_path}
+wsgi = sample
+callable = app
+pidfile = /var/run/uwsgi.pid
+uid = uwsgi
+gid = uwsgi
+log-x-forwarded-for = true
+daemonize = uwsgi.log
+touch-reload = reload.txt
+log-format = %(addr) - %(user) [%(ltime)] "%(method) %(uri) %(proto)" %(status) %(size)`` "%(referer)" "%(uagent)"
+</pre></div>
+</div>
+<table border="1" class="docutils"><colgroup><col width="23%"/><col width="77%"/></colgroup><tbody valign="top"><tr class="row-odd"><td>virtualenv</td>
+<td>virtualenvを使用している場合、virtualenvのパスを指定する</td>
+</tr><tr class="row-even"><td>python-path</td>
+<td>アプリケーションのパスを指定する。</td>
+</tr><tr class="row-odd"><td>touch-reload</td>
+<td>指定したファイルをtouchすることでアプリと<a class="reference external" href="http://projects.unbit.it/uwsgi">uWSGI</a>の設定がリロードされる</td>
+</tr></tbody></table><div class="highlight-python"><div class="highlight"><pre><span class="c"># touch reload.txt</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># uwsgi development.ini</span>
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html">http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html</a></li>
+<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/Options.html">http://uwsgi-docs.readthedocs.org/en/latest/Options.html</a></li>
+<li><a class="reference external" href="http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html">http://uwsgi-docs.readthedocs.org/en/latest/LogFormat.html</a></li>
+</ul>
+        <div class="postmeta">
+        <div class="author">
+            <span>Posted by zinrai</span>
+        </div>
+        <div class="categories">
+            <span>
+                Filed under:
+                <a href="categories/uwsgi.html">uwsgi</a></span>
+        </div>
+        <div class="tags">
+            <span>
+                Tags:
+                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/python.html">python</a>, <a href="tags/uwsgi.html">uwsgi</a></span>
+        </div>
+        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
             <span>September 04, 2013</span>
         </div>
         <h1><a href="2013/09/04/freebsd_nginx_reverse_proxy.html">Nginxでリバースプロキシ</a></h1>
@@ -212,231 +286,6 @@ jenkins {
                 Tags:
                 <a href="tags/freebsd.html">freebsd</a>, <a href="tags/jail.html">jail</a>, <a href="tags/jenkins.html">jenkins</a></span>
         </div>
-        </div><div class="separator post_separator"></div><div class="timestamp postmeta">
-            <span>September 02, 2013</span>
-        </div>
-        <h1><a href="2013/09/02/freebsd_irc_znc.html">ZNCでIRC Proxy</a></h1>
-<p>IRCクライアオンからIRCサーバに接続してない間の発言は見ることが出来無い。IRC Proxyを置けば接続していない間の発言を記録し、IRCクライアントからIRC Proxyに接続すれば記録された発言を見ることが出来る。IRC Proxyでログを定期的にメールすると外出中は捗る。IRC Proxyといえばネットでは「<a class="reference external" href="http://www.clovery.jp/tiarra">Tiarra</a>」をよく見掛けるが、SSL接続のために「<a class="reference external" href="http://sourceforge.jp/projects/stone">stone</a>」などを使わなければならず面倒くさい。SSL接続できるIRC Proxyはないか探してみたところ「<a class="reference external" href="http://wiki.znc.in/ZNC">ZNC</a>」を見付け使っている。</p>
-<ul class="simple"><li><a class="reference internal" href="2013/09/01/freebsd_irc_ngircd.html"><em>ngircdでIRCサーバ</em></a></li>
-</ul><div class="highlight-python"><div class="highlight"><pre><span class="c"># pw useradd -n znc -s /bin/tcsh -m</span>
-<span class="c"># su - znc</span>
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ znc --help
-[ ** ] USAGE: znc [options]
-[ ** ] Options are:
-[ ** ]  -h, --help         List available command line options (this page)
-[ ** ]  -v, --version      Output version information and exit
-[ ** ]  -f, --foreground   Don't fork into the background
-[ ** ]  -D, --debug        Output debugging information (Implies -f)
-[ ** ]  -n, --no-color     Don't use escape sequences in the output
-[ ** ]  -r, --allow-root   Don't complain if ZNC is run as root
-[ ** ]  -c, --makeconf     Interactively create a new config
-[ ** ]  -s, --makepass     Generates a password for use in config
-[ ** ]  -p, --makepem      Generates a pemfile for use with SSL
-[ ** ]  -d, --datadir      Set a different ZNC repository (default is ~/.znc)
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ znc -v
-ZNC 1.0 - http://znc.in
-IPv6: yes, SSL: yes, DNS: threads
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ znc -c
-[ ok ] Checking for list of available modules...
-[ ** ] Building new config
-[ ** ]
-[ ** ] First let's start with some global settings...
-[ ** ]
-[ ?? ] What port would you like ZNC to listen on? (1025 to 65535): 6668
-[ ?? ] Would you like ZNC to listen using SSL? (yes/no) [no]: yes
-[ ** ] Unable to locate pem file: [/home/znc/.znc/znc.pem]
-[ ?? ] Would you like to create a new pem file now? (yes/no) [yes]:
-[ ok ] Writing Pem file [/home/znc/.znc/znc.pem]...
-[ ?? ] Would you like ZNC to listen using ipv6? (yes/no) [yes]: no
-[ ?? ] Listen Host (Blank for all ips): 192.168.0.8
-[ ok ] Verifying the listener...
-[ ** ]
-[ ** ] -- Global Modules --
-[ ** ]
-[ ** ] +-----------+----------------------------------------------------------+
-[ ** ] | Name      | Description                                              |
-[ ** ] +-----------+----------------------------------------------------------+
-[ ** ] | partyline | Internal channels and queries for users connected to znc |
-[ ** ] | webadmin  | Web based administration module                          |
-[ ** ] +-----------+----------------------------------------------------------+
-[ ** ] And 10 other (uncommon) modules. You can enable those later.
-[ ** ]
-[ ?? ] Load global module &lt;partyline&gt;? (yes/no) [no]:
-[ ?? ] Load global module &lt;webadmin&gt;? (yes/no) [no]:
-[ ** ]
-[ ** ] Now we need to set up a user...
-[ ** ]
-[ ?? ] Username (AlphaNumeric): hoge
-[ ?? ] Enter Password:
-[ ?? ] Confirm Password:
-[ ?? ] Would you like this user to be an admin? (yes/no) [yes]:
-[ ?? ] Nick [hoge]:
-[ ?? ] Alt Nick [hoge_]:
-[ ?? ] Ident [hoge]:
-[ ?? ] Real Name [Got ZNC?]: fuga
-[ ?? ] Bind Host (optional):
-[ ?? ] Number of lines to buffer per channel [50]:
-[ ?? ] Would you like to clear channel buffers after replay? (yes/no) [yes]:
-[ ?? ] Default channel modes [+stn]:
-[ ** ]
-[ ** ] -- User Modules --
-[ ** ]
-[ ** ] +--------------+------------------------------------------------------------------------------------------+
-[ ** ] | Name         | Description                                                                              |
-[ ** ] +--------------+------------------------------------------------------------------------------------------+
-[ ** ] | chansaver    | Keep config up-to-date when user joins/parts                                             |
-[ ** ] | controlpanel | Dynamic configuration through IRC. Allows editing only yourself if you're not ZNC admin. |
-[ ** ] | perform      | Keeps a list of commands to be executed when ZNC connects to IRC.                        |
-[ ** ] +--------------+------------------------------------------------------------------------------------------+
-[ ** ] And 22 other (uncommon) modules. You can enable those later.
-[ ** ]
-[ ?? ] Load module &lt;chansaver&gt;? (yes/no) [no]:
-[ ?? ] Load module &lt;controlpanel&gt;? (yes/no) [no]:
-[ ?? ] Load module &lt;perform&gt;? (yes/no) [no]:
-[ ** ]
-[ ?? ] Would you like to set up a network? (yes/no) [no]: yes
-[ ?? ] Network (e.g. `freenode' or `efnet'): hogeirc
-[ ** ]
-[ ** ] -- Network Modules --
-[ ** ]
-[ ** ] +-------------+-------------------------------------------------------------------------------------------------+
-[ ** ] | Name        | Description                                                                                     |
-[ ** ] +-------------+-------------------------------------------------------------------------------------------------+
-[ ** ] | chansaver   | Keep config up-to-date when user joins/parts                                                    |
-[ ** ] | keepnick    | Keep trying for your primary nick                                                               |
-[ ** ] | kickrejoin  | Autorejoin on kick                                                                              |
-[ ** ] | nickserv    | Auths you with NickServ                                                                         |
-[ ** ] | perform     | Keeps a list of commands to be executed when ZNC connects to IRC.                               |
-[ ** ] | simple_away | This module will automatically set you away on IRC while you are disconnected from the bouncer. |
-[ ** ] +-------------+-------------------------------------------------------------------------------------------------+
-[ ** ] And 16 other (uncommon) modules. You can enable those later.
-[ ** ]
-[ ?? ] Load module &lt;chansaver&gt;? (yes/no) [no]:
-[ ?? ] Load module &lt;keepnick&gt;? (yes/no) [no]:
-[ ?? ] Load module &lt;kickrejoin&gt;? (yes/no) [no]:
-[ ?? ] Load module &lt;nickserv&gt;? (yes/no) [no]:
-[ ?? ] Load module &lt;perform&gt;? (yes/no) [no]:
-[ ?? ] Load module &lt;simple_away&gt;? (yes/no) [no]:
-[ ** ]
-[ ** ] -- IRC Servers --
-[ ** ] Only add servers from the same IRC network.
-[ ** ] If a server from the list can't be reached, another server will be used.
-[ ** ]
-[ ?? ] IRC server (host only): 192.168.0.7
-[ ?? ] [192.168.50.7] Port (1 to 65535) [6667]: 6669
-[ ?? ] [192.168.50.7] Password (probably empty): aiueo
-[ ?? ] Does this server use SSL? (yes/no) [no]: yes
-[ ** ]
-[ ?? ] Would you like to add another server for this IRC network? (yes/no) [no]:
-[ ** ]
-[ ** ] -- Channels --
-[ ** ]
-[ ?? ] Would you like to add a channel for ZNC to automatically join? (yes/no) [yes]:
-[ ?? ] Channel name: #fuga
-[ ?? ] Would you like to add another channel? (yes/no) [no]:
-[ ?? ] Would you like to set up another network? (yes/no) [no]:
-[ ** ]
-[ ?? ] Would you like to set up another user? (yes/no) [no]:
-[ ok ] Writing config [/home/znc/.znc/configs/znc.conf]...
-[ ** ]
-[ ** ] To connect to this ZNC you need to connect to it as your IRC server
-[ ** ] using the port that you supplied.  You have to supply your login info
-[ ** ] as the IRC server password like this: user/network:pass.
-[ ** ]
-[ ** ] Try something like this in your IRC client...
-[ ** ] /server &lt;znc_server_ip&gt; +6668 hoge:&lt;pass&gt;
-[ ** ] And this in your browser...
-[ ** ] https://&lt;znc_server_ip&gt;:6668/
-[ ** ]
-[ ?? ] Launch ZNC now? (yes/no) [yes]:
-[ ok ] Opening config [/home/znc/.znc/configs/znc.conf]...
-[ ok ] Binding to port [+6668] on host [192.168.0.8] using ipv4...
-[ ** ] Loading user [hoge]
-[ ** ] Loading network [hogeirc]
-[ ok ] Adding server [192.168.0.7 +6669 aiueo]...
-[ ok ] Forking into the background... [pid: 42611]
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre>$ vi .znc/configs/znc.conf
-// WARNING
-//
-// Do NOT edit this file while ZNC is running!
-// Use webadmin or *controlpanel instead.
-//
-// Buf if you feel risky, you might want to read help on /znc saveconfig and /znc rehash.
-// Also check http://en.znc.in/wiki/Configuration
-
-Version = 1.0
-&lt;Listener l&gt;
-        Port = 6668
-        IPv4 = true
-        IPv6 = false
-        SSL = true
-        Host = 192.168.0.8
-&lt;/Listener&gt;
-
-&lt;User hoge&gt;
-        Pass       = sha256#...#...#
-        Admin      = true
-        Nick       = hoge
-        AltNick    = hoge_
-        Ident      = hoge
-        RealName   = fuga
-        Buffer     = 50
-        AutoClearChanBuffer = true
-        ChanModes  = +stn
-
-
-        &lt;Network hogeirc&gt;
-
-                Server     = 192.168.0.7 +6669 aiueo
-
-                &lt;Chan #atchan&gt;
-                &lt;/Chan&gt;
-        &lt;/Network&gt;
-&lt;/User&gt;
-</pre></div>
-</div>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># vi /etc/rc.conf</span>
-<span class="n">znc_enable</span><span class="o">=</span><span class="s">"YES"</span>
-<span class="n">znc_user</span><span class="o">=</span><span class="s">"znc"</span>
-<span class="n">znc_conf_dir</span><span class="o">=</span><span class="s">"/home/znc/.znc"</span>
-
-<span class="c"># service znc start</span>
-</pre></div>
-</div>
-<div class="section" id="weechat">
-<h2>WeeChat</h2>
-<p>「<a class="reference internal" href="2013/09/02/freebsd_irc_znc.html#weechat">WeeChat</a>」で「<a class="reference external" href="http://wiki.znc.in/ZNC">ZNC</a>」に接続するには</p>
-<div class="highlight-python"><div class="highlight"><pre>/server add hoge irc.hoge.localnet/6668 -ssl -username=hoge -password=hogepassword
-/connect hoge
-/disconnect hoge
-</pre></div>
-</div>
-<ul class="simple"><li><a class="reference external" href="http://www.weechat.org">http://www.weechat.org/</a></li>
-<li><a class="reference external" href="http://wiki.znc.in/Weechat">http://wiki.znc.in/Weechat</a></li>
-<li><a class="reference external" href="http://wiki.znc.in/Using_commands">http://wiki.znc.in/Using_commands</a></li>
-</ul></div>
-        <div class="postmeta">
-        <div class="author">
-            <span>Posted by zinrai</span>
-        </div>
-        <div class="categories">
-            <span>
-                Filed under:
-                <a href="categories/znc.html">znc</a></span>
-        </div>
-        <div class="tags">
-            <span>
-                Tags:
-                <a href="tags/freebsd.html">freebsd</a>, <a href="tags/irc.html">irc</a>, <a href="tags/znc.html">znc</a></span>
-        </div>
         </div><div class="archive_link">
         <a href="archive.html"> &mdash; Blog Archive &mdash; </a>
     </div><ul class="related clearfix">
@@ -445,6 +294,8 @@ Version = 1.0
         </ul></article><aside class="sidebar"><section><div class="widget">
     <h1>Recent Posts</h1>
     <ul><li>
+            <a href="2014/08/29/debian_sid_lxc_centos_container.html">Debian sid で CentOS の LXCテンプレートを試してみた</a>
+        </li><li>
             <a href="2014/08/28/debian_sid_lxc.html">Debian sid で LXC を使ってみる</a>
         </li><li>
             <a href="2014/08/24/debian_wheezy_lxc.html">Debian wheezyでLXCを使ってみる</a>
@@ -462,15 +313,13 @@ Version = 1.0
             <a href="2014/06/27/centos_65_clamav.html">CentOS 6.5 で ClamAV を使ってみた</a>
         </li><li>
             <a href="2014/06/26/debian_sid_vagrant_kvm.html">Debian sid で vagrant-kvm を使ってみた</a>
-        </li><li>
-            <a href="2014/06/25/debian_sid_install.html">Debian sid インストール</a>
         </li></ul>
 </div>
 </section><section><div class="widget">
     <h1>Categories</h1>
-    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/lxc.html">lxc</a> (2)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
+    <ul><li><a href="categories/aide.html">aide</a> (1)</li><li><a href="categories/ansible.html">ansible</a> (1)</li><li><a href="categories/apt.html">apt</a> (1)</li><li><a href="categories/centos.html">centos</a> (2)</li><li><a href="categories/chef.html">chef</a> (2)</li><li><a href="categories/clamav.html">clamav</a> (1)</li><li><a href="categories/cobbler.html">cobbler</a> (2)</li><li><a href="categories/cowbuilder.html">cowbuilder</a> (1)</li><li><a href="categories/dante.html">dante</a> (1)</li><li><a href="categories/debian.html">debian</a> (5)</li><li><a href="categories/direnv.html">direnv</a> (1)</li><li><a href="categories/dnsmasq.html">dnsmasq</a> (2)</li><li><a href="categories/docker.html">docker</a> (1)</li><li><a href="categories/fabric.html">fabric</a> (2)</li><li><a href="categories/freebsd.html">freebsd</a> (6)</li><li><a href="categories/gentoo.html">gentoo</a> (2)</li><li><a href="categories/jail.html">jail</a> (2)</li><li><a href="categories/jenkins.html">jenkins</a> (2)</li><li><a href="categories/kvm.html">kvm</a> (1)</li><li><a href="categories/libvirt.html">libvirt</a> (1)</li><li><a href="categories/lxc.html">lxc</a> (3)</li><li><a href="categories/mfsbsd.html">mfsbsd</a> (1)</li><li><a href="categories/mongodb.html">mongodb</a> (2)</li><li><a href="categories/munin.html">munin</a> (3)</li><li><a href="categories/mysql.html">mysql</a> (2)</li><li><a href="categories/nfs.html">nfs</a> (2)</li><li><a href="categories/nginx.html">nginx</a> (4)</li><li><a href="categories/ngircd.html">ngircd</a> (1)</li><li><a href="categories/nsd.html">nsd</a> (1)</li><li><a href="categories/ntp.html">ntp</a> (1)</li><li><a href="categories/openvpn.html">openvpn</a> (1)</li><li><a href="categories/openvswitch.html">openvswitch</a> (1)</li><li><a href="categories/packer.html">packer</a> (1)</li><li><a href="categories/poudriere.html">poudriere</a> (1)</li><li><a href="categories/puppet.html">puppet</a> (1)</li><li><a href="categories/pxeboot.html">pxeboot</a> (2)</li><li><a href="categories/qemu.html">qemu</a> (2)</li><li><a href="categories/rails.html">rails</a> (1)</li><li><a href="categories/rbenv.html">rbenv</a> (1)</li><li><a href="categories/ruby_build.html">ruby-build</a> (1)</li><li><a href="categories/schroot.html">schroot</a> (2)</li><li><a href="categories/serverspec.html">serverspec</a> (1)</li><li><a href="categories/snort.html">snort</a> (2)</li><li><a href="categories/squid.html">squid</a> (1)</li><li><a href="categories/ssh.html">ssh</a> (1)</li><li><a href="categories/sshfs.html">sshfs</a> (1)</li><li><a href="categories/supervisor.html">supervisor</a> (1)</li><li><a href="categories/synergy.html">synergy</a> (1)</li><li><a href="categories/td_agent.html">td-agent</a> (2)</li><li><a href="categories/tinkerer.html">tinkerer</a> (1)</li><li><a href="categories/unbound.html">unbound</a> (1)</li><li><a href="categories/uwsgi.html">uwsgi</a> (1)</li><li><a href="categories/vagrant.html">vagrant</a> (3)</li><li><a href="categories/virtualbox.html">virtualbox</a> (1)</li><li><a href="categories/wpasupplicant.html">wpasupplicant</a> (1)</li><li><a href="categories/xbuild.html">xbuild</a> (1)</li><li><a href="categories/xdm.html">xdm</a> (1)</li><li><a href="categories/zfs.html">zfs</a> (2)</li><li><a href="categories/znc.html">znc</a> (1)</li></ul>
 </div></section><section><div class="widget">
-    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (18), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (34), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (3), <a href="tags/lxc.html">lxc</a> (2), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (3), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (27), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
+    <h1>Tags</h1><a href="tags/aide.html">aide</a> (1), <a href="tags/ansible.html">ansible</a> (1), <a href="tags/apt.html">apt</a> (1), <a href="tags/aufs.html">aufs</a> (2), <a href="tags/aws.html">aws</a> (2), <a href="tags/centos.html">centos</a> (19), <a href="tags/chef.html">chef</a> (3), <a href="tags/chroot.html">chroot</a> (4), <a href="tags/clamav.html">clamav</a> (1), <a href="tags/cobbler.html">cobbler</a> (2), <a href="tags/cowbuilder.html">cowbuilder</a> (1), <a href="tags/dante.html">dante</a> (1), <a href="tags/debian.html">debian</a> (35), <a href="tags/debootstrap.html">debootstrap</a> (1), <a href="tags/deiban.html">deiban</a> (1), <a href="tags/direnv.html">direnv</a> (1), <a href="tags/dns.html">dns</a> (2), <a href="tags/dnsmasq.html">dnsmasq</a> (3), <a href="tags/docker.html">docker</a> (2), <a href="tags/fabric.html">fabric</a> (2), <a href="tags/fluentd.html">fluentd</a> (2), <a href="tags/freebsd.html">freebsd</a> (17), <a href="tags/gentoo.html">gentoo</a> (2), <a href="tags/github.html">github</a> (1), <a href="tags/irc.html">irc</a> (2), <a href="tags/jail.html">jail</a> (3), <a href="tags/jenkins.html">jenkins</a> (3), <a href="tags/kvm.html">kvm</a> (3), <a href="tags/libvirt.html">libvirt</a> (3), <a href="tags/lxc.html">lxc</a> (3), <a href="tags/mfsbsd.html">mfsbsd</a> (1), <a href="tags/mongodb.html">mongodb</a> (2), <a href="tags/munin.html">munin</a> (3), <a href="tags/mysql.html">mysql</a> (2), <a href="tags/nfs.html">nfs</a> (2), <a href="tags/nginx.html">nginx</a> (4), <a href="tags/ngircd.html">ngircd</a> (1), <a href="tags/nsd.html">nsd</a> (1), <a href="tags/ntp.html">ntp</a> (1), <a href="tags/nullfs.html">nullfs</a> (2), <a href="tags/openvpn.html">openvpn</a> (1), <a href="tags/openvswitch.html">openvswitch</a> (1), <a href="tags/packages.html">packages</a> (3), <a href="tags/packer.html">packer</a> (1), <a href="tags/pexboot.html">pexboot</a> (1), <a href="tags/ports.html">ports</a> (3), <a href="tags/poudriere.html">poudriere</a> (1), <a href="tags/pulledpork.html">pulledpork</a> (1), <a href="tags/puppet.html">puppet</a> (1), <a href="tags/pxeboot.html">pxeboot</a> (1), <a href="tags/python.html">python</a> (5), <a href="tags/qemu.html">qemu</a> (2), <a href="tags/rails.html">rails</a> (1), <a href="tags/rbenv.html">rbenv</a> (1), <a href="tags/rpmbuild.html">rpmbuild</a> (2), <a href="tags/ruby_build.html">ruby-build</a> (1), <a href="tags/s3.html">s3</a> (2), <a href="tags/schroot.html">schroot</a> (2), <a href="tags/serverspec.html">serverspec</a> (1), <a href="tags/sid.html">sid</a> (4), <a href="tags/snort.html">snort</a> (2), <a href="tags/socks.html">socks</a> (1), <a href="tags/squid.html">squid</a> (1), <a href="tags/ssh.html">ssh</a> (1), <a href="tags/sshfs.html">sshfs</a> (1), <a href="tags/supervisor.html">supervisor</a> (1), <a href="tags/synergy.html">synergy</a> (1), <a href="tags/td_agent.html">td-agent</a> (2), <a href="tags/tinkerer.html">tinkerer</a> (1), <a href="tags/ubuntu.html">ubuntu</a> (5), <a href="tags/unbound.html">unbound</a> (1), <a href="tags/uwsgi.html">uwsgi</a> (2), <a href="tags/vagrant.html">vagrant</a> (4), <a href="tags/vimage.html">vimage</a> (2), <a href="tags/virtualbox.html">virtualbox</a> (3), <a href="tags/vsftpd.html">vsftpd</a> (1), <a href="tags/wheezy.html">wheezy</a> (27), <a href="tags/wpasupplicant.html">wpasupplicant</a> (1), <a href="tags/xbuild.html">xbuild</a> (1), <a href="tags/xdm.html">xdm</a> (1), <a href="tags/yum.html">yum</a> (1), <a href="tags/zfs.html">zfs</a> (5), <a href="tags/znc.html">znc</a> (1)</div></section><section><div class="widget" id="searchbox" role="search">
     <h1>Search</h1>
     <form action="search.html" method="get">
         <input type="text" name="q" />

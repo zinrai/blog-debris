@@ -5,8 +5,88 @@
         <link>http://127.0.0.1/blog/html/</link>
         <description>Hello World</description>
         <language>en-us</language>
-        <pubDate>Thu, 28 Aug 2014 00:00:00 +0900</pubDate>
+        <pubDate>Fri, 29 Aug 2014 00:00:00 +0900</pubDate>
         
+        <item>
+            <link>http://127.0.0.1/blog/html/2014/08/29/debian_sid_lxc_centos_container.html</link>
+            <guid>http://127.0.0.1/blog/html/2014/08/29/debian_sid_lxc_centos_container.html</guid>
+            <title><![CDATA[Debian sid で CentOS の LXCテンプレートを試してみた]]></title>
+            <description><![CDATA[<h1>Debian sid で CentOS の LXCテンプレートを試してみた</h1>
+<ul class="simple"><li><a class="reference internal" href="http://127.0.0.1/blog/html/2014/08/28/debian_sid_lxc.html"><em>Debian sid で LXC を使ってみる</em></a></li>
+</ul><div class="highlight-python"><div class="highlight"><pre>% uname -srv
+Linux 3.14-2-amd64 #1 SMP Debian 3.14.15-2 (2014-08-09)
+
+% cat /etc/debian_version
+jessie/sid
+</pre></div>
+</div>
+<p>templateにCentOSがあったので試してみた。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ dpkg -L lxc | grep template
+/usr/share/lxc/templates
+/usr/share/lxc/templates/lxc-centos
+/usr/share/lxc/templates/lxc-sshd
+/usr/share/lxc/templates/lxc-gentoo
+/usr/share/lxc/templates/lxc-fedora
+/usr/share/lxc/templates/lxc-debian
+/usr/share/lxc/templates/lxc-opensuse
+/usr/share/lxc/templates/lxc-ubuntu
+/usr/share/lxc/templates/lxc-alpine
+/usr/share/lxc/templates/lxc-download
+/usr/share/lxc/templates/lxc-cirros
+/usr/share/lxc/templates/lxc-oracle
+/usr/share/lxc/templates/lxc-openmandriva
+/usr/share/lxc/templates/lxc-ubuntu-cloud
+/usr/share/lxc/templates/lxc-archlinux
+/usr/share/lxc/templates/lxc-altlinux
+/usr/share/lxc/templates/lxc-busybox
+/usr/share/lxc/templates/lxc-plamo
+</pre></div>
+</div>
+<p>-Rでリリース番号、-aでarchを指定できる。</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cat -n /usr/share/lxc/templates/lxc-centos
+645 usage()
+646 {
+647 cat &lt;&lt;EOF
+648 usage:
+649 $1 -n|--name=&lt;container_name&gt;
+650 [-p|--path=&lt;path&gt;] [-c|--clean] [-R|--release=&lt;CentOS_release&gt;] [-A|--arch=&lt;arch of the container&gt;]
+651 [-h|--help]
+652 Mandatory args:
+653 -n,--name container name, used to as an identifier for that container from now on
+654 Optional args:
+655 -p,--path path to where the container rootfs will be created, defaults to /var/lib/lxc/name.
+656 -c,--clean clean the cache
+657 -R,--release Centos release for the new container. if the host is Centos, then it will defaultto the host's release.
+658 --fqdn fully qualified domain name (FQDN) for DNS and system naming
+659 --repo repository to use (url)
+660 -a,--arch Define what arch the container will be [i686,x86_64]
+661 -h,--help print this help
+662 EOF
+663 return 0
+664 }
+</pre></div>
+</div>
+<p>テンプレートを眺めてみるとyumを使っていたので、Debianにyumなんてあるのかなと思って調べてみたらあった。yumをインストールしておく。</p>
+<div class="highlight-python"><div class="highlight"><pre>% apt-get install yum
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% vi /var/lib/lxc/centos6-64/config
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.link = virbr0
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>% lxc-create -n centos6-64 -t centos -- -R 6 -a x86_64
+% lxc-start -n centos6-64 -d
+% lxc-console -n centos6-64
+</pre></div>
+</div>
+<ul class="simple"><li><a class="reference external" href="https://packages.debian.org/sid/yum">https://packages.debian.org/sid/yum</a></li>
+</ul>]]></description>
+            <category><![CDATA[ lxc ]]></category>
+             <pubDate>Fri, 29 Aug 2014 00:00:00 +0900</pubDate>
+        </item>
+    
         <item>
             <link>http://127.0.0.1/blog/html/2014/08/28/debian_sid_lxc.html</link>
             <guid>http://127.0.0.1/blog/html/2014/08/28/debian_sid_lxc.html</guid>
