@@ -23,7 +23,7 @@ author = 'zinrai'
 copyright = '2012, ' + author
 
 # Change this to your blog root URL (required for RSS feed)
-website = 'http://d.zinrai.info/'
+website = 'http://d.zinrai.info/blog/html'
 
 # **************************************************************
 # More tweaks you can do
